@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://v2.nonebot.dev/"><img src="https://raw.githubusercontent.com/nonebot/nonebot2/master/docs/.vuepress/public/logo.png" width="200" height="200" alt="nonebot"></a>
+  <a href="https://v2.nonebot.dev/"><img src="https://raw.githubusercontent.com/nonebot/adapter-onebot/master/website/static/img/logo.png" width="500" height="200" alt="nonebot-adapter-onebot"></a>
 </p>
 
 <div align="center">
 
-# NoneBot-Adapter-CQHTTP
+# NoneBot-Adapter-OneBot
 
-_✨ OneBot(CQHTTP) 协议适配 ✨_
+_✨ OneBot 协议适配 ✨_
 
 </div>
