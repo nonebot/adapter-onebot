@@ -23,7 +23,7 @@ from nonebot.drivers import (
 )
 
 from .utils import log, escape
-from .config import Config as CQHTTPConfig
+from .config import Config as OneBotConfig
 from .message import Message, MessageSegment
 from .event import Event, Reply, MessageEvent, get_event_model
 from .exception import ActionFailed, NetworkError, ApiNotAvailable
@@ -232,42 +232,42 @@ class ResultStore:
 
 class Bot(BaseBot):
     """
-    CQHTTP 协议 Bot 适配。继承属性参考 `BaseBot <./#class-basebot>`_ 。
+    OneBot v11 协议 Bot 适配。
     """
 
-    cqhttp_config: CQHTTPConfig
+    onebot_config: OneBotConfig
 
     @property
     @overrides(BaseBot)
     def type(self) -> str:
         """
-        - 返回: ``"cqhttp"``
+        - 返回: ``"onebot v11"``
         """
-        return "cqhttp"
+        return "onebot v11"
 
     @classmethod
     def register(cls, driver: Driver, config: "Config"):
         super().register(driver, config)
-        cls.cqhttp_config = CQHTTPConfig(**config.dict())
-        if not isinstance(driver, ForwardDriver) and cls.cqhttp_config.ws_urls:
+        cls.onebot_config = OneBotConfig(**config.dict())
+        if not isinstance(driver, ForwardDriver) and cls.onebot_config.ws_urls:
             logger.warning(
                 f"Current driver {cls.config.driver} don't support forward connections"
             )
-        elif isinstance(driver, ForwardDriver) and cls.cqhttp_config.ws_urls:
-            for self_id, url in cls.cqhttp_config.ws_urls.items():
+        elif isinstance(driver, ForwardDriver) and cls.onebot_config.ws_urls:
+            for self_id, url in cls.onebot_config.ws_urls.items():
                 try:
                     headers = (
-                        {"authorization": f"Bearer {cls.cqhttp_config.access_token}"}
-                        if cls.cqhttp_config.access_token
+                        {"authorization": f"Bearer {cls.onebot_config.access_token}"}
+                        if cls.onebot_config.access_token
                         else {}
                     )
                     driver.setup_websocket(
-                        WebSocketSetup("cqhttp", self_id, url, headers=headers)
+                        WebSocketSetup("onebot", self_id, url, headers=headers)
                     )
                 except Exception as e:
                     logger.opt(colors=True, exception=e).error(
                         f"<r><bg #f8bbd0>Bad url {escape_tag(url)} for bot {escape_tag(self_id)} "
-                        "in cqhttp forward websocket</bg #f8bbd0></r>"
+                        "in onebot forward websocket</bg #f8bbd0></r>"
                     )
 
     @classmethod
@@ -278,12 +278,12 @@ class Bot(BaseBot):
         """
         :说明:
 
-          CQHTTP (OneBot) 协议鉴权。参考 `鉴权 <https://github.com/howmanybots/onebot/blob/master/v11/specs/communication/authorization.md>`_
+          OneBot v11 协议鉴权。参考 `鉴权 <https://github.com/botuniverse/onebot-11/blob/master/communication/authorization.md>`_
         """
         x_self_id = request.headers.get("x-self-id")
         x_signature = request.headers.get("x-signature")
         token = get_auth_bearer(request.headers.get("authorization"))
-        cqhttp_config = CQHTTPConfig(**driver.config.dict())
+        onebot_config = OneBotConfig(**driver.config.dict())
 
         # 检查self_id
         if not x_self_id:
@@ -291,7 +291,7 @@ class Bot(BaseBot):
             return None, HTTPResponse(400, b"Missing X-Self-ID Header")
 
         # 检查签名
-        secret = cqhttp_config.secret
+        secret = onebot_config.secret
         if secret and isinstance(request, HTTPRequest):
             if not x_signature:
                 log("WARNING", "Missing Signature Header")
@@ -301,7 +301,7 @@ class Bot(BaseBot):
                 log("WARNING", "Signature Header is invalid")
                 return None, HTTPResponse(403, b"Signature is invalid")
 
-        access_token = cqhttp_config.access_token
+        access_token = onebot_config.access_token
         if access_token and access_token != token and isinstance(request, WebSocket):
             log(
                 "WARNING",
@@ -382,8 +382,8 @@ class Bot(BaseBot):
                 api_root += "/"
 
             headers = {"Content-Type": "application/json"}
-            if self.cqhttp_config.access_token is not None:
-                headers["Authorization"] = "Bearer " + self.cqhttp_config.access_token
+            if self.onebot_config.access_token is not None:
+                headers["Authorization"] = "Bearer " + self.onebot_config.access_token
 
             try:
                 async with httpx.AsyncClient(
@@ -412,7 +412,7 @@ class Bot(BaseBot):
         """
         :说明:
 
-          调用 CQHTTP 协议 API
+          调用 OneBot 协议 API
 
         :参数:
 

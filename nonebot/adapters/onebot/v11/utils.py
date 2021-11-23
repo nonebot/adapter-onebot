@@ -2,7 +2,7 @@ from typing import Optional
 
 from nonebot.utils import logger_wrapper
 
-log = logger_wrapper("CQHTTP")
+log = logger_wrapper("OneBot")
 
 
 def escape(s: str, *, escape_comma: bool = True) -> str:

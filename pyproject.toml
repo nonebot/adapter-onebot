@@ -8,7 +8,7 @@ readme = "README.md"
 homepage = "https://v2.nonebot.dev/"
 repository = "https://github.com/nonebot/adapter-onebot"
 documentation = "https://v2.nonebot.dev/"
-keywords = ["bot", "qq", "qqbot", "coolq", "cqhttp"]
+keywords = ["bot", "qq", "qqbot", "coolq", "onebot", "cqhttp"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Framework :: Robot Framework",

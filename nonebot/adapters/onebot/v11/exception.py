@@ -7,16 +7,16 @@ from nonebot.exception import NoLogException as BaseNoLogException
 from nonebot.exception import ApiNotAvailable as BaseApiNotAvailable
 
 
-class CQHTTPAdapterException(AdapterException):
+class OneBotAdapterException(AdapterException):
     def __init__(self):
-        super().__init__("cqhttp")
+        super().__init__("onebot")
 
 
-class NoLogException(BaseNoLogException, CQHTTPAdapterException):
+class NoLogException(BaseNoLogException, OneBotAdapterException):
     pass
 
 
-class ActionFailed(BaseActionFailed, CQHTTPAdapterException):
+class ActionFailed(BaseActionFailed, OneBotAdapterException):
     """
     :说明:
 
@@ -42,7 +42,7 @@ class ActionFailed(BaseActionFailed, CQHTTPAdapterException):
         return self.__repr__()
 
 
-class NetworkError(BaseNetworkError, CQHTTPAdapterException):
+class NetworkError(BaseNetworkError, OneBotAdapterException):
     """
     :说明:
 
@@ -64,5 +64,5 @@ class NetworkError(BaseNetworkError, CQHTTPAdapterException):
         return self.__repr__()
 
 
-class ApiNotAvailable(BaseApiNotAvailable, CQHTTPAdapterException):
+class ApiNotAvailable(BaseApiNotAvailable, OneBotAdapterException):
     pass

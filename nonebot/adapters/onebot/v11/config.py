@@ -6,18 +6,18 @@ from pydantic import Field, AnyUrl, BaseModel
 # priority: alias > origin
 class Config(BaseModel):
     """
-    CQHTTP 配置类
+    OneBot 配置类
 
     :配置项:
 
-      - ``access_token`` / ``cqhttp_access_token``: CQHTTP 协议授权令牌
-      - ``secret`` / ``cqhttp_secret``: CQHTTP HTTP 上报数据签名口令
-      - ``ws_urls`` / ``cqhttp_ws_urls``: CQHTTP 正向 Websocket 连接 Bot ID、目标 URL 字典
+      - ``access_token`` / ``onebot_access_token``: OneBot 协议授权令牌
+      - ``secret`` / ``onebot_secret``: OneBot HTTP 上报数据签名口令
+      - ``ws_urls`` / ``onebot_ws_urls``: OneBot 正向 Websocket 连接 Bot ID、目标 URL 字典
     """
 
-    access_token: Optional[str] = Field(default=None, alias="cqhttp_access_token")
-    secret: Optional[str] = Field(default=None, alias="cqhttp_secret")
-    ws_urls: Dict[str, AnyUrl] = Field(default_factory=set, alias="cqhttp_ws_urls")
+    access_token: Optional[str] = Field(default=None, alias="onebot_access_token")
+    secret: Optional[str] = Field(default=None, alias="onebot_secret")
+    ws_urls: Dict[str, AnyUrl] = Field(default_factory=set, alias="onebot_ws_urls")
 
     class Config:
         extra = "ignore"

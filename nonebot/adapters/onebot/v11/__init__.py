@@ -19,4 +19,4 @@ from .exception import ActionFailed as ActionFailed
 from .exception import NetworkError as NetworkError
 from .message import MessageSegment as MessageSegment
 from .exception import ApiNotAvailable as ApiNotAvailable
-from .exception import CQHTTPAdapterException as CQHTTPAdapterException
+from .exception import OneBotAdapterException as OneBotAdapterException
