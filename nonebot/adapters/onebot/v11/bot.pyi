@@ -8,73 +8,42 @@ from nonebot.drivers import Driver, WebSocket
 from .event import Event
 from .message import Message, MessageSegment
 
-def get_auth_bearer(access_token: Optional[str] = ...) -> Optional[str]:
-    ...
-
-
-async def _check_reply(bot: "Bot", event: Event):
-    ...
-
-
-def _check_at_me(bot: "Bot", event: Event):
-    ...
-
-
-def _check_nickname(bot: "Bot", event: Event):
-    ...
-
-
-def _handle_api_result(result: Optional[Dict[str, Any]]) -> Any:
-    ...
-
+def get_auth_bearer(access_token: Optional[str] = ...) -> Optional[str]: ...
+async def _check_reply(bot: "Bot", event: Event): ...
+def _check_at_me(bot: "Bot", event: Event): ...
+def _check_nickname(bot: "Bot", event: Event): ...
+def _handle_api_result(result: Optional[Dict[str, Any]]) -> Any: ...
 
 class ResultStore:
     _seq: int = ...
     _futures: Dict[int, asyncio.Future] = ...
-
     @classmethod
-    def get_seq(cls) -> int:
-        ...
-
+    def get_seq(cls) -> int: ...
     @classmethod
-    def add_result(cls, result: Dict[str, Any]):
-        ...
-
+    def add_result(cls, result: Dict[str, Any]): ...
     @classmethod
-    async def fetch(cls, seq: int, timeout: Optional[float]) -> Dict[str, Any]:
-        ...
-
+    async def fetch(cls, seq: int, timeout: Optional[float]) -> Dict[str, Any]: ...
 
 class Bot(BaseBot):
-
-    def __init__(self,
-                 driver: Driver,
-                 connection_type: str,
-                 config: Config,
-                 self_id: str,
-                 *,
-                 websocket: WebSocket = None):
-        ...
-
-    def type(self) -> str:
-        ...
-
+    def __init__(
+        self,
+        driver: Driver,
+        connection_type: str,
+        config: Config,
+        self_id: str,
+        *,
+        websocket: WebSocket = None,
+    ): ...
+    def type(self) -> str: ...
     @classmethod
-    async def check_permission(cls, driver: Driver, connection_type: str,
-                               headers: dict, body: Optional[dict]) -> str:
-        ...
-
-    async def handle_message(self, message: dict):
-        ...
-
-    async def call_api(self, api: str, *, **data) -> Any:
-        ...
-
-    async def send(self, event: Event, message: Union[str, Message,
-                                                      MessageSegment],
-                   **kwargs) -> Any:
-        ...
-
+    async def check_permission(
+        cls, driver: Driver, connection_type: str, headers: dict, body: Optional[dict]
+    ) -> str: ...
+    async def handle_message(self, message: dict): ...
+    async def call_api(self, api: str, **data) -> Any: ...
+    async def send(
+        self, event: Event, message: Union[str, Message, MessageSegment], **kwargs
+    ) -> Any: ...
     async def send_private_msg(
         self,
         *,
@@ -95,7 +64,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def send_group_msg(
         self,
         *,
@@ -116,7 +84,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def send_msg(
         self,
         *,
@@ -141,7 +108,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def delete_msg(
         self,
         *,
@@ -158,7 +124,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_msg(
         self,
         *,
@@ -175,7 +140,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_forward_msg(
         self,
         *,
@@ -192,7 +156,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def send_like(
         self,
         *,
@@ -211,7 +174,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_kick(
         self,
         *,
@@ -232,7 +194,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_ban(
         self,
         *,
@@ -253,7 +214,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_anonymous_ban(
         self,
         *,
@@ -276,7 +236,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_whole_ban(
         self,
         *,
@@ -295,7 +254,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_admin(
         self,
         *,
@@ -316,7 +274,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_anonymous(
         self,
         *,
@@ -335,7 +292,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_card(
         self,
         *,
@@ -356,7 +312,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_name(
         self,
         *,
@@ -375,7 +330,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_leave(
         self,
         *,
@@ -394,7 +348,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_special_title(
         self,
         *,
@@ -417,7 +370,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_friend_add_request(
         self,
         *,
@@ -438,7 +390,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_group_add_request(
         self,
         *,
@@ -461,7 +412,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_login_info(self) -> Dict[str, Any]:
         """
         :说明:
@@ -470,7 +420,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_stranger_info(
         self,
         *,
@@ -489,7 +438,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_friend_list(self) -> List[Dict[str, Any]]:
         """
         :说明:
@@ -498,7 +446,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_group_info(
         self,
         *,
@@ -517,7 +464,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_group_list(self) -> List[Dict[str, Any]]:
         """
         :说明:
@@ -526,7 +472,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_group_member_info(
         self,
         *,
@@ -547,7 +492,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_group_member_list(
         self,
         *,
@@ -564,7 +508,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_group_honor_info(
         self,
         *,
@@ -583,7 +526,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_cookies(
         self,
         *,
@@ -600,7 +542,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_csrf_token(self) -> Dict[str, Any]:
         """
         :说明:
@@ -609,7 +550,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_credentials(
         self,
         *,
@@ -626,7 +566,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_record(
         self,
         *,
@@ -645,7 +584,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_image(
         self,
         *,
@@ -662,7 +600,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def can_send_image(self) -> Dict[str, Any]:
         """
         :说明:
@@ -671,7 +608,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def can_send_record(self) -> Dict[str, Any]:
         """
         :说明:
@@ -680,7 +616,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_status(self) -> Dict[str, Any]:
         """
         :说明:
@@ -689,7 +624,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def get_version_info(self) -> Dict[str, Any]:
         """
         :说明:
@@ -698,7 +632,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def set_restart(
         self,
         *,
@@ -715,7 +648,6 @@ class Bot(BaseBot):
 
         """
         ...
-
     async def clean_cache(self) -> None:
         """
         :说明:
