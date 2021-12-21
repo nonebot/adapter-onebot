@@ -1,6 +1,10 @@
-from typing import Dict, Optional
+from typing import Set, Optional
 
 from pydantic import Field, AnyUrl, BaseModel
+
+
+class WSUrl(AnyUrl):
+    allow_schemes = {"ws", "wss"}
 
 
 # priority: alias > origin
@@ -17,7 +21,7 @@ class Config(BaseModel):
 
     access_token: Optional[str] = Field(default=None, alias="onebot_access_token")
     secret: Optional[str] = Field(default=None, alias="onebot_secret")
-    ws_urls: Dict[str, AnyUrl] = Field(default_factory=set, alias="onebot_ws_urls")
+    ws_urls: Set[WSUrl] = Field(default_factory=set, alias="onebot_ws_urls")
 
     class Config:
         extra = "ignore"

@@ -1,47 +1,17 @@
 import re
-import sys
-import hmac
-import json
-import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Tuple, Union, Optional
+from typing import TYPE_CHECKING, Any, Union
 
-import httpx
-
-from nonebot.log import logger
 from nonebot.typing import overrides
 from nonebot.message import handle_event
+
 from nonebot.adapters import Bot as BaseBot
-from nonebot.utils import DataclassEncoder, escape_tag
-from nonebot.drivers import (
-    Driver,
-    WebSocket,
-    HTTPRequest,
-    HTTPResponse,
-    ForwardDriver,
-    HTTPConnection,
-    WebSocketSetup,
-)
 
 from .utils import log, escape
-from .config import Config as OneBotConfig
 from .message import Message, MessageSegment
-from .event import Event, Reply, MessageEvent, get_event_model
-from .exception import ActionFailed, NetworkError, ApiNotAvailable
-
-if TYPE_CHECKING:
-    from nonebot.config import Config
+from .event import Event, Reply, MessageEvent
 
 
-def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
-    if not access_token:
-        return None
-    scheme, _, param = access_token.partition(" ")
-    if scheme.lower() not in ["bearer", "token"]:
-        return None
-    return param
-
-
-async def _check_reply(bot: "Bot", event: "Event"):
+async def _check_reply(bot: "Bot", event: MessageEvent):
     """
     :说明:
 
@@ -52,9 +22,6 @@ async def _check_reply(bot: "Bot", event: "Event"):
       * ``bot: Bot``: Bot 对象
       * ``event: Event``: Event 对象
     """
-    if not isinstance(event, MessageEvent):
-        return
-
     try:
         index = list(map(lambda x: x.type == "reply", event.message)).index(True)
     except ValueError:
@@ -79,7 +46,7 @@ async def _check_reply(bot: "Bot", event: "Event"):
         event.message.append(MessageSegment.text(""))
 
 
-def _check_at_me(bot: "Bot", event: "Event"):
+def _check_at_me(bot: "Bot", event: MessageEvent):
     """
     :说明:
 
@@ -143,7 +110,7 @@ def _check_at_me(bot: "Bot", event: "Event"):
             event.message.append(MessageSegment.text(""))
 
 
-def _check_nickname(bot: "Bot", event: "Event"):
+def _check_nickname(bot: "Bot", event: MessageEvent):
     """
     :说明:
 
@@ -154,9 +121,6 @@ def _check_nickname(bot: "Bot", event: "Event"):
       * ``bot: Bot``: Bot 对象
       * ``event: Event``: Event 对象
     """
-    if not isinstance(event, MessageEvent):
-        return
-
     first_msg_seg = event.message[0]
     if first_msg_seg.type != "text":
         return
@@ -175,260 +139,88 @@ def _check_nickname(bot: "Bot", event: "Event"):
             first_msg_seg.data["text"] = first_text[m.end() :]
 
 
-def _handle_api_result(result: Optional[Dict[str, Any]]) -> Any:
-    """
-    :说明:
-
-      处理 API 请求返回值。
-
-    :参数:
-
-      * ``result: Optional[Dict[str, Any]]``: API 返回数据
-
-    :返回:
-
-        - ``Any``: API 调用返回数据
-
-    :异常:
-
-        - ``ActionFailed``: API 调用失败
-    """
-    if isinstance(result, dict):
-        if result.get("status") == "failed":
-            raise ActionFailed(**result)
-        return result.get("data")
-
-
-class ResultStore:
-    _seq = 1
-    _futures: Dict[int, asyncio.Future] = {}
-
-    @classmethod
-    def get_seq(cls) -> int:
-        s = cls._seq
-        cls._seq = (cls._seq + 1) % sys.maxsize
-        return s
-
-    @classmethod
-    def add_result(cls, result: Dict[str, Any]):
-        if isinstance(result.get("echo"), dict) and isinstance(
-            result["echo"].get("seq"), int
-        ):
-            future = cls._futures.get(result["echo"]["seq"])
-            if future:
-                future.set_result(result)
-
-    @classmethod
-    async def fetch(cls, seq: int, timeout: Optional[float]) -> Dict[str, Any]:
-        future = asyncio.get_event_loop().create_future()
-        cls._futures[seq] = future
-        try:
-            return await asyncio.wait_for(future, timeout)
-        except asyncio.TimeoutError:
-            raise NetworkError("WebSocket API call timeout") from None
-        finally:
-            del cls._futures[seq]
-
-
 class Bot(BaseBot):
     """
     OneBot v11 协议 Bot 适配。
     """
 
-    onebot_config: OneBotConfig
+    # @overrides(BaseBot)
+    # async def _call_api(self, api: str, **data) -> Any:
+    #     log("DEBUG", f"Calling API <y>{api}</y>")
+    #     if isinstance(self.request, WebSocket):
+    #         seq = ResultStore.get_seq()
+    #         json_data = json.dumps(
+    #             {"action": api, "params": data, "echo": {"seq": seq}},
+    #             cls=DataclassEncoder,
+    #         )
+    #         await self.request.send(json_data)
+    #         return _handle_api_result(
+    #             await ResultStore.fetch(seq, self.config.api_timeout)
+    #         )
 
-    @property
-    @overrides(BaseBot)
-    def type(self) -> str:
-        """
-        - 返回: ``"onebot v11"``
-        """
-        return "onebot v11"
+    #     elif isinstance(self.request, HTTPRequest):
+    #         api_root = self.config.api_root.get(self.self_id)
+    #         if not api_root:
+    #             raise ApiNotAvailable
+    #         elif not api_root.endswith("/"):
+    #             api_root += "/"
 
-    @classmethod
-    def register(cls, driver: Driver, config: "Config"):
-        super().register(driver, config)
-        cls.onebot_config = OneBotConfig(**config.dict())
-        if not isinstance(driver, ForwardDriver) and cls.onebot_config.ws_urls:
-            logger.warning(
-                f"Current driver {cls.config.driver} don't support forward connections"
-            )
-        elif isinstance(driver, ForwardDriver) and cls.onebot_config.ws_urls:
-            for self_id, url in cls.onebot_config.ws_urls.items():
-                try:
-                    headers = (
-                        {"authorization": f"Bearer {cls.onebot_config.access_token}"}
-                        if cls.onebot_config.access_token
-                        else {}
-                    )
-                    driver.setup_websocket(
-                        WebSocketSetup("onebot", self_id, url, headers=headers)
-                    )
-                except Exception as e:
-                    logger.opt(colors=True, exception=e).error(
-                        f"<r><bg #f8bbd0>Bad url {escape_tag(url)} for bot {escape_tag(self_id)} "
-                        "in onebot forward websocket</bg #f8bbd0></r>"
-                    )
+    #         headers = {"Content-Type": "application/json"}
+    #         if self.onebot_config.access_token is not None:
+    #             headers["Authorization"] = "Bearer " + self.onebot_config.access_token
 
-    @classmethod
-    @overrides(BaseBot)
-    async def check_permission(
-        cls, driver: Driver, request: HTTPConnection
-    ) -> Tuple[Optional[str], HTTPResponse]:
-        """
-        :说明:
+    #         try:
+    #             async with httpx.AsyncClient(
+    #                 headers=headers, follow_redirects=True
+    #             ) as client:
+    #                 response = await client.post(
+    #                     api_root + api,
+    #                     content=json.dumps(data, cls=DataclassEncoder),
+    #                     timeout=self.config.api_timeout,
+    #                 )
 
-          OneBot v11 协议鉴权。参考 `鉴权 <https://github.com/botuniverse/onebot-11/blob/master/communication/authorization.md>`_
-        """
-        x_self_id = request.headers.get("x-self-id")
-        x_signature = request.headers.get("x-signature")
-        token = get_auth_bearer(request.headers.get("authorization"))
-        onebot_config = OneBotConfig(**driver.config.dict())
+    #             if 200 <= response.status_code < 300:
+    #                 result = response.json()
+    #                 return _handle_api_result(result)
+    #             raise NetworkError(
+    #                 f"HTTP request received unexpected "
+    #                 f"status code: {response.status_code}"
+    #             )
+    #         except httpx.InvalidURL:
+    #             raise NetworkError("API root url invalid")
+    #         except httpx.HTTPError:
+    #             raise NetworkError("HTTP request failed")
 
-        # 检查self_id
-        if not x_self_id:
-            log("WARNING", "Missing X-Self-ID Header")
-            return None, HTTPResponse(400, b"Missing X-Self-ID Header")
+    # @overrides(BaseBot)
+    # async def call_api(self, api: str, **data) -> Any:
+    #     """
+    #     :说明:
 
-        # 检查签名
-        secret = onebot_config.secret
-        if secret and isinstance(request, HTTPRequest):
-            if not x_signature:
-                log("WARNING", "Missing Signature Header")
-                return None, HTTPResponse(401, b"Missing Signature")
-            sig = hmac.new(secret.encode("utf-8"), request.body, "sha1").hexdigest()
-            if x_signature != "sha1=" + sig:
-                log("WARNING", "Signature Header is invalid")
-                return None, HTTPResponse(403, b"Signature is invalid")
+    #       调用 OneBot 协议 API
 
-        access_token = onebot_config.access_token
-        if access_token and access_token != token and isinstance(request, WebSocket):
-            log(
-                "WARNING",
-                "Authorization Header is invalid"
-                if token
-                else "Missing Authorization Header",
-            )
-            return None, HTTPResponse(
-                403,
-                b"Authorization Header is invalid"
-                if token
-                else b"Missing Authorization Header",
-            )
-        return str(x_self_id), HTTPResponse(204, b"")
+    #     :参数:
 
-    @overrides(BaseBot)
-    async def handle_message(self, message: bytes):
-        """
-        :说明:
+    #       * ``api: str``: API 名称
+    #       * ``**data: Any``: API 参数
 
-          调用 `_check_reply <#async-check-reply-bot-event>`_, `_check_at_me <#check-at-me-bot-event>`_, `_check_nickname <#check-nickname-bot-event>`_ 处理事件并转换为 `Event <#class-event>`_
-        """
-        data: dict = json.loads(message)
+    #     :返回:
 
-        if not data:
-            return
+    #       - ``Any``: API 调用返回数据
 
-        if "post_type" not in data:
-            ResultStore.add_result(data)
-            return
+    #     :异常:
 
-        try:
-            post_type = data["post_type"]
-            detail_type = data.get(f"{post_type}_type")
-            detail_type = f".{detail_type}" if detail_type else ""
-            sub_type = data.get("sub_type")
-            sub_type = f".{sub_type}" if sub_type else ""
-            models = get_event_model(post_type + detail_type + sub_type)
-            for model in models:
-                try:
-                    event = model.parse_obj(data)
-                    break
-                except Exception as e:
-                    log("DEBUG", "Event Parser Error", e)
-            else:
-                event = Event.parse_obj(data)
+    #       - ``NetworkError``: 网络错误
+    #       - ``ActionFailed``: API 调用失败
+    #     """
+    #     return await super().call_api(api, **data)
 
-            # Check whether user is calling me
+    async def handle_event(self, event: Event) -> None:
+        if isinstance(event, MessageEvent):
             await _check_reply(self, event)
             _check_at_me(self, event)
             _check_nickname(self, event)
 
-            await handle_event(self, event)
-        except Exception as e:
-            logger.opt(colors=True, exception=e).error(
-                f"<r><bg #f8bbd0>Failed to handle event. Raw: {escape_tag(str(data))}</bg #f8bbd0></r>"
-            )
-
-    @overrides(BaseBot)
-    async def _call_api(self, api: str, **data) -> Any:
-        log("DEBUG", f"Calling API <y>{api}</y>")
-        if isinstance(self.request, WebSocket):
-            seq = ResultStore.get_seq()
-            json_data = json.dumps(
-                {"action": api, "params": data, "echo": {"seq": seq}},
-                cls=DataclassEncoder,
-            )
-            await self.request.send(json_data)
-            return _handle_api_result(
-                await ResultStore.fetch(seq, self.config.api_timeout)
-            )
-
-        elif isinstance(self.request, HTTPRequest):
-            api_root = self.config.api_root.get(self.self_id)
-            if not api_root:
-                raise ApiNotAvailable
-            elif not api_root.endswith("/"):
-                api_root += "/"
-
-            headers = {"Content-Type": "application/json"}
-            if self.onebot_config.access_token is not None:
-                headers["Authorization"] = "Bearer " + self.onebot_config.access_token
-
-            try:
-                async with httpx.AsyncClient(
-                    headers=headers, follow_redirects=True
-                ) as client:
-                    response = await client.post(
-                        api_root + api,
-                        content=json.dumps(data, cls=DataclassEncoder),
-                        timeout=self.config.api_timeout,
-                    )
-
-                if 200 <= response.status_code < 300:
-                    result = response.json()
-                    return _handle_api_result(result)
-                raise NetworkError(
-                    f"HTTP request received unexpected "
-                    f"status code: {response.status_code}"
-                )
-            except httpx.InvalidURL:
-                raise NetworkError("API root url invalid")
-            except httpx.HTTPError:
-                raise NetworkError("HTTP request failed")
-
-    @overrides(BaseBot)
-    async def call_api(self, api: str, **data) -> Any:
-        """
-        :说明:
-
-          调用 OneBot 协议 API
-
-        :参数:
-
-          * ``api: str``: API 名称
-          * ``**data: Any``: API 参数
-
-        :返回:
-
-          - ``Any``: API 调用返回数据
-
-        :异常:
-
-          - ``NetworkError``: 网络错误
-          - ``ActionFailed``: API 调用失败
-        """
-        return await super().call_api(api, **data)
+        await handle_event(self, event)
 
     @overrides(BaseBot)
     async def send(
