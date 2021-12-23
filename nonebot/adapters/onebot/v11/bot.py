@@ -244,4 +244,4 @@ class Bot(BaseBot):
           - ``NetworkError``: 网络错误
           - ``ActionFailed``: API 调用失败
         """
-        return self.__class__.send_handler(self, event, message, **kwargs)
+        return await self.__class__.send_handler(self, event, message, **kwargs)
