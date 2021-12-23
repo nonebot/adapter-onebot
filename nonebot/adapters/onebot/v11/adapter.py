@@ -70,7 +70,7 @@ class Adapter(BaseAdapter):
             )
             self.setup_websocket_server(ws_setup)
 
-        if self.onebot_config.ws_urls:
+        if self.onebot_config.onebot_ws_urls:
             if not isinstance(self.driver, ForwardDriver):
                 log(
                     "WARNING",
@@ -103,8 +103,10 @@ class Adapter(BaseAdapter):
                 api_root += "/"
 
             headers = {"Content-Type": "application/json"}
-            if self.onebot_config.access_token is not None:
-                headers["Authorization"] = "Bearer " + self.onebot_config.access_token
+            if self.onebot_config.onebot_access_token is not None:
+                headers["Authorization"] = (
+                    "Bearer " + self.onebot_config.onebot_access_token
+                )
 
             request = Request(
                 "POST",
@@ -214,7 +216,7 @@ class Adapter(BaseAdapter):
     def _check_signature(self, request: Request) -> Optional[Response]:
         x_signature = request.headers.get("x-signature")
 
-        secret = self.onebot_config.secret
+        secret = self.onebot_config.onebot_secret
         if secret:
             if not x_signature:
                 log("WARNING", "Missing Signature Header")
@@ -236,7 +238,7 @@ class Adapter(BaseAdapter):
     def _check_access_token(self, request: Request) -> Optional[Response]:
         token = get_auth_bearer(request.headers.get("authorization"))
 
-        access_token = self.onebot_config.access_token
+        access_token = self.onebot_config.onebot_access_token
         if access_token and access_token != token:
             msg = (
                 "Authorization Header is invalid"
@@ -253,7 +255,7 @@ class Adapter(BaseAdapter):
             )
 
     async def start_forward(self) -> None:
-        for url in self.onebot_config.ws_urls:
+        for url in self.onebot_config.onebot_ws_urls:
             try:
                 ws_url = URL(url)
                 self.tasks.append(asyncio.create_task(self._forward_ws(ws_url)))
@@ -274,8 +276,10 @@ class Adapter(BaseAdapter):
 
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
-        if self.onebot_config.access_token:
-            headers["Authorization"] = f"Bearer {self.onebot_config.access_token}"
+        if self.onebot_config.onebot_access_token:
+            headers[
+                "Authorization"
+            ] = f"Bearer {self.onebot_config.onebot_access_token}"
         request = Request("GET", url, headers=headers)
 
         bot: Optional[Bot] = None
