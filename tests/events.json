@@ -1,0 +1,21 @@
+[
+  {
+    "_model": "PrivateMessageEvent",
+    "self_id": 0,
+    "time": 0,
+    "post_type": "message",
+    "message_type": "private",
+    "sub_type": "friend",
+    "message_id": 1,
+    "user_id": 1,
+    "message": "[cq:at,qq=all] Test text",
+    "raw_message": "[cq:at,qq=all] Test text",
+    "font": 0,
+    "sender": {
+      "user_id": 1,
+      "nickname": "Test",
+      "sex": "unknown",
+      "age": 0
+    }
+  }
+]

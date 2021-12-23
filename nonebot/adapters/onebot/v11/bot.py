@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Any, Union
+from typing import Any, Union, Callable
 
 from nonebot.typing import overrides
 from nonebot.message import handle_event
@@ -139,80 +139,73 @@ def _check_nickname(bot: "Bot", event: MessageEvent):
             first_msg_seg.data["text"] = first_text[m.end() :]
 
 
+async def send(
+    bot: "Bot",
+    event: Event,
+    message: Union[str, Message, MessageSegment],
+    at_sender: bool = False,
+    **kwargs: Any,
+) -> Any:
+    message = (
+        escape(message, escape_comma=False) if isinstance(message, str) else message
+    )
+    msg = message if isinstance(message, Message) else Message(message)
+
+    at_sender = at_sender and bool(getattr(event, "user_id", None))
+
+    params = {}
+    if getattr(event, "user_id", None):
+        params["user_id"] = getattr(event, "user_id")
+    if getattr(event, "group_id", None):
+        params["group_id"] = getattr(event, "group_id")
+    params.update(kwargs)
+
+    if "message_type" not in params:
+        if params.get("group_id", None):
+            params["message_type"] = "group"
+        elif params.get("user_id", None):
+            params["message_type"] = "private"
+        else:
+            raise ValueError("Cannot guess message type to reply!")
+
+    if at_sender and params["message_type"] != "private":
+        params["message"] = MessageSegment.at(params["user_id"]) + " " + msg
+    else:
+        params["message"] = msg
+    return await bot.send_msg(**params)
+
+
 class Bot(BaseBot):
     """
     OneBot v11 协议 Bot 适配。
     """
 
-    # @overrides(BaseBot)
-    # async def _call_api(self, api: str, **data) -> Any:
-    #     log("DEBUG", f"Calling API <y>{api}</y>")
-    #     if isinstance(self.request, WebSocket):
-    #         seq = ResultStore.get_seq()
-    #         json_data = json.dumps(
-    #             {"action": api, "params": data, "echo": {"seq": seq}},
-    #             cls=DataclassEncoder,
-    #         )
-    #         await self.request.send(json_data)
-    #         return _handle_api_result(
-    #             await ResultStore.fetch(seq, self.config.api_timeout)
-    #         )
+    send_handler: Callable[
+        ["Bot", Event, Union[str, Message, MessageSegment]], Any
+    ] = send
 
-    #     elif isinstance(self.request, HTTPRequest):
-    #         api_root = self.config.api_root.get(self.self_id)
-    #         if not api_root:
-    #             raise ApiNotAvailable
-    #         elif not api_root.endswith("/"):
-    #             api_root += "/"
+    @overrides(BaseBot)
+    async def call_api(self, api: str, **data) -> Any:
+        """
+        :说明:
 
-    #         headers = {"Content-Type": "application/json"}
-    #         if self.onebot_config.access_token is not None:
-    #             headers["Authorization"] = "Bearer " + self.onebot_config.access_token
+          调用 OneBot 协议 API
 
-    #         try:
-    #             async with httpx.AsyncClient(
-    #                 headers=headers, follow_redirects=True
-    #             ) as client:
-    #                 response = await client.post(
-    #                     api_root + api,
-    #                     content=json.dumps(data, cls=DataclassEncoder),
-    #                     timeout=self.config.api_timeout,
-    #                 )
+        :参数:
 
-    #             if 200 <= response.status_code < 300:
-    #                 result = response.json()
-    #                 return _handle_api_result(result)
-    #             raise NetworkError(
-    #                 f"HTTP request received unexpected "
-    #                 f"status code: {response.status_code}"
-    #             )
-    #         except httpx.InvalidURL:
-    #             raise NetworkError("API root url invalid")
-    #         except httpx.HTTPError:
-    #             raise NetworkError("HTTP request failed")
+          * ``api: str``: API 名称
+          * ``**data: Any``: API 参数
 
-    # @overrides(BaseBot)
-    # async def call_api(self, api: str, **data) -> Any:
-    #     """
-    #     :说明:
+        :返回:
 
-    #       调用 OneBot 协议 API
+          - ``Any``: API 调用返回数据
 
-    #     :参数:
+        :异常:
 
-    #       * ``api: str``: API 名称
-    #       * ``**data: Any``: API 参数
-
-    #     :返回:
-
-    #       - ``Any``: API 调用返回数据
-
-    #     :异常:
-
-    #       - ``NetworkError``: 网络错误
-    #       - ``ActionFailed``: API 调用失败
-    #     """
-    #     return await super().call_api(api, **data)
+          - ``NetworkError``: 网络错误
+          - ``ActionFailed``: API 调用失败
+        """
+        return await super().call_api(api, **data)
 
     async def handle_event(self, event: Event) -> None:
         if isinstance(event, MessageEvent):
@@ -227,7 +220,6 @@ class Bot(BaseBot):
         self,
         event: Event,
         message: Union[str, Message, MessageSegment],
-        at_sender: bool = False,
         **kwargs,
     ) -> Any:
         """
@@ -252,30 +244,4 @@ class Bot(BaseBot):
           - ``NetworkError``: 网络错误
           - ``ActionFailed``: API 调用失败
         """
-        message = (
-            escape(message, escape_comma=False) if isinstance(message, str) else message
-        )
-        msg = message if isinstance(message, Message) else Message(message)
-
-        at_sender = at_sender and bool(getattr(event, "user_id", None))
-
-        params = {}
-        if getattr(event, "user_id", None):
-            params["user_id"] = getattr(event, "user_id")
-        if getattr(event, "group_id", None):
-            params["group_id"] = getattr(event, "group_id")
-        params.update(kwargs)
-
-        if "message_type" not in params:
-            if params.get("group_id", None):
-                params["message_type"] = "group"
-            elif params.get("user_id", None):
-                params["message_type"] = "private"
-            else:
-                raise ValueError("Cannot guess message type to reply!")
-
-        if at_sender and params["message_type"] != "private":
-            params["message"] = MessageSegment.at(params["user_id"]) + " " + msg
-        else:
-            params["message"] = msg
-        return await self.send_msg(**params)
+        return self.__class__.send_handler(self, event, message, **kwargs)

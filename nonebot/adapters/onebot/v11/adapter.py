@@ -1,10 +1,12 @@
 import hmac
 import json
 import asyncio
-from typing import Any, Optional, cast
+import inspect
+from typing import Any, Dict, List, Type, Union, Callable, Optional, cast
 
+from pygtrie import StringTrie
 from nonebot.typing import overrides
-from nonebot.utils import escape_tag
+from nonebot.utils import DataclassEncoder, escape_tag
 from nonebot.drivers import (
     URL,
     Driver,
@@ -19,19 +21,31 @@ from nonebot.drivers import (
 
 from nonebot.adapters import Adapter as BaseAdapter
 
+from . import event
 from .bot import Bot
 from .config import Config
-from .event import Event, LifecycleMetaEvent, get_event_model
+from .event import Event, LifecycleMetaEvent
+from .message import Message, MessageSegment
+from .exception import NetworkError, ApiNotAvailable
 from .utils import ResultStore, log, get_auth_bearer, _handle_api_result
 
 RECONNECT_INTERVAL = 3.0
 
 
 class Adapter(BaseAdapter):
+    # init all event models
+    event_models: StringTrie = StringTrie(separator=".")
+    for model_name in dir(event):
+        model = getattr(event, model_name)
+        if not inspect.isclass(model) or not issubclass(model, Event):
+            continue
+        event_models["." + model.__event__] = model
+
     @overrides(BaseAdapter)
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
+        self.connections: Dict[str, WebSocket] = {}
         self.setup()
 
     @classmethod
@@ -66,7 +80,56 @@ class Adapter(BaseAdapter):
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data) -> Any:
-        ...
+        websocket = self.connections.get(bot.self_id, None)
+        log("DEBUG", f"Calling API <y>{api}</y>")
+        if websocket:
+            seq = ResultStore.get_seq()
+            json_data = json.dumps(
+                {"action": api, "params": data, "echo": {"seq": seq}},
+                cls=DataclassEncoder,
+            )
+            await websocket.send(json_data)
+            return _handle_api_result(
+                await ResultStore.fetch(seq, self.config.api_timeout)
+            )
+
+        elif isinstance(self.driver, ForwardDriver):
+            api_root = self.config.api_root.get(bot.self_id)
+            if not api_root:
+                raise ApiNotAvailable
+            elif not api_root.endswith("/"):
+                api_root += "/"
+
+            headers = {"Content-Type": "application/json"}
+            if self.onebot_config.access_token is not None:
+                headers["Authorization"] = "Bearer " + self.onebot_config.access_token
+
+            request = Request(
+                "POST",
+                api_root + api,
+                headers=headers,
+                content=json.dumps(data, cls=DataclassEncoder),
+                timeout=self.config.api_timeout,
+            )
+
+            try:
+                response = await self.driver.request(request)
+
+                if 200 <= response.status_code < 300:
+                    if not response.content:
+                        raise ValueError("Empty response")
+                    result = json.loads(response.content)
+                    return _handle_api_result(result)
+                raise NetworkError(
+                    f"HTTP request received unexpected "
+                    f"status code: {response.status_code}"
+                )
+            except NetworkError:
+                raise
+            except Exception as e:
+                raise NetworkError("HTTP request failed") from e
+        else:
+            raise ApiNotAvailable
 
     async def _handle_http(self, request: Request) -> Response:
         self_id = request.headers.get("x-self-id")
@@ -121,6 +184,7 @@ class Adapter(BaseAdapter):
 
         await websocket.accept()
         bot = Bot(self, self_id)
+        self.connections[self_id] = websocket
         self.bot_connect(bot)
 
         try:
@@ -142,6 +206,7 @@ class Adapter(BaseAdapter):
                 await websocket.close()
             except Exception:
                 pass
+            self.connections.pop(self_id, None)
             self.bot_disconnect(bot)
 
     def _check_signature(self, request: Request) -> Optional[Response]:
@@ -235,6 +300,7 @@ class Adapter(BaseAdapter):
                                 continue
                             self_id = event.self_id
                             bot = Bot(self, str(self_id))
+                            self.connections[str(self_id)] = ws
                             self.bot_connect(bot)
                         asyncio.create_task(bot.handle_event(event))
                     except Exception as e:
@@ -251,6 +317,7 @@ class Adapter(BaseAdapter):
                         break
             finally:
                 if bot:
+                    self.connections.pop(bot.self_id, None)
                     self.bot_disconnect(bot)
                     bot = None
 
@@ -271,7 +338,7 @@ class Adapter(BaseAdapter):
             detail_type = f".{detail_type}" if detail_type else ""
             sub_type = json_data.get("sub_type")
             sub_type = f".{sub_type}" if sub_type else ""
-            models = get_event_model(post_type + detail_type + sub_type)
+            models = cls.get_event_model(post_type + detail_type + sub_type)
             for model in models:
                 try:
                     event = model.parse_obj(json_data)
@@ -289,3 +356,31 @@ class Adapter(BaseAdapter):
                 f"Raw: {escape_tag(str(json_data))}</bg #f8bbd0></r>",
                 e,
             )
+
+    @classmethod
+    def add_custom_model(cls, model: Type[Event]) -> None:
+        if not model.__event__:
+            raise ValueError("Event model's `__event__` attribute must be set")
+        cls.event_models["." + model.__event__] = model
+
+    @classmethod
+    def get_event_model(cls, event_name: str) -> List[Type[Event]]:
+        """
+        :说明:
+
+          根据事件名获取对应 ``Event Model`` 及 ``FallBack Event Model`` 列表, 不包括基类 ``Event``
+
+        :返回:
+
+          - ``List[Type[Event]]``
+        """
+        return [model.value for model in cls.event_models.prefixes("." + event_name)][
+            ::-1
+        ]
+
+    @classmethod
+    def custom_send(
+        cls,
+        send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], None],
+    ):
+        setattr(Bot, "send_handler", send_func)
