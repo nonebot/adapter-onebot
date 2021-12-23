@@ -46,6 +46,7 @@ class Adapter(BaseAdapter):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
         self.connections: Dict[str, WebSocket] = {}
+        self.tasks: List[asyncio.Task] = []
         self.setup()
 
     @classmethod
@@ -77,6 +78,7 @@ class Adapter(BaseAdapter):
                 )
             else:
                 self.driver.on_startup(self.start_forward)
+                self.driver.on_shutdown(self.stop_forward)
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data) -> Any:
@@ -254,7 +256,7 @@ class Adapter(BaseAdapter):
         for url in self.onebot_config.ws_urls:
             try:
                 ws_url = URL(url)
-                asyncio.create_task(self._forward_ws(ws_url))
+                self.tasks.append(asyncio.create_task(self._forward_ws(ws_url)))
             except Exception as e:
                 log(
                     "ERROR",
@@ -262,6 +264,13 @@ class Adapter(BaseAdapter):
                     "in onebot forward websocket config</bg #f8bbd0></r>",
                     e,
                 )
+
+    async def stop_forward(self) -> None:
+        for task in self.tasks:
+            if not task.done():
+                task.cancel()
+
+        await asyncio.gather(*self.tasks, return_exceptions=True)
 
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
@@ -304,10 +313,6 @@ class Adapter(BaseAdapter):
                             self.bot_connect(bot)
                         asyncio.create_task(bot.handle_event(event))
                     except Exception as e:
-                        try:
-                            await ws.close()
-                        except Exception:
-                            pass
                         log(
                             "ERROR",
                             "<r><bg #f8bbd0>Error while process data from websocket"
@@ -316,6 +321,10 @@ class Adapter(BaseAdapter):
                         )
                         break
             finally:
+                try:
+                    await ws.close()
+                except Exception:
+                    pass
                 if bot:
                     self.connections.pop(bot.self_id, None)
                     self.bot_disconnect(bot)
