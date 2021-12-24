@@ -92,7 +92,7 @@ class Adapter(BaseAdapter):
             )
             await websocket.send(json_data)
             return _handle_api_result(
-                await ResultStore.fetch(seq, self.config.api_timeout)
+                await ResultStore.fetch(bot.self_id, seq, self.config.api_timeout)
             )
 
         elif isinstance(self.driver, ForwardDriver):
@@ -162,6 +162,7 @@ class Adapter(BaseAdapter):
                 if not bot:
                     bot = Bot(self, self_id)
                     self.bot_connect(bot)
+                    log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                 bot = cast(Bot, bot)
                 asyncio.create_task(bot.handle_event(event))
         return Response(204)
@@ -190,6 +191,8 @@ class Adapter(BaseAdapter):
         bot = Bot(self, self_id)
         self.connections[self_id] = websocket
         self.bot_connect(bot)
+
+        log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
 
         try:
             while True:
@@ -297,12 +300,13 @@ class Adapter(BaseAdapter):
                 await asyncio.sleep(RECONNECT_INTERVAL)
                 continue
 
+            log("DEBUG", f"WebSocket Connection to {escape_tag(str(url))} established")
             try:
                 while True:
                     try:
                         data = await ws.receive()
                         json_data = json.loads(data)
-                        event = self.json_to_event(json_data)
+                        event = self.json_to_event(json_data, bot and bot.self_id)
                         if not event:
                             continue
                         if not bot:
@@ -315,6 +319,10 @@ class Adapter(BaseAdapter):
                             bot = Bot(self, str(self_id))
                             self.connections[str(self_id)] = ws
                             self.bot_connect(bot)
+                            log(
+                                "INFO",
+                                f"<y>Bot {escape_tag(str(self_id))}</y> connected",
+                            )
                         asyncio.create_task(bot.handle_event(event))
                     except Exception as e:
                         log(
@@ -337,12 +345,15 @@ class Adapter(BaseAdapter):
             await asyncio.sleep(RECONNECT_INTERVAL)
 
     @classmethod
-    def json_to_event(cls, json_data: Any) -> Optional[Event]:
+    def json_to_event(
+        cls, json_data: Any, self_id: Optional[str] = None
+    ) -> Optional[Event]:
         if not isinstance(json_data, dict):
             return None
 
         if "post_type" not in json_data:
-            ResultStore.add_result(json_data)
+            if self_id is not None:
+                ResultStore.add_result(self_id, json_data)
             return
 
         try:

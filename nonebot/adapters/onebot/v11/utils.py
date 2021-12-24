@@ -1,6 +1,6 @@
 import sys
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Tuple, Optional
 
 from nonebot.utils import logger_wrapper
 
@@ -84,7 +84,7 @@ def _handle_api_result(result: Optional[Dict[str, Any]]) -> Any:
 
 class ResultStore:
     _seq = 1
-    _futures: Dict[int, asyncio.Future] = {}
+    _futures: Dict[Tuple[str, int], asyncio.Future] = {}
 
     @classmethod
     def get_seq(cls) -> int:
@@ -93,21 +93,23 @@ class ResultStore:
         return s
 
     @classmethod
-    def add_result(cls, result: Dict[str, Any]):
+    def add_result(cls, self_id: str, result: Dict[str, Any]):
         if isinstance(result.get("echo"), dict) and isinstance(
             result["echo"].get("seq"), int
         ):
-            future = cls._futures.get(result["echo"]["seq"])
+            future = cls._futures.get((self_id, result["echo"]["seq"]))
             if future:
                 future.set_result(result)
 
     @classmethod
-    async def fetch(cls, seq: int, timeout: Optional[float]) -> Dict[str, Any]:
+    async def fetch(
+        cls, self_id: str, seq: int, timeout: Optional[float]
+    ) -> Dict[str, Any]:
         future = asyncio.get_event_loop().create_future()
-        cls._futures[seq] = future
+        cls._futures[(self_id, seq)] = future
         try:
             return await asyncio.wait_for(future, timeout)
         except asyncio.TimeoutError:
             raise NetworkError("WebSocket API call timeout") from None
         finally:
-            del cls._futures[seq]
+            del cls._futures[(self_id, seq)]
