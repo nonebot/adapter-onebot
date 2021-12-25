@@ -46,7 +46,7 @@ class Adapter(BaseAdapter):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
         self.connections: Dict[str, WebSocket] = {}
-        self.tasks: List[asyncio.Task] = []
+        self.tasks: List["asyncio.Task"] = []
         self.setup()
 
     @classmethod
@@ -81,7 +81,7 @@ class Adapter(BaseAdapter):
                 self.driver.on_shutdown(self.stop_forward)
 
     @overrides(BaseAdapter)
-    async def _call_api(self, bot: Bot, api: str, **data) -> Any:
+    async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
         websocket = self.connections.get(bot.self_id, None)
         log("DEBUG", f"Calling API <y>{api}</y>")
         if websocket:
@@ -283,7 +283,7 @@ class Adapter(BaseAdapter):
             headers[
                 "Authorization"
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
-        request = Request("GET", url, headers=headers)
+        request = Request("GET", url, headers=headers, timeout=30.0)
 
         bot: Optional[Bot] = None
 

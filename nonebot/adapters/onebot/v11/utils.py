@@ -6,7 +6,7 @@ from nonebot.utils import logger_wrapper
 
 from .exception import ActionFailed, NetworkError
 
-log = logger_wrapper("OneBot")
+log = logger_wrapper("OneBot V11")
 
 
 def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
