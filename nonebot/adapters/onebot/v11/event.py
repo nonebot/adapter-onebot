@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, List, Type, Optional
 
 from pydantic import BaseModel
 from pygtrie import StringTrie
-
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag
+
 from nonebot.adapters import Event as BaseEvent
 
 from .message import Message
@@ -51,11 +51,11 @@ class Event(BaseEvent):
 
     @overrides(BaseEvent)
     def get_user_id(self) -> str:
-        raise ValueError("Event has no message!")
+        raise ValueError("Event has no context!")
 
     @overrides(BaseEvent)
     def get_session_id(self) -> str:
-        raise ValueError("Event has no message!")
+        raise ValueError("Event has no context!")
 
     @overrides(BaseEvent)
     def is_tome(self) -> bool:
