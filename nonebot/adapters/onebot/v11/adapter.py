@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Type, Union, Callable, Optional, cast
 
 from pygtrie import StringTrie
 from nonebot.typing import overrides
+from nonebot.exception import WebSocketClosed
 from nonebot.utils import DataclassEncoder, escape_tag
 from nonebot.drivers import (
     URL,
@@ -289,41 +290,39 @@ class Adapter(BaseAdapter):
 
         while True:
             try:
-                ws = await self.websocket(request)
-            except Exception as e:
-                log(
-                    "ERROR",
-                    "<r><bg #f8bbd0>Error while setup websocket to "
-                    f"{escape_tag(str(url))}. Trying to reconnect...</bg #f8bbd0></r>",
-                    e,
-                )
-                await asyncio.sleep(RECONNECT_INTERVAL)
-                continue
-
-            log("DEBUG", f"WebSocket Connection to {escape_tag(str(url))} established")
-            try:
-                while True:
+                async with self.websocket(request) as ws:
+                    log(
+                        "DEBUG",
+                        f"WebSocket Connection to {escape_tag(str(url))} established",
+                    )
                     try:
-                        data = await ws.receive()
-                        json_data = json.loads(data)
-                        event = self.json_to_event(json_data, bot and bot.self_id)
-                        if not event:
-                            continue
-                        if not bot:
-                            if (
-                                not isinstance(event, LifecycleMetaEvent)
-                                or event.sub_type != "connect"
-                            ):
+                        while True:
+                            data = await ws.receive()
+                            json_data = json.loads(data)
+                            event = self.json_to_event(json_data, bot and bot.self_id)
+                            if not event:
                                 continue
-                            self_id = event.self_id
-                            bot = Bot(self, str(self_id))
-                            self.connections[str(self_id)] = ws
-                            self.bot_connect(bot)
-                            log(
-                                "INFO",
-                                f"<y>Bot {escape_tag(str(self_id))}</y> connected",
-                            )
-                        asyncio.create_task(bot.handle_event(event))
+                            if not bot:
+                                if (
+                                    not isinstance(event, LifecycleMetaEvent)
+                                    or event.sub_type != "connect"
+                                ):
+                                    continue
+                                self_id = event.self_id
+                                bot = Bot(self, str(self_id))
+                                self.connections[str(self_id)] = ws
+                                self.bot_connect(bot)
+                                log(
+                                    "INFO",
+                                    f"<y>Bot {escape_tag(str(self_id))}</y> connected",
+                                )
+                            asyncio.create_task(bot.handle_event(event))
+                    except WebSocketClosed as e:
+                        log(
+                            "ERROR",
+                            f"<r><bg #f8bbd0>WebSocket Closed</bg #f8bbd0></r>",
+                            e,
+                        )
                     except Exception as e:
                         log(
                             "ERROR",
@@ -331,16 +330,19 @@ class Adapter(BaseAdapter):
                             f"{escape_tag(str(url))}. Trying to reconnect...</bg #f8bbd0></r>",
                             e,
                         )
-                        break
-            finally:
-                try:
-                    await ws.close()
-                except Exception:
-                    pass
-                if bot:
-                    self.connections.pop(bot.self_id, None)
-                    self.bot_disconnect(bot)
-                    bot = None
+                    finally:
+                        if bot:
+                            self.connections.pop(bot.self_id, None)
+                            self.bot_disconnect(bot)
+                            bot = None
+
+            except Exception as e:
+                log(
+                    "ERROR",
+                    "<r><bg #f8bbd0>Error while setup websocket to "
+                    f"{escape_tag(str(url))}. Trying to reconnect...</bg #f8bbd0></r>",
+                    e,
+                )
 
             await asyncio.sleep(RECONNECT_INTERVAL)
 
