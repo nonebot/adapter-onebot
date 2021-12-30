@@ -71,6 +71,11 @@ class Adapter(BaseAdapter):
             )
             self.setup_websocket_server(ws_setup)
 
+            ws_setup = WebSocketServerSetup(
+                URL("/onebot/v11/ws/"), self.get_name(), self._handle_ws
+            )
+            self.setup_websocket_server(ws_setup)
+
         if self.onebot_config.onebot_ws_urls:
             if not isinstance(self.driver, ForwardDriver):
                 log(
@@ -202,6 +207,8 @@ class Adapter(BaseAdapter):
                 event = self.json_to_event(json_data)
                 if event:
                     asyncio.create_task(bot.handle_event(event))
+        except WebSocketClosed as e:
+            log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
         except Exception as e:
             log(
                 "ERROR",
