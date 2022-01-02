@@ -18,7 +18,7 @@ def extract_image_urls(message: Message) -> List[str]:
     ]
 
 
-def image_urls(prompt: Optional[str] = None):
+def ImageURLs(prompt: Optional[str] = None):
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
     ) -> List[str]:
@@ -40,7 +40,7 @@ def extract_numbers(message: Message) -> List[float]:
     ]
 
 
-def numbers(prompt: Optional[str] = None):
+def Numbers(prompt: Optional[str] = None):
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
     ) -> List[float]:
@@ -130,7 +130,7 @@ def is_cancellation(message: Union[Message, str]) -> bool:
     )
 
 
-def handle_cancellation(cancel_prompt: Optional[str] = None):
+def HandleCancellation(cancel_prompt: Optional[str] = None):
     async def dependency(matcher: Matcher, message: Message = EventMessage()) -> bool:
         cancelled = is_cancellation(message)
         if cancelled and cancel_prompt:
@@ -147,7 +147,7 @@ class CooldownIsolateLevel(IntEnum):
     GROUP_USER = auto()
 
 
-def cooldown(
+def Cooldown(
     cooldown: float = 5,
     *,
     prompt: Optional[str] = None,
