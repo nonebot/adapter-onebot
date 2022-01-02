@@ -1,12 +1,9 @@
 import re
 from enum import IntEnum, auto
-from collections import defaultdict
 from asyncio import get_running_loop
-from typing import Set, List, Type, Union, Optional, DefaultDict
+from typing import Set, List, Union, Optional
 
-from nonebot.typing import T_State
 from nonebot.matcher import Matcher
-from nonebot.adapters import Bot, Event
 from nonebot.params import Depends, EventMessage
 
 from .message import Message
@@ -41,6 +38,18 @@ def extract_numbers(message: Message) -> List[float]:
         float(matched)
         for matched in NUMBERS_REGEXP.findall(message.extract_plain_text())
     ]
+
+
+def numbers(prompt: Optional[str] = None):
+    async def dependency(
+        matcher: Matcher, message: Message = EventMessage()
+    ) -> List[float]:
+        numbers = extract_numbers(message)
+        if not numbers and prompt:
+            await matcher.finish(prompt)
+        return numbers
+
+    return Depends(dependency)
 
 
 CHINESE_AGREE_WORD = {
@@ -121,76 +130,61 @@ def is_cancellation(message: Union[Message, str]) -> bool:
     )
 
 
-def handle_cancellation(reject_prompt: Optional[str] = None):
-    async def cancellation_rule(
-        matcher: Matcher, bot: Bot, event: MessageEvent
-    ) -> bool:
-        cancelled = is_cancellation(event.message)
-        if cancelled and reject_prompt:
-            await matcher.finish(reject_prompt)
+def handle_cancellation(cancel_prompt: Optional[str] = None):
+    async def dependency(matcher: Matcher, message: Message = EventMessage()) -> bool:
+        cancelled = is_cancellation(message)
+        if cancelled and cancel_prompt:
+            await matcher.finish(cancel_prompt)
         return not cancelled
 
-    return cancellation_rule
+    return Depends(dependency)
 
 
-class CommandDebounce:
-    debounced: DefaultDict[Type[Matcher], Set[str]] = defaultdict(set)
+class CooldownIsolateLevel(IntEnum):
+    GLOBAL = auto()
+    GROUP = auto()
+    USER = auto()
+    GROUP_USER = auto()
 
-    class IsolateLevel(IntEnum):
-        GLOBAL = auto()
-        GROUP = auto()
-        USER = auto()
-        GROUP_USER = auto()
 
-    def __init__(
-        self,
-        matcher: Type[Matcher],
-        isolate_level: IsolateLevel = IsolateLevel.USER,
-        debounce_timeout: float = 5,
-        cancel_message: Optional[str] = None,
-    ):
-        self.isolate_level = isolate_level
-        self.debounce_timeout = debounce_timeout
-        self.matcher = matcher
-        self.cancel_message = cancel_message
+def cooldown(
+    cooldown: float = 5,
+    *,
+    prompt: Optional[str] = None,
+    isolate_level: CooldownIsolateLevel = CooldownIsolateLevel.USER,
+):
+    if not isinstance(isolate_level, CooldownIsolateLevel):
+        raise ValueError(
+            f"invalid isolate level: {isolate_level!r}, "
+            "isolate level must use provided enumerate value."
+        )
+    debounced: Set[str] = set()
 
-    async def __call__(self, bot: Bot, event: Event, state: T_State) -> bool:
-        if not isinstance(event, MessageEvent):
-            return True
-
+    async def dependency(matcher: Matcher, event: MessageEvent):
         loop = get_running_loop()
-        debounce_set = CommandDebounce.debounced[self.matcher]
 
-        if self.isolate_level is self.IsolateLevel.GROUP:
+        if isolate_level is CooldownIsolateLevel.GROUP:
             key = str(
                 event.group_id
                 if isinstance(event, GroupMessageEvent)
                 else event.user_id,
             )
-        elif self.isolate_level is self.IsolateLevel.USER:
+        elif isolate_level is CooldownIsolateLevel.USER:
             key = str(event.user_id)
-        elif self.isolate_level is self.IsolateLevel.GROUP_USER:
+        elif isolate_level is CooldownIsolateLevel.GROUP_USER:
             key = (
                 f"{event.group_id}_{event.user_id}"
                 if isinstance(event, GroupMessageEvent)
                 else str(event.user_id)
             )
-        elif self.isolate_level is self.IsolateLevel.GLOBAL:
-            key = self.IsolateLevel.GLOBAL.name
         else:
-            raise ValueError(
-                f"invalid isolate level: {self.isolate_level!r}, "
-                "isolate level must use provided enumerate value."
-            )
+            key = CooldownIsolateLevel.GLOBAL.name
 
-        if key in debounce_set:
-            await self.matcher.finish(message=self.cancel_message, at_sender=True)
-            return False
+        if key in debounced:
+            await matcher.finish(prompt)
         else:
-            debounce_set.add(key)
-            loop.call_later(self.debounce_timeout, lambda: debounce_set.remove(key))
-            return True
+            debounced.add(key)
+            loop.call_later(cooldown, lambda: debounced.remove(key))
+        return
 
-    def apply(self) -> Type[Matcher]:
-        self.matcher.rule.checkers.add(self.__call__)
-        return self.matcher
+    return Depends(dependency)
