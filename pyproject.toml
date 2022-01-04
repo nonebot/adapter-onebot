@@ -35,6 +35,9 @@ nonebot2 = { git = "https://github.com/nonebot/nonebot2.git", branch = "dev" }
 # url = "https://mirrors.aliyun.com/pypi/simple/"
 # default = true
 
+[tool.pytest.ini_options]
+addopts = "--cov nonebot.adapters.onebot --cov-report term-missing"
+
 [tool.black]
 line-length = 88
 target-version = ["py37", "py38", "py39", "py310"]

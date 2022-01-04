@@ -58,19 +58,26 @@ class Adapter(BaseAdapter):
     def setup(self) -> None:
         if isinstance(self.driver, ReverseDriver):
             http_setup = HTTPServerSetup(
+                URL("/onebot/v11/"), "POST", self.get_name(), self._handle_http
+            )
+            self.setup_http_server(http_setup)
+            http_setup = HTTPServerSetup(
                 URL("/onebot/v11/http"), "POST", self.get_name(), self._handle_http
             )
             self.setup_http_server(http_setup)
             http_setup = HTTPServerSetup(
-                URL("/onebot/v11/"), "POST", self.get_name(), self._handle_http
+                URL("/onebot/v11/http/"), "POST", self.get_name(), self._handle_http
             )
             self.setup_http_server(http_setup)
 
             ws_setup = WebSocketServerSetup(
+                URL("/onebot/v11/"), self.get_name(), self._handle_ws
+            )
+            self.setup_websocket_server(ws_setup)
+            ws_setup = WebSocketServerSetup(
                 URL("/onebot/v11/ws"), self.get_name(), self._handle_ws
             )
             self.setup_websocket_server(ws_setup)
-
             ws_setup = WebSocketServerSetup(
                 URL("/onebot/v11/ws/"), self.get_name(), self._handle_ws
             )
