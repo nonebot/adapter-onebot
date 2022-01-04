@@ -18,7 +18,7 @@ def extract_image_urls(message: Message) -> List[str]:
     ]
 
 
-def ImageURLs(prompt: Optional[str] = None):
+def ImageURLs(prompt: Optional[str] = None) -> List[str]:
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
     ) -> List[str]:
@@ -40,7 +40,7 @@ def extract_numbers(message: Message) -> List[float]:
     ]
 
 
-def Numbers(prompt: Optional[str] = None):
+def Numbers(prompt: Optional[str] = None) -> List[float]:
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
     ) -> List[float]:
@@ -130,7 +130,7 @@ def is_cancellation(message: Union[Message, str]) -> bool:
     )
 
 
-def HandleCancellation(cancel_prompt: Optional[str] = None):
+def HandleCancellation(cancel_prompt: Optional[str] = None) -> bool:
     async def dependency(matcher: Matcher, message: Message = EventMessage()) -> bool:
         cancelled = is_cancellation(message)
         if cancelled and cancel_prompt:
@@ -152,7 +152,7 @@ def Cooldown(
     *,
     prompt: Optional[str] = None,
     isolate_level: CooldownIsolateLevel = CooldownIsolateLevel.USER,
-):
+) -> None:
     if not isinstance(isolate_level, CooldownIsolateLevel):
         raise ValueError(
             f"invalid isolate level: {isolate_level!r}, "

@@ -5,4 +5,4 @@ warnings.warn(
     DeprecationWarning,
 )
 
-from nonebot.adapters.onebot import *  # type: ignore
+from nonebot.adapters.onebot.v11 import *  # type: ignore
