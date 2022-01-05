@@ -7,7 +7,7 @@ from nonebug import App
 
 
 @pytest.mark.asyncio
-async def test_event(app: App, import_hook):
+async def test_event(app: App, init_adapter):
     from nonebot.adapters.onebot.v11 import Event, Adapter
 
     with (Path(__file__).parent / "events.json").open("r") as f:
