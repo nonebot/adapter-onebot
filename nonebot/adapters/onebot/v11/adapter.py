@@ -211,7 +211,7 @@ class Adapter(BaseAdapter):
             while True:
                 data = await websocket.receive()
                 json_data = json.loads(data)
-                event = self.json_to_event(json_data)
+                event = self.json_to_event(json_data, self_id)
                 if event:
                     asyncio.create_task(bot.handle_event(event))
         except WebSocketClosed as e:
