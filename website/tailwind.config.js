@@ -4,17 +4,20 @@ module.exports = {
       nonepress: {
         light: {
           theme: {
-            DEFAULT: "#000000",
+            DEFAULT: "#ea5252",
           },
         },
         dark: {
           theme: {
-            DEFAULT: "#eeeeee",
+            DEFAULT: "#ea5252",
           },
         },
       },
       colors: {
-        hero: "#aaaaaa",
+        hero: "#ea5252",
+        light: {
+          DEFAULT: "#fffdfd",
+        },
       },
     },
   },

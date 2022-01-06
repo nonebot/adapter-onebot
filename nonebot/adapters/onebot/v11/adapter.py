@@ -109,7 +109,7 @@ class Adapter(BaseAdapter):
             )
 
         elif isinstance(self.driver, ForwardDriver):
-            api_root = self.config.api_root.get(bot.self_id)
+            api_root = self.onebot_config.onebot_api_roots.get(bot.self_id)
             if not api_root:
                 raise ApiNotAvailable
             elif not api_root.endswith("/"):
