@@ -60,6 +60,16 @@ const config = {
             category: "guide",
           },
           {
+            label: "API",
+            type: "docLink",
+            docId: "index",
+          },
+          {
+            label: "NoneBot",
+            icon: ["fas", "angle-double-right"],
+            href: "https://github.com/nonebot/nonebot2",
+          },
+          {
             icon: ["fab", "github"],
             href: "https://github.com/nonebot/adapter-onebot",
           },
@@ -99,12 +109,22 @@ const config = {
           {
             title: "NoneBot Team",
             icon: ["fas", "user-friends"],
-            items: [],
+            items: [
+              {
+                label: "Homepage",
+                href: "https://nonebot.dev",
+              },
+              {
+                label: "NoneBot V1",
+                href: "https://docs.nonebot.dev",
+              },
+              { label: "NoneBot V2", href: "https://v2.nonebot.dev" },
+            ],
           },
           {
             title: "Related",
             icon: ["fas", "external-link-alt"],
-            items: [],
+            items: [{ label: "OneBot", href: "https://onebot.dev/" }],
           },
         ],
       },

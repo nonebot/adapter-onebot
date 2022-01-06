@@ -9,23 +9,23 @@ import type { Feature } from "../components/Hero";
 import styles from "../css/index.module.css";
 
 export default function Home() {
-  const firstFeature: Feature = {
-    title: "开箱即用",
-    tagline: "out of box",
-    description: "使用 NB-CLI 快速构建属于你的机器人",
-  } as const;
-  const secondFeatures = [
-    {
-      title: "插件系统",
-      tagline: "plugin system",
-      description: "插件化开发，模块化管理",
-    },
-    {
-      title: "跨平台支持",
-      tagline: "cross-platform support",
-      description: "支持多种平台，以及多样的事件响应方式",
-    },
-  ] as const;
+  // const firstFeature: Feature = {
+  //   title: "开箱即用",
+  //   tagline: "out of box",
+  //   description: "使用 NB-CLI 快速构建属于你的机器人",
+  // } as const;
+  // const secondFeatures = [
+  //   {
+  //     title: "插件系统",
+  //     tagline: "plugin system",
+  //     description: "插件化开发，模块化管理",
+  //   },
+  //   {
+  //     title: "跨平台支持",
+  //     tagline: "cross-platform support",
+  //     description: "支持多种平台，以及多样的事件响应方式",
+  //   },
+  // ] as const;
 
   return (
     <Layout>
