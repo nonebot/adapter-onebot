@@ -1,7 +1,8 @@
+from collections import defaultdict
 import re
 from enum import IntEnum, auto
 from asyncio import get_running_loop
-from typing import Set, List, Union, Optional
+from typing import DefaultDict, Set, List, Union, Optional
 
 from nonebot.matcher import Matcher
 from nonebot.params import Depends, EventMessage
@@ -152,13 +153,20 @@ def Cooldown(
     *,
     prompt: Optional[str] = None,
     isolate_level: CooldownIsolateLevel = CooldownIsolateLevel.USER,
+    parallel: int = 1,
 ) -> None:
     if not isinstance(isolate_level, CooldownIsolateLevel):
         raise ValueError(
             f"invalid isolate level: {isolate_level!r}, "
             "isolate level must use provided enumerate value."
         )
-    debounced: Set[str] = set()
+    running: DefaultDict[str, int] = defaultdict(lambda: parallel)
+
+    def increase(key: str, value: int = 1):
+        running[key] += value
+        if running[key] >= parallel:
+            del running[key]
+        return
 
     async def dependency(matcher: Matcher, event: MessageEvent):
         loop = get_running_loop()
@@ -180,11 +188,11 @@ def Cooldown(
         else:
             key = CooldownIsolateLevel.GLOBAL.name
 
-        if key in debounced:
+        if running[key] <= 0:
             await matcher.finish(prompt)
         else:
-            debounced.add(key)
-            loop.call_later(cooldown, lambda: debounced.remove(key))
+            running[key] -= 1
+            loop.call_later(cooldown, lambda: increase(key))
         return
 
     return Depends(dependency)
