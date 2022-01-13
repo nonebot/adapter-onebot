@@ -19,9 +19,7 @@ class Config(BaseModel):
       - ``onebot_api_roots``: OneBot HTTP API 请求地址字典
     """
 
-    onebot_access_token: Optional[str] = Field(
-        default=None, alias="onebot_access_token"
-    )
+    onebot_access_token: Optional[str] = Field(default=None)
     onebot_secret: Optional[str] = Field(default=None)
     onebot_ws_urls: Set[WSUrl] = Field(default_factory=set)
     onebot_api_roots: Dict[str, AnyUrl] = Field(default_factory=dict)
