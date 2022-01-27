@@ -9,10 +9,16 @@ from nonebot.adapters import Bot as BaseBot
 from .event import Event
 from .message import Message, MessageSegment
 
-
 async def _check_reply(bot: "Bot", event: Event): ...
 def _check_at_me(bot: "Bot", event: Event): ...
 def _check_nickname(bot: "Bot", event: Event): ...
+async def send(
+    bot: "Bot",
+    event: Event,
+    message: Union[str, Message, MessageSegment],
+    at_sender: bool = ...,
+    **kwargs: Any,
+) -> Any: ...
 
 class Bot(BaseBot):
     async def handle_event(self, event: Event) -> None: ...

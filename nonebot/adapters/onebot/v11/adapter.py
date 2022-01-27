@@ -421,6 +421,6 @@ class Adapter(BaseAdapter):
     @classmethod
     def custom_send(
         cls,
-        send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], None],
+        send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
     ):
         setattr(Bot, "send_handler", send_func)
