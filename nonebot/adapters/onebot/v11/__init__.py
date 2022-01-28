@@ -1,11 +1,6 @@
-"""
-OneBot v11 协议适配
-============================
+"""OneBot v11 协议适配
 
-协议详情请看: `OneBot V11`_
-
-.. _OneBot V11:
-    https://github.com/botuniverse/onebot-11/blob/master/README.md
+协议详情请看: [OneBot V11](https://11.onebot.dev/)
 """
 
 from .event import *

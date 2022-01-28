@@ -7,7 +7,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 const config = {
   title: "NoneBot",
   tagline: "OneBot 协议适配",
-  url: "https://onebot.nonebot.dev/",
+  url: "https://adapter-onebot.netlify.app/",
   baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -63,7 +63,7 @@ const config = {
           {
             label: "API",
             type: "docLink",
-            docId: "index",
+            docId: "api/index",
           },
           {
             label: "NoneBot",

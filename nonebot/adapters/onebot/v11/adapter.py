@@ -36,6 +36,8 @@ RECONNECT_INTERVAL = 3.0
 class Adapter(BaseAdapter):
     # init all event models
     event_models: StringTrie = StringTrie(separator=".")
+    """所有事件模型索引"""
+
     for model_name in dir(event):
         model = getattr(event, model_name)
         if not inspect.isclass(model) or not issubclass(model, Event):
@@ -46,16 +48,18 @@ class Adapter(BaseAdapter):
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
+        """OneBot V11 配置"""
         self.connections: Dict[str, WebSocket] = {}
         self.tasks: List["asyncio.Task"] = []
-        self.setup()
+        self._setup()
 
     @classmethod
     @overrides(BaseAdapter)
     def get_name(cls) -> str:
+        """适配器名称: `OneBot V11`"""
         return "OneBot V11"
 
-    def setup(self) -> None:
+    def _setup(self) -> None:
         if isinstance(self.driver, ReverseDriver):
             http_setup = HTTPServerSetup(
                 URL("/onebot/v11/"), "POST", self.get_name(), self._handle_http
@@ -90,8 +94,8 @@ class Adapter(BaseAdapter):
                     f"Current driver {self.config.driver} don't support forward connections! Ignored",
                 )
             else:
-                self.driver.on_startup(self.start_forward)
-                self.driver.on_shutdown(self.stop_forward)
+                self.driver.on_startup(self._start_forward)
+                self.driver.on_shutdown(self._stop_forward)
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
@@ -272,7 +276,7 @@ class Adapter(BaseAdapter):
                 content=msg,
             )
 
-    async def start_forward(self) -> None:
+    async def _start_forward(self) -> None:
         for url in self.onebot_config.onebot_ws_urls:
             try:
                 ws_url = URL(url)
@@ -285,7 +289,7 @@ class Adapter(BaseAdapter):
                     e,
                 )
 
-    async def stop_forward(self) -> None:
+    async def _stop_forward(self) -> None:
         for task in self.tasks:
             if not task.done():
                 task.cancel()
@@ -364,6 +368,17 @@ class Adapter(BaseAdapter):
     def json_to_event(
         cls, json_data: Any, self_id: Optional[str] = None
     ) -> Optional[Event]:
+        """将 json 数据转换为 Event 对象。
+
+        如果为 API 调用返回数据且提供了 Event 对应 Bot，则将数据存入 ResultStore。
+
+        参数:
+            json_data: json 数据
+            self_id: 当前 Event 对应的 Bot
+
+        返回:
+            Event 对象，如果解析失败或为 API 调用返回数据，则返回 None
+        """
         if not isinstance(json_data, dict):
             return None
 
@@ -399,21 +414,21 @@ class Adapter(BaseAdapter):
 
     @classmethod
     def add_custom_model(cls, model: Type[Event]) -> None:
-        if not model.__event__:
+        """插入或覆盖一个自定义的 Event 类型。
+
+        需提供 `__event__` 属性，进行事件模型索引，
+        格式为 `{post_type}[.{sub_type}]`，如: `message.private`。
+
+        参数:
+            model: 自定义的 Event 类型
+        """
+        if not hasattr(model, "__event__"):
             raise ValueError("Event model's `__event__` attribute must be set")
         cls.event_models["." + model.__event__] = model
 
     @classmethod
     def get_event_model(cls, event_name: str) -> List[Type[Event]]:
-        """
-        :说明:
-
-          根据事件名获取对应 ``Event Model`` 及 ``FallBack Event Model`` 列表, 不包括基类 ``Event``
-
-        :返回:
-
-          - ``List[Type[Event]]``
-        """
+        """根据事件名获取对应 `Event Model` 及 `FallBack Event Model` 列表，不包括基类 `Event`。"""
         return [model.value for model in cls.event_models.prefixes("." + event_name)][
             ::-1
         ]
@@ -423,4 +438,5 @@ class Adapter(BaseAdapter):
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
     ):
+        """自定义 Bot 的回复函数。"""
         setattr(Bot, "send_handler", send_func)

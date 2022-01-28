@@ -1,8 +1,8 @@
-from collections import defaultdict
 import re
 from enum import IntEnum, auto
+from collections import defaultdict
 from asyncio import get_running_loop
-from typing import DefaultDict, Set, List, Union, Optional
+from typing import Set, List, Union, Optional, DefaultDict
 
 from nonebot.matcher import Matcher
 from nonebot.params import Depends, EventMessage

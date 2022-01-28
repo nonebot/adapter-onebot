@@ -5,6 +5,7 @@ from base64 import b64encode
 from typing import Any, Type, Tuple, Union, Mapping, Iterable, Optional, cast
 
 from nonebot.typing import overrides
+
 from nonebot.adapters import Message as BaseMessage
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 

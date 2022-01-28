@@ -11,16 +11,12 @@ from .message import Message, MessageSegment
 from .event import Event, Reply, MessageEvent
 
 
-async def _check_reply(bot: "Bot", event: MessageEvent):
-    """
-    :说明:
+async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
+    """检查消息中存在的回复，去除并赋值 `event.reply`, `event.to_me`。
 
-      检查消息中存在的回复，去除并赋值 ``event.reply``, ``event.to_me``
-
-    :参数:
-
-      * ``bot: Bot``: Bot 对象
-      * ``event: Event``: Event 对象
+    参数:
+        bot: Bot 对象
+        event: MessageEvent 对象
     """
     try:
         index = list(map(lambda x: x.type == "reply", event.message)).index(True)
@@ -46,16 +42,12 @@ async def _check_reply(bot: "Bot", event: MessageEvent):
         event.message.append(MessageSegment.text(""))
 
 
-def _check_at_me(bot: "Bot", event: MessageEvent):
-    """
-    :说明:
+def _check_at_me(bot: "Bot", event: MessageEvent) -> None:
+    """检查消息开头或结尾是否存在 @机器人，去除并赋值 `event.to_me`。
 
-      检查消息开头或结尾是否存在 @机器人，去除并赋值 ``event.to_me``
-
-    :参数:
-
-      * ``bot: Bot``: Bot 对象
-      * ``event: Event``: Event 对象
+    参数:
+        bot: Bot 对象
+        event: MessageEvent 对象
     """
     if not isinstance(event, MessageEvent):
         return
@@ -110,16 +102,12 @@ def _check_at_me(bot: "Bot", event: MessageEvent):
             event.message.append(MessageSegment.text(""))
 
 
-def _check_nickname(bot: "Bot", event: MessageEvent):
-    """
-    :说明:
+def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
+    """检查消息开头是否存在昵称，去除并赋值 `event.to_me`。
 
-      检查消息开头是否存在昵称，去除并赋值 ``event.to_me``
-
-    :参数:
-
-      * ``bot: Bot``: Bot 对象
-      * ``event: Event``: Event 对象
+    参数:
+        bot: Bot 对象
+        event: MessageEvent 对象
     """
     first_msg_seg = event.message[0]
     if first_msg_seg.type != "text":
@@ -146,6 +134,7 @@ async def send(
     at_sender: bool = False,
     **kwargs: Any,
 ) -> Any:
+    """默认回复消息处理函数。"""
     message = (
         escape(message, escape_comma=False) if isinstance(message, str) else message
     )
@@ -220,28 +209,22 @@ class Bot(BaseBot):
         self,
         event: Event,
         message: Union[str, Message, MessageSegment],
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
-        """
-        :说明:
+        """根据 `event` 向触发事件的主体回复消息。
 
-          根据 ``event``  向触发事件的主体发送消息。
+        参数:
+            event: Event 对象
+            message: 要发送的消息
+            at_sender: 是否 @ 事件主体
+            kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v11.adapter.Adapter.custom_send` 配合使用
 
-        :参数:
+        返回:
+            API 调用返回数据
 
-          * ``event: Event``: Event 对象
-          * ``message: Union[str, Message, MessageSegment]``: 要发送的消息
-          * ``at_sender: bool``: 是否 @ 事件主体
-          * ``**kwargs``: 覆盖默认参数
-
-        :返回:
-
-          - ``Any``: API 调用返回数据
-
-        :异常:
-
-          - ``ValueError``: 缺少 ``user_id``, ``group_id``
-          - ``NetworkError``: 网络错误
-          - ``ActionFailed``: API 调用失败
+        异常:
+            ValueError: 缺少 `user_id`, `group_id`
+            NetworkError: 网络错误
+            ActionFailed: API 调用失败
         """
         return await self.__class__.send_handler(self, event, message, **kwargs)
