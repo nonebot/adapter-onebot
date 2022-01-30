@@ -17,11 +17,9 @@ if TYPE_CHECKING:
 
 
 class Event(BaseEvent):
-    """
-    OneBot v11 协议事件，字段与 OneBot 一致。各事件字段参考 `OneBot 文档`_
+    """OneBot v11 协议事件，字段与 OneBot 一致。各事件字段参考 [OneBot 文档]
 
-    .. OneBot 文档:
-        https://github.com/botuniverse/onebot-11/blob/master/README.md
+    [OneBot 文档]: https://github.com/botuniverse/onebot-11/blob/master/README.md
     """
 
     __event__ = ""

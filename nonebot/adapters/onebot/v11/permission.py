@@ -19,22 +19,14 @@ async def _private_other(event: PrivateMessageEvent) -> bool:
     return event.sub_type == "other"
 
 
-PRIVATE = Permission(_private)
-"""
-- **说明**: 匹配任意私聊消息类型事件
-"""
-PRIVATE_FRIEND = Permission(_private_friend)
-"""
-- **说明**: 匹配任意好友私聊消息类型事件
-"""
-PRIVATE_GROUP = Permission(_private_group)
-"""
-- **说明**: 匹配任意群临时私聊消息类型事件
-"""
-PRIVATE_OTHER = Permission(_private_other)
-"""
-- **说明**: 匹配任意其他私聊消息类型事件
-"""
+PRIVATE: Permission = Permission(_private)
+""" 匹配任意私聊消息类型事件"""
+PRIVATE_FRIEND: Permission = Permission(_private_friend)
+"""匹配任意好友私聊消息类型事件"""
+PRIVATE_GROUP: Permission = Permission(_private_group)
+"""匹配任意群临时私聊消息类型事件"""
+PRIVATE_OTHER: Permission = Permission(_private_other)
+"""匹配任意其他私聊消息类型事件"""
 
 
 async def _group(event: GroupMessageEvent) -> bool:
@@ -53,26 +45,19 @@ async def _group_owner(event: GroupMessageEvent) -> bool:
     return event.sender.role == "owner"
 
 
-GROUP = Permission(_group)
-"""
-- **说明**: 匹配任意群聊消息类型事件
-"""
-GROUP_MEMBER = Permission(_group_member)
-r"""
-- **说明**: 匹配任意群员群聊消息类型事件
+GROUP: Permission = Permission(_group)
+"""匹配任意群聊消息类型事件"""
+GROUP_MEMBER: Permission = Permission(_group_member)
+"""匹配任意群员群聊消息类型事件
 
-\:\:\:warning 警告
+:::warning 警告
 该权限通过 event.sender 进行判断且不包含管理员以及群主！
-\:\:\:
+:::
 """
-GROUP_ADMIN = Permission(_group_admin)
-"""
-- **说明**: 匹配任意群管理员群聊消息类型事件
-"""
-GROUP_OWNER = Permission(_group_owner)
-"""
-- **说明**: 匹配任意群主群聊消息类型事件
-"""
+GROUP_ADMIN: Permission = Permission(_group_admin)
+"""匹配任意群管理员群聊消息类型事件"""
+GROUP_OWNER: Permission = Permission(_group_owner)
+"""匹配任意群主群聊消息类型事件"""
 
 __all__ = [
     "PRIVATE",

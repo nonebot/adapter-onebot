@@ -17,19 +17,17 @@ class NoLogException(BaseNoLogException, OneBotAdapterException):
 
 
 class ActionFailed(BaseActionFailed, OneBotAdapterException):
-    """
-    :说明:
+    """API 请求返回错误信息。
 
-      API 请求返回错误信息。
-
-    :参数:
-
-      * ``retcode: Optional[int]``: 错误码
+    参数:
+        retcode (int): 错误码
+        kwargs: 其他协议端提供信息
     """
 
     def __init__(self, **kwargs):
         super().__init__()
         self.info = kwargs
+        """所有错误信息"""
 
     def __repr__(self):
         return (
@@ -43,19 +41,12 @@ class ActionFailed(BaseActionFailed, OneBotAdapterException):
 
 
 class NetworkError(BaseNetworkError, OneBotAdapterException):
-    """
-    :说明:
-
-      网络错误。
-
-    :参数:
-
-      * ``retcode: Optional[int]``: 错误码
-    """
+    """网络错误。"""
 
     def __init__(self, msg: Optional[str] = None):
         super().__init__()
-        self.msg = msg
+        self.msg: Optional[str] = msg
+        """错误原因"""
 
     def __repr__(self):
         return f"<NetWorkError message={self.msg}>"

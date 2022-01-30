@@ -19,15 +19,11 @@ def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
 
 
 def escape(s: str, *, escape_comma: bool = True) -> str:
-    """
-    :说明:
+    """对字符串进行 CQ 码转义。
 
-      对字符串进行 CQ 码转义。
-
-    :参数:
-
-      * ``s: str``: 需要转义的字符串
-      * ``escape_comma: bool``: 是否转义逗号（``,``）。
+    参数:
+        s: 需要转义的字符串
+        escape_comma: 是否转义逗号（`,`）。
     """
     s = s.replace("&", "&amp;").replace("[", "&#91;").replace("]", "&#93;")
     if escape_comma:
@@ -36,14 +32,10 @@ def escape(s: str, *, escape_comma: bool = True) -> str:
 
 
 def unescape(s: str) -> str:
-    """
-    :说明:
+    """对字符串进行 CQ 码去转义。
 
-      对字符串进行 CQ 码去转义。
-
-    :参数:
-
-      * ``s: str``: 需要转义的字符串
+    参数:
+        s: 需要转义的字符串
     """
     return (
         s.replace("&#44;", ",")
@@ -59,22 +51,16 @@ def _b2s(b: Optional[bool]) -> Optional[str]:
 
 
 def _handle_api_result(result: Optional[Dict[str, Any]]) -> Any:
-    """
-    :说明:
+    """处理 API 请求返回值。
 
-      处理 API 请求返回值。
+    参数:
+        result: API 返回数据
 
-    :参数:
+    返回:
+        API 调用返回数据
 
-      * ``result: Optional[Dict[str, Any]]``: API 返回数据
-
-    :返回:
-
-        - ``Any``: API 调用返回数据
-
-    :异常:
-
-        - ``ActionFailed``: API 调用失败
+    异常:
+        ActionFailed: API 调用失败
     """
     if isinstance(result, dict):
         if result.get("status") == "failed":

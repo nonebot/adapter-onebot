@@ -13,9 +13,7 @@ from .utils import log, _b2s, escape, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
-    """
-    OneBot v11 协议 MessageSegment 适配。具体方法参考协议消息段类型或源码。
-    """
+    """OneBot v11 协议 MessageSegment 适配。具体方法参考协议消息段类型或源码。"""
 
     @classmethod
     @overrides(BaseMessageSegment)
@@ -252,9 +250,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
 
 class Message(BaseMessage[MessageSegment]):
-    """
-    OneBot v11 协议 Message 适配。
-    """
+    """OneBot v11 协议 Message 适配。"""
 
     @classmethod
     @overrides(BaseMessage)

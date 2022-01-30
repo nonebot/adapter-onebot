@@ -216,7 +216,7 @@ class Bot(BaseBot):
         参数:
             event: Event 对象
             message: 要发送的消息
-            at_sender: 是否 @ 事件主体
+            at_sender (bool): 是否 @ 事件主体
             kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v11.adapter.Adapter.custom_send` 配合使用
 
         返回:
