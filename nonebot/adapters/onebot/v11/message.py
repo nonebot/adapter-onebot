@@ -2,7 +2,7 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing import Any, Type, Tuple, Union, Mapping, Iterable, Optional, cast
+from typing import Any, Type, Tuple, Union, Iterable, Optional, cast
 
 from nonebot.typing import overrides
 
@@ -35,13 +35,17 @@ class MessageSegment(BaseMessageSegment["Message"]):
         return f"[CQ:{type_}{',' if params else ''}{params}]"
 
     @overrides(BaseMessageSegment)
-    def __add__(self, other) -> "Message":
+    def __add__(
+        self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
+    ) -> "Message":
         return Message(self) + (
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
     @overrides(BaseMessageSegment)
-    def __radd__(self, other) -> "Message":
+    def __radd__(
+        self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
+    ) -> "Message":
         return (
             MessageSegment.text(other) if isinstance(other, str) else Message(other)
         ) + self
@@ -258,60 +262,52 @@ class Message(BaseMessage[MessageSegment]):
         return MessageSegment
 
     @overrides(BaseMessage)
-    def __add__(self, other: Union[str, Mapping, Iterable[Mapping]]) -> "Message":
+    def __add__(
+        self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
+    ) -> "Message":
         return super(Message, self).__add__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
     @overrides(BaseMessage)
-    def __radd__(self, other: Union[str, Mapping, Iterable[Mapping]]) -> "Message":
+    def __radd__(
+        self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
+    ) -> "Message":
         return super(Message, self).__radd__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
     @staticmethod
     @overrides(BaseMessage)
-    def _construct(
-        msg: Union[str, Mapping, Iterable[Mapping]]
-    ) -> Iterable[MessageSegment]:
-        if isinstance(msg, Mapping):
-            msg = cast(Mapping[str, Any], msg)
-            yield MessageSegment(msg["type"], msg.get("data") or {})
-            return
-        elif isinstance(msg, Iterable) and not isinstance(msg, str):
-            for seg in msg:
-                yield MessageSegment(seg["type"], seg.get("data") or {})
-            return
-        elif isinstance(msg, str):
+    def _construct(msg: str) -> Iterable[MessageSegment]:
+        def _iter_message(msg: str) -> Iterable[Tuple[str, str]]:
+            text_begin = 0
+            for cqcode in re.finditer(
+                r"\[CQ:(?P<type>[a-zA-Z0-9-_.]+)"
+                r"(?P<params>"
+                r"(?:,[a-zA-Z0-9-_.]+=[^,\]]+)*"
+                r"),?\]",
+                msg,
+            ):
+                yield "text", msg[text_begin : cqcode.pos + cqcode.start()]
+                text_begin = cqcode.pos + cqcode.end()
+                yield cqcode.group("type"), cqcode.group("params").lstrip(",")
+            yield "text", msg[text_begin:]
 
-            def _iter_message(msg: str) -> Iterable[Tuple[str, str]]:
-                text_begin = 0
-                for cqcode in re.finditer(
-                    r"\[CQ:(?P<type>[a-zA-Z0-9-_.]+)"
-                    r"(?P<params>"
-                    r"(?:,[a-zA-Z0-9-_.]+=[^,\]]+)*"
-                    r"),?\]",
-                    msg,
-                ):
-                    yield "text", msg[text_begin : cqcode.pos + cqcode.start()]
-                    text_begin = cqcode.pos + cqcode.end()
-                    yield cqcode.group("type"), cqcode.group("params").lstrip(",")
-                yield "text", msg[text_begin:]
-
-            for type_, data in _iter_message(msg):
-                if type_ == "text":
-                    if data:
-                        # only yield non-empty text segment
-                        yield MessageSegment(type_, {"text": unescape(data)})
-                else:
-                    data = {
-                        k: unescape(v)
-                        for k, v in map(
-                            lambda x: x.split("=", maxsplit=1),
-                            filter(lambda x: x, (x.lstrip() for x in data.split(","))),
-                        )
-                    }
-                    yield MessageSegment(type_, data)
+        for type_, data in _iter_message(msg):
+            if type_ == "text":
+                if data:
+                    # only yield non-empty text segment
+                    yield MessageSegment(type_, {"text": unescape(data)})
+            else:
+                data = {
+                    k: unescape(v)
+                    for k, v in map(
+                        lambda x: x.split("=", maxsplit=1),
+                        filter(lambda x: x, (x.lstrip() for x in data.split(","))),
+                    )
+                }
+                yield MessageSegment(type_, data)
 
     @overrides(BaseMessage)
     def extract_plain_text(self) -> str:
