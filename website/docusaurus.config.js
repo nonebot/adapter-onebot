@@ -7,7 +7,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 const config = {
   title: "NoneBot",
   tagline: "OneBot 协议适配",
-  url: "https://adapter-onebot.netlify.app/",
+  url: "https://onebot.adapters.nonebot.dev/",
   baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -131,7 +131,7 @@ const config = {
       },
       prism: {
         theme: lightCodeTheme,
-        dark: darkCodeTheme,
+        darkTheme: darkCodeTheme,
       },
       algolia: {
         appId: "3L2O9QYHV1",
