@@ -134,9 +134,9 @@ const config = {
         darkTheme: darkCodeTheme,
       },
       algolia: {
-        appId: "3L2O9QYHV1",
-        apiKey: "8066251395dda45cb9833d3d44496bd5",
-        indexName: "onebot",
+        appId: "UXS5VZ9AQX",
+        apiKey: "f1e9e8357ce05e81665c586c978a7661",
+        indexName: "adapter-onebot",
         contextualSearch: true,
       },
       tailwindConfig: require("./tailwind.config"),
