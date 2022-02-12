@@ -201,18 +201,16 @@ def HandleCancellation(cancel_prompt: Optional[str] = None) -> bool:
 
 
 class CooldownIsolateLevel(IntEnum):
-    """命令冷却的隔离级别
-
-    GLOBAL: 全局使用同一个冷却计时
-    GROUP: 群组内使用同一个冷却计时
-    USER: 按用户使用同一个冷却计时
-    GROUP_USER: 群组内每个用户使用同一个冷却计时
-    """
+    """命令冷却的隔离级别"""
 
     GLOBAL = auto()
+    """全局使用同一个冷却计时"""
     GROUP = auto()
+    """群组内使用同一个冷却计时"""
     USER = auto()
+    """按用户使用同一个冷却计时"""
     GROUP_USER = auto()
+    """群组内每个用户使用同一个冷却计时"""
 
 
 def Cooldown(
