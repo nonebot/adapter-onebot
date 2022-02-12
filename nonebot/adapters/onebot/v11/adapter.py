@@ -100,7 +100,9 @@ class Adapter(BaseAdapter):
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
         websocket = self.connections.get(bot.self_id, None)
+        timeout: float = data.get("_timeout", self.config.api_timeout)
         log("DEBUG", f"Calling API <y>{api}</y>")
+
         if websocket:
             seq = ResultStore.get_seq()
             json_data = json.dumps(
@@ -109,7 +111,7 @@ class Adapter(BaseAdapter):
             )
             await websocket.send(json_data)
             return _handle_api_result(
-                await ResultStore.fetch(bot.self_id, seq, self.config.api_timeout)
+                await ResultStore.fetch(bot.self_id, seq, timeout)
             )
 
         elif isinstance(self.driver, ForwardDriver):
@@ -129,8 +131,8 @@ class Adapter(BaseAdapter):
                 "POST",
                 api_root + api,
                 headers=headers,
+                timeout=timeout,
                 content=json.dumps(data, cls=DataclassEncoder),
-                timeout=self.config.api_timeout,
             )
 
             try:
