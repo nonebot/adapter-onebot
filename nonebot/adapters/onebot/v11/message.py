@@ -312,3 +312,13 @@ class Message(BaseMessage[MessageSegment]):
     @overrides(BaseMessage)
     def extract_plain_text(self) -> str:
         return "".join(seg.data["text"] for seg in self if seg.is_text())
+
+    def reduce(self) -> None:
+        """合并消息内连续的纯文本段。"""
+        index = 1
+        while index < len(self):
+            if self[index - 1].type == "text" and self[index].type == "text":
+                self[index - 1].data["text"] += self[index].data["text"]
+                del self[index]
+            else:
+                index += 1
