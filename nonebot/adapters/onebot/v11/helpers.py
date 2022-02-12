@@ -12,6 +12,14 @@ from .event import MessageEvent, GroupMessageEvent
 
 
 def extract_image_urls(message: Message) -> List[str]:
+    """提取消息中的图片链接
+
+    参数:
+        message: 消息对象
+
+    返回:
+        图片链接列表
+    """
     return [
         segment.data["url"]
         for segment in message
@@ -19,7 +27,13 @@ def extract_image_urls(message: Message) -> List[str]:
     ]
 
 
-def ImageURLs(prompt: Optional[str] = None) -> List[str]:
+def ImageURLs(prompt: Optional[str] = None):
+    """提取消息中图片链接`extract_image_urls`的依赖注入版本
+
+    参数:
+        prompt: 当不存在图片链接时发送给用户的错误消息. 默认为 `None`.
+    """
+
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
     ) -> List[str]:
@@ -35,6 +49,14 @@ NUMBERS_REGEXP = re.compile(r"[+-]?(\d*\.?\d+|\d+\.?\d*)")
 
 
 def extract_numbers(message: Message) -> List[float]:
+    """提取消息中的数字
+
+    参数:
+        message: 消息对象
+
+    返回:
+        数字列表, 可以是浮点数或整数
+    """ """"""
     return [
         float(matched)
         for matched in NUMBERS_REGEXP.findall(message.extract_plain_text())
@@ -42,6 +64,12 @@ def extract_numbers(message: Message) -> List[float]:
 
 
 def Numbers(prompt: Optional[str] = None) -> List[float]:
+    """提取消息中的数字`extract_numbers`的依赖注入版本
+
+    参数:
+        prompt: 当不存在数字时发送给用户的错误消息.
+    """
+
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
     ) -> List[float]:
@@ -97,6 +125,14 @@ CHINESE_TRAILING_WORD = ",.!?~，。！？～了的呢吧呀啊呗啦"
 
 
 def convert_chinese_to_bool(message: Union[Message, str]) -> Optional[bool]:
+    """将中文中表示判断的词语转换为布尔值
+
+    参数:
+        message: 消息对象或消息文本
+
+    返回:
+        是表达同意的布尔值, 如果无法确认判断的词语, 则返回 `None`
+    """
     text = message.extract_plain_text() if isinstance(message, Message) else message
     text = text.lower().strip().replace(" ", "").rstrip(CHINESE_TRAILING_WORD)
 
@@ -110,6 +146,15 @@ def convert_chinese_to_bool(message: Union[Message, str]) -> Optional[bool]:
 def remove_empty_lines(
     message: Union[Message, str], include_stripped: bool = False
 ) -> str:
+    """移除消息中的空行
+
+    参数:
+        message: 消息对象或消息文本
+        include_stripped: 是否包含只有空格的行
+
+    返回:
+        移除空行后的消息文本
+    """ """"""
     text = message.extract_plain_text() if isinstance(message, Message) else message
     return "".join(
         line
@@ -124,6 +169,14 @@ CHINESE_CANCELLATION_REGEX_2 = re.compile(r"^那?(?:[给帮]我)?取消了?吧?$
 
 
 def is_cancellation(message: Union[Message, str]) -> bool:
+    """判断消息是否表示取消
+
+    参数:
+        message: 消息对象或消息文本
+
+    返回:
+        是否表示取消的布尔值
+    """ """"""
     text = message.extract_plain_text() if isinstance(message, Message) else message
     return any(kw in text for kw in CHINESE_CANCELLATION_WORDS) and bool(
         CHINESE_CANCELLATION_REGEX_1.match(text)
@@ -132,6 +185,12 @@ def is_cancellation(message: Union[Message, str]) -> bool:
 
 
 def HandleCancellation(cancel_prompt: Optional[str] = None) -> bool:
+    """检查消息是否表示取消`is_cancellation`的依赖注入版本
+
+    参数:
+        cancel_prompt: 当消息表示取消时发送给用户的取消消息
+    """ """"""
+
     async def dependency(matcher: Matcher, message: Message = EventMessage()) -> bool:
         cancelled = is_cancellation(message)
         if cancelled and cancel_prompt:
@@ -142,6 +201,14 @@ def HandleCancellation(cancel_prompt: Optional[str] = None) -> bool:
 
 
 class CooldownIsolateLevel(IntEnum):
+    """命令冷却的隔离级别
+
+    GLOBAL: 全局使用同一个冷却计时
+    GROUP: 群组内使用同一个冷却计时
+    USER: 按用户使用同一个冷却计时
+    GROUP_USER: 群组内每个用户使用同一个冷却计时
+    """
+
     GLOBAL = auto()
     GROUP = auto()
     USER = auto()
@@ -155,6 +222,21 @@ def Cooldown(
     isolate_level: CooldownIsolateLevel = CooldownIsolateLevel.USER,
     parallel: int = 1,
 ) -> None:
+    """依赖注入形式的命令冷却
+
+    用法:
+        ```python
+        @matcher.handle(parameterless=[Cooldown(cooldown=11.4514, ...)])
+        async def handle_command(matcher: Matcher, message: Message):
+            ...
+        ```
+
+    参数:
+        cooldown: 命令冷却间隔
+        prompt: 当命令冷却时发送给用户的提示消息
+        isolate_level: 命令冷却的隔离级别, 参考 `CooldownIsolateLevel`
+        parallel: 并行执行的命令数量
+    """
     if not isinstance(isolate_level, CooldownIsolateLevel):
         raise ValueError(
             f"invalid isolate level: {isolate_level!r}, "
