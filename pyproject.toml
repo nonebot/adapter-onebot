@@ -29,13 +29,13 @@ isort = "^5.10.1"
 black = "^21.11b1"
 pytest-cov = "^3.0.0"
 nonebug = { git = "https://github.com/nonebot/nonebug.git" }
-nonebot2 = { git = "https://github.com/nonebot/nonebot2.git", branch = "dev" }
+nonebot2 = { git = "https://github.com/nonebot/nonebot2.git" }
+nb-autodoc = {git = "https://github.com/nonebot/nb-autodoc.git"}
 
 # [[tool.poetry.source]]
 # name = "aliyun"
 # url = "https://mirrors.aliyun.com/pypi/simple/"
 # default = true
-nb-autodoc = {git = "https://github.com/nonebot/nb-autodoc.git"}
 
 [tool.pytest.ini_options]
 addopts = "--cov nonebot.adapters.onebot --cov-report term-missing"
