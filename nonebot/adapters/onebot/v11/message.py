@@ -100,7 +100,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         if isinstance(file, bytes):
             file = f"base64://{b64encode(file).decode()}"
         elif isinstance(file, Path):
-            file = f"file:///{file.resolve()}"
+            file = file.resolve().as_uri()
         return MessageSegment(
             "image",
             {
@@ -186,7 +186,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         if isinstance(file, bytes):
             file = f"base64://{b64encode(file).decode()}"
         elif isinstance(file, Path):
-            file = f"file:///{file.resolve()}"
+            file = file.resolve().as_uri()
         return MessageSegment(
             "record",
             {
@@ -237,7 +237,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         if isinstance(file, bytes):
             file = f"base64://{b64encode(file).decode()}"
         elif isinstance(file, Path):
-            file = f"file:///{file.resolve()}"
+            file = file.resolve().as_uri()
         return MessageSegment(
             "video",
             {
