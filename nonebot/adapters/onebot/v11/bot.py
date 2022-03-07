@@ -132,35 +132,33 @@ async def send(
     event: Event,
     message: Union[str, Message, MessageSegment],
     at_sender: bool = False,
-    **kwargs: Any,
+    **params: Any,  # extra options passed to send_msg API
 ) -> Any:
     """默认回复消息处理函数。"""
-    message = (
-        escape(message, escape_comma=False) if isinstance(message, str) else message
-    )
-    msg = message if isinstance(message, Message) else Message(message)
+    event_dict = event.dict()
 
-    at_sender = at_sender and bool(getattr(event, "user_id", None))
+    if "user_id" in event_dict:  # copy the user_id to the API params if exists
+        params.setdefault("user_id", event_dict["user_id"])
+    else:
+        at_sender = False  # if no user_id, force disable at_sender
 
-    params = {}
-    if getattr(event, "user_id", None):
-        params["user_id"] = getattr(event, "user_id")
-    if getattr(event, "group_id", None):
-        params["group_id"] = getattr(event, "group_id")
-    params.update(kwargs)
+    if "group_id" in event_dict:  # copy the group_id to the API params if exists
+        params.setdefault("group_id", event_dict["group_id"])
 
-    if "message_type" not in params:
-        if params.get("group_id", None):
+    if "message_type" not in params:  # guess the message_type
+        if "group_id" in params:
             params["message_type"] = "group"
-        elif params.get("user_id", None):
+        elif "user_id" in params:
             params["message_type"] = "private"
         else:
             raise ValueError("Cannot guess message type to reply!")
 
+    full_message = Message()  # create a new message with at sender segment
     if at_sender and params["message_type"] != "private":
-        params["message"] = MessageSegment.at(params["user_id"]) + " " + msg
-    else:
-        params["message"] = msg
+        full_message += MessageSegment.at(params["user_id"]) + " "
+    full_message += message
+    params.setdefault("message", full_message)
+
     return await bot.send_msg(**params)
 
 
