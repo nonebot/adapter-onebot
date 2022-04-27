@@ -1,9 +1,10 @@
 import sys
 import asyncio
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, Type
 
 from nonebot.utils import logger_wrapper
 
+from .event import Event
 from .exception import ActionFailed, NetworkError
 
 log = logger_wrapper("OneBot V12")

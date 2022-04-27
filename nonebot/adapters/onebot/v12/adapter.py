@@ -5,8 +5,6 @@ import json
 from pygtrie import StringTrie
 from typing import Any, Dict, List, Optional, Type, cast
 
-from requests import request
-
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.exception import ApiNotAvailable, WebSocketClosed
 from nonebot.typing import overrides
@@ -38,9 +36,8 @@ class Adapter(BaseAdapter):
 
     for model_name in dir(event):
         model = getattr(event, model_name)
-        if not inspect.isclass(model) or not issubclass(model, Event):
-            continue
-        event_models["." + model.__event__] = model
+        if inspect.isclass(model) and issubclass(model, Event):
+            event_models["." + model.full_type()] = model
 
     @classmethod
     @overrides(BaseAdapter)
@@ -65,9 +62,35 @@ class Adapter(BaseAdapter):
                     self._handle_http_webhook,
                 )
             )
+            self.setup_http_server(
+                HTTPServerSetup(
+                    URL("/onebot/v12/http"),
+                    "POST",
+                    self.get_name(),
+                    self._handle_http_webhook,
+                )
+            )
+            self.setup_http_server(
+                HTTPServerSetup(
+                    URL("/onebot/v12/http/"),
+                    "POST",
+                    self.get_name(),
+                    self._handle_http_webhook,
+                )
+            )
             self.setup_websocket_server(
                 WebSocketServerSetup(
                     URL("/onebot/v12/"), self.get_name(), self._handle_ws
+                )
+            )
+            self.setup_websocket_server(
+                WebSocketServerSetup(
+                    URL("/onebot/v12/ws"), self.get_name(), self._handle_ws
+                )
+            )
+            self.setup_websocket_server(
+                WebSocketServerSetup(
+                    URL("/onebot/v12/ws/"), self.get_name(), self._handle_ws
                 )
             )
         if self.onebot_config.onebot_ws_urls:

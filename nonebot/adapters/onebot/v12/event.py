@@ -1,3 +1,4 @@
+from ast import operator
 from typing_extensions import Literal
 
 from pydantic import BaseModel
@@ -16,13 +17,12 @@ class Event(BaseEvent):
     参考文档：[OneBot 文档](https://12.1bot.dev)
     """
 
-    __event__ = ""
     id: str
     impl: str
     platform: str
     self_id: str
     time: float
-    type: str
+    type: Literal["message", "notice", "request", "meta"]
     detail_type: str
     sub_type: str
 
@@ -32,7 +32,7 @@ class Event(BaseEvent):
 
     @overrides(BaseEvent)
     def get_event_name(self) -> str:
-        return self.__event__
+        return self.full_type()
 
     @overrides(BaseEvent)
     def get_event_description(self) -> str:
@@ -58,6 +58,20 @@ class Event(BaseEvent):
     def is_tome(self) -> bool:
         return False
 
+    @classmethod
+    def full_type(cls) -> str:
+        return ".".join(
+            [
+                i
+                for i in [
+                    cls.__fields__["type"].default,
+                    cls.__fields__["detail_type"].default,
+                    cls.__fields__["sub_type"].default,
+                ]
+                if i
+            ]
+        )
+
 
 class Status(BaseModel):
     good: bool
@@ -65,8 +79,7 @@ class Status(BaseModel):
 
 
 class MessageEvent(Event):
-    __event__ = "message"
-    type: Literal["message"]
+    type: Literal["message"] = "message"
     message_id: str
     message: Message
     alt_message: str
@@ -96,8 +109,7 @@ class MessageEvent(Event):
 
 
 class PrivateMessageEvent(MessageEvent):
-    __event__ = "message.private"
-    detail_type: Literal["private"]
+    detail_type: Literal["private"] = "private"
 
     @overrides(Event)
     def get_event_description(self) -> str:
@@ -116,8 +128,7 @@ class PrivateMessageEvent(MessageEvent):
 
 
 class GroupMessageEvent(MessageEvent):
-    __event__ = "message.group"
-    detail_type: Literal["group"]
+    detail_type: Literal["group"] = "group"
     group_id: str
 
     @overrides(Event)
@@ -141,18 +152,80 @@ class GroupMessageEvent(MessageEvent):
 
 
 class NoticeEvent(Event):
-    __event__ = "notice"
-    type = Literal["notice"]
+    type: Literal["notice"] = "notice"
+
+
+class FriendIncreaseEvent(NoticeEvent):
+    detail_type: Literal["friend_increase"] = "friend_increase"
+    uer_id: str
+
+
+class FriendDecreaseEvent(NoticeEvent):
+    detail_type: Literal["friend_decrease"] = "friend_decrease"
+    user_id: str
+
+
+class PrivateMessageDeleteEvent(NoticeEvent):
+    detail_type: Literal["private_message_delete"] = "private_message_delete"
+    message_id: str
+
+
+class GroupMemberIncreaseEvent(NoticeEvent):
+    detail_type: Literal["group_member_increase"] = "group_member_increase"
+    group_id: str
+    user_id: str
+    operator_id: str
+
+
+class GroupMemberDecreaseEvent(NoticeEvent):
+    detail_type: Literal["group_member_decrease"] = "group_member_decrease"
+    group_id: str
+    user_id: str
+    operator_id: str
+
+
+class GroupMemberBanEvent(NoticeEvent):
+    detail_type: Literal["group_member_ban"] = "group_member_ban"
+    group_id: str
+    user_id: str
+    operator_id: str
+
+
+class GroupMemberUnbanEvent(NoticeEvent):
+    detail_type: Literal["group_member_unban"] = "group_member_unban"
+    group_id: str
+    user_id: str
+    operator_id: str
+
+
+class GroupAdminSetEvent(NoticeEvent):
+    detail_type: Literal["group_admin_set"] = "group_admin_set"
+    group_id: str
+    user_id: str
+    operator_id: str
+
+
+class GroupAdminUnsetEvent(NoticeEvent):
+    detail_type: Literal["group_admin_unset"] = "group_admin_unset"
+    group_id: str
+    user_id: str
+    operator_id: str
+
+
+class GroupMessageDeleteEvent(NoticeEvent):
+    detail_type: Literal["group_message_delete"] = "group_message_delete"
+    group_id: str
+    message_id: str
+    user_id: str
+    operator_id: str
 
 
 class RequestEvent(Event):
-    __event__ = "request"
-    type = Literal["request"]
+    type: Literal["request"] = "request"
 
 
 class MetaEvent(Event):
-    __event__ = "meta"
-    type = Literal["meta"]
+    type: Literal["meta"] = "meta"
 
     @overrides(Event)
     def get_log_string(self) -> str:
@@ -160,7 +233,6 @@ class MetaEvent(Event):
 
 
 class HeartbeatMetaEvent(MetaEvent):
-    __event__ = "meta.heartbeat"
-    detail_type = Literal["heartbeat"]
+    detail_type: Literal["heartbeat"] = "heartbeat"
     interval: int
     status: Status
