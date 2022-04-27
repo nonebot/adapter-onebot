@@ -316,6 +316,10 @@ class Adapter(BaseAdapter):
             await asyncio.sleep(RECONNECT_INTERVAL)
 
     @classmethod
+    def add_custom_model(cls, model: Type[Event]) -> None:
+        cls.event_models["." + model.full_type()] = model
+
+    @classmethod
     def get_event_model(cls, event_type: str) -> List[Type[Event]]:
         return [model.value for model in cls.event_models.prefixes("." + event_type)][
             ::-1
