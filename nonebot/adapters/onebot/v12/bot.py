@@ -30,7 +30,7 @@ def _check_to_me(bot: "Bot", event: MessageEvent) -> None:
 
         def _is_mention_me_seg(segment: MessageSegment) -> bool:
             return (
-                segment.type == "at"
+                segment.type == "mention"
                 and str(segment.data.get("user_id", "")) == event.self_id
             )
 
