@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Type, Union, Any
+from typing import Iterable, Type, Union
 
 from nonebot.typing import overrides
 from nonebot.adapters import Message as BaseMessage
@@ -41,43 +41,43 @@ class MessageSegment(BaseMessageSegment["Message"]):
         return self.type == "text"
 
     @staticmethod
-    def text(text: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["text"] = text
-        return MessageSegment("text", extra)
+    def text(text: str, **kwargs) -> "MessageSegment":
+        kwargs["text"] = text
+        return MessageSegment("text", kwargs)
 
     @staticmethod
-    def mention(user_id: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["user_id"] = user_id
-        return MessageSegment("mention", extra)
+    def mention(user_id: str, **kwargs) -> "MessageSegment":
+        kwargs["user_id"] = user_id
+        return MessageSegment("mention", kwargs)
 
     @staticmethod
-    def mention_all(extra: Dict[str, Any] = {}) -> "MessageSegment":
-        return MessageSegment("mention_all", extra)
+    def mention_all(**kwargs) -> "MessageSegment":
+        return MessageSegment("mention_all", kwargs)
 
     @staticmethod
-    def image(file_id: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["file_id"] = file_id
-        return MessageSegment("image", extra)
+    def image(file_id: str, **kwargs) -> "MessageSegment":
+        kwargs["file_id"] = file_id
+        return MessageSegment("image", kwargs)
 
     @staticmethod
-    def voice(file_id: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["file_id"] = file_id
-        return MessageSegment("voice", extra)
+    def voice(file_id: str, **kwargs) -> "MessageSegment":
+        kwargs["file_id"] = file_id
+        return MessageSegment("voice", kwargs)
 
     @staticmethod
-    def audio(file_id: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["file_id"] = file_id
-        return MessageSegment("audio", extra)
+    def audio(file_id: str, **kwargs) -> "MessageSegment":
+        kwargs["file_id"] = file_id
+        return MessageSegment("audio", kwargs)
 
     @staticmethod
-    def video(file_id: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["file_id"] = file_id
-        return MessageSegment("video", extra)
+    def video(file_id: str, **kwargs) -> "MessageSegment":
+        kwargs["file_id"] = file_id
+        return MessageSegment("video", kwargs)
 
     @staticmethod
-    def file(file_id: str, extra: Dict[str, Any] = {}) -> "MessageSegment":
-        extra["file_id"] = file_id
-        return MessageSegment("file", extra)
+    def file(file_id: str, **kwargs) -> "MessageSegment":
+        kwargs["file_id"] = file_id
+        return MessageSegment("file", kwargs)
 
     @staticmethod
     def location(
@@ -85,24 +85,22 @@ class MessageSegment(BaseMessageSegment["Message"]):
         longitude: float,
         title: str,
         content: str,
-        extra: Dict[str, Any] = {},
+        **kwargs,
     ) -> "MessageSegment":
-        extra["latitude"] = latitude
-        extra["longitude"] = longitude
-        extra["title"] = title
-        extra["content"] = content
+        kwargs["latitude"] = latitude
+        kwargs["longitude"] = longitude
+        kwargs["title"] = title
+        kwargs["content"] = content
         return MessageSegment(
             "location",
-            extra,
+            kwargs,
         )
 
     @staticmethod
-    def reply(
-        message_id: str, user_id: str, extra: Dict[str, Any] = {}
-    ) -> "MessageSegment":
-        extra["message_id"] = message_id
-        extra["user_id"] = user_id
-        return MessageSegment("reply", extra)
+    def reply(message_id: str, user_id: str, **kwargs) -> "MessageSegment":
+        kwargs["message_id"] = message_id
+        kwargs["user_id"] = user_id
+        return MessageSegment("reply", kwargs)
 
 
 class Message(BaseMessage[MessageSegment]):

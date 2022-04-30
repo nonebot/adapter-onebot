@@ -124,8 +124,6 @@ class Adapter(BaseAdapter):
             api_url = self.onebot_config.onebot_http_urls.get(bot.self_id)
             if not api_url:
                 raise ApiNotAvailable
-            elif not api_url.endswith("/"):
-                api_url += "/"
 
             headers = {"Content-Type": "application/json"}
             if self.onebot_config.onebot_access_token is not None:
@@ -135,10 +133,12 @@ class Adapter(BaseAdapter):
 
             request = Request(
                 "POST",
-                api_url + api,
+                api_url,
                 headers=headers,
                 timeout=timeout,
-                content=json.dumps(data, cls=DataclassEncoder),
+                content=json.dumps(
+                    {"action": api, "params": data}, cls=DataclassEncoder
+                ),
             )
 
             try:
