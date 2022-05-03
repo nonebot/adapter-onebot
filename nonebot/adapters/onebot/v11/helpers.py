@@ -1,14 +1,16 @@
+import asyncio
 import re
 from enum import IntEnum, auto
 from collections import defaultdict
 from asyncio import get_running_loop
-from typing import Set, List, Union, Optional, DefaultDict
+from typing import Any, Dict, List, Union, Optional, DefaultDict
 
 from nonebot.matcher import Matcher
 from nonebot.params import Depends, EventMessage
 
-from .message import Message
-from .event import MessageEvent, GroupMessageEvent
+from .message import Message, MessageSegment
+from .event import MessageEvent, GroupMessageEvent, Event
+from .bot import send, Bot
 
 
 def extract_image_urls(message: Message) -> List[str]:
@@ -276,3 +278,35 @@ def Cooldown(
         return
 
     return Depends(dependency)
+
+
+async def autorevoke_send(
+    bot: Bot,
+    event: Event,
+    message: Union[str, Message, MessageSegment],
+    at_sender: bool = False,
+    revoke_interval: int = 60,
+    **kwargs,
+):
+    """发出消息指定时间后自动撤回
+
+    参数:
+        bot: 实例化的Bot类
+        event: 事件对象
+        message: 消息对象或消息文本
+        at_sender: 是否在消息中添加 @ 用户
+        revoke_interval: 撤回消息的间隔时间, 单位为秒
+
+    返回:
+        [`TimeHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
+    """
+    message_data: Dict[str, Any] = await send(bot, event, message, at_sender, **kwargs)
+    message_id: int = message_data["message_id"]
+
+    loop = get_running_loop()
+    return loop.call_later(
+        revoke_interval,
+        lambda: asyncio.run_coroutine_threadsafe(
+            bot.delete_msg(message_id=message_id), loop=loop
+        ),
+    )
