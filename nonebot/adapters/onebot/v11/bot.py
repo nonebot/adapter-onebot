@@ -131,11 +131,15 @@ async def send(
     bot: "Bot",
     event: Event,
     message: Union[str, Message, MessageSegment],
+    reply_message: bool = False,
     at_sender: bool = False,
     **params: Any,  # extra options passed to send_msg API
 ) -> Any:
     """默认回复消息处理函数。"""
     event_dict = event.dict()
+
+    if "message_id" not in event_dict:
+        reply_message = False  # if no message_id, force disable reply_message
 
     if "user_id" in event_dict:  # copy the user_id to the API params if exists
         params.setdefault("user_id", event_dict["user_id"])
@@ -154,6 +158,8 @@ async def send(
             raise ValueError("Cannot guess message type to reply!")
 
     full_message = Message()  # create a new message with at sender segment
+    if reply_message:
+        full_message += MessageSegment.reply(event_dict["message_id"])
     if at_sender and params["message_type"] != "private":
         full_message += MessageSegment.at(params["user_id"]) + " "
     full_message += message
@@ -214,6 +220,7 @@ class Bot(BaseBot):
         参数:
             event: Event 对象
             message: 要发送的消息
+            reply_message (bool): 是否回复事件消息
             at_sender (bool): 是否 @ 事件主体
             kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v11.adapter.Adapter.custom_send` 配合使用
 
