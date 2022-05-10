@@ -10,7 +10,7 @@ from nonebot.params import Depends, EventMessage
 
 from .message import Message, MessageSegment
 from .event import MessageEvent, GroupMessageEvent, Event
-from .bot import send, Bot
+from .bot import Bot
 
 
 def extract_image_urls(message: Message) -> List[str]:
@@ -300,7 +300,9 @@ async def autorevoke_send(
     返回:
         [`TimeHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
     """
-    message_data: Dict[str, Any] = await send(bot, event, message, at_sender, **kwargs)
+    message_data: Dict[str, Any] = await bot.send(
+        event, message, at_sender=at_sender, **kwargs
+    )
     message_id: int = message_data["message_id"]
 
     loop = get_running_loop()
