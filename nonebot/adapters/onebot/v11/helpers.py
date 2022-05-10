@@ -308,7 +308,5 @@ async def autorevoke_send(
     loop = get_running_loop()
     return loop.call_later(
         revoke_interval,
-        lambda: asyncio.run_coroutine_threadsafe(
-            bot.delete_msg(message_id=message_id), loop=loop
-        ),
+        lambda: loop.create_task(bot.delete_msg(message_id=message_id)),
     )
