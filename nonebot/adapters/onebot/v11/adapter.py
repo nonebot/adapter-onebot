@@ -21,6 +21,7 @@ from nonebot.drivers import (
 )
 
 from nonebot.adapters import Adapter as BaseAdapter
+from nonebot.adapters.onebot.collator import Collator
 
 from . import event
 from .bot import Bot
@@ -31,18 +32,25 @@ from .exception import NetworkError, ApiNotAvailable
 from .utils import ResultStore, log, get_auth_bearer, _handle_api_result
 
 RECONNECT_INTERVAL = 3.0
+DEFAULT_MODELS: List[Type[Event]] = []
+for model_name in dir(event):
+    model = getattr(event, model_name)
+    if not inspect.isclass(model) or not issubclass(model, Event):
+        continue
+    DEFAULT_MODELS.append(model)
 
 
 class Adapter(BaseAdapter):
-    # init all event models
-    event_models: StringTrie = StringTrie(separator=".")
-    """所有事件模型索引"""
 
-    for model_name in dir(event):
-        model = getattr(event, model_name)
-        if not inspect.isclass(model) or not issubclass(model, Event):
-            continue
-        event_models["." + model.__event__] = model
+    event_models = Collator(
+        "OneBot V11",
+        DEFAULT_MODELS,
+        (
+            "post_type",
+            ("message_type", "notice_type", "request_type", "meta_event_type"),
+            "sub_type",
+        ),
+    )
 
     @overrides(BaseAdapter)
     def __init__(self, driver: Driver, **kwargs: Any):
@@ -390,12 +398,7 @@ class Adapter(BaseAdapter):
             return
 
         try:
-            post_type = json_data["post_type"]
-            detail_type = json_data.get(f"{post_type}_type")
-            detail_type = f".{detail_type}" if detail_type else ""
-            sub_type = json_data.get("sub_type")
-            sub_type = f".{sub_type}" if sub_type else ""
-            models = cls.get_event_model(post_type + detail_type + sub_type)
+            models = cls.get_event_model(json_data)
             for model in models:
                 try:
                     event = model.parse_obj(json_data)
@@ -415,25 +418,18 @@ class Adapter(BaseAdapter):
             )
 
     @classmethod
-    def add_custom_model(cls, model: Type[Event]) -> None:
+    def add_custom_model(cls, *model: Type[Event]) -> None:
         """插入或覆盖一个自定义的 Event 类型。
-
-        需提供 `__event__` 属性，进行事件模型索引，
-        格式为 `{post_type}[.{sub_type}]`，如: `message.private`。
 
         参数:
             model: 自定义的 Event 类型
         """
-        if not hasattr(model, "__event__"):
-            raise ValueError("Event model's `__event__` attribute must be set")
-        cls.event_models["." + model.__event__] = model
+        cls.event_models.add_model(*model)
 
     @classmethod
-    def get_event_model(cls, event_name: str) -> List[Type[Event]]:
-        """根据事件名获取对应 `Event Model` 及 `FallBack Event Model` 列表，不包括基类 `Event`。"""
-        return [model.value for model in cls.event_models.prefixes("." + event_name)][
-            ::-1
-        ]
+    def get_event_model(cls, data: Dict[str, Any]) -> List[Type[Event]]:
+        """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
+        return cls.event_models.get_model(data)
 
     @classmethod
     def custom_send(
