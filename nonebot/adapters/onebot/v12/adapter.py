@@ -1,43 +1,50 @@
-import inspect
-import asyncio
 import json
+import asyncio
+import inspect
+from typing import Any, Dict, List, Type, Optional, cast
 
 from pygtrie import StringTrie
-from typing import Any, Dict, List, Optional, Type, cast
-
-from nonebot.adapters import Adapter as BaseAdapter
-from nonebot.exception import ApiNotAvailable, WebSocketClosed
 from nonebot.typing import overrides
+from nonebot.utils import DataclassEncoder, escape_tag
+from nonebot.exception import ApiNotAvailable, WebSocketClosed
 from nonebot.drivers import (
     URL,
     Driver,
     Request,
     Response,
     WebSocket,
-    ReverseDriver,
     ForwardDriver,
+    ReverseDriver,
     HTTPServerSetup,
     WebSocketServerSetup,
 )
-from nonebot.utils import DataclassEncoder, escape_tag
+
+from nonebot.adapters import Adapter as BaseAdapter
+from nonebot.adapters.onebot.collator import Collator
 
 from . import event
 from .bot import Bot
 from .event import Event
 from .config import Config
 from .exception import NetworkError
-from .utils import get_auth_bearer, log, ResultStore, _handle_api_result
+from .utils import ResultStore, log, get_auth_bearer, _handle_api_result
 
 RECONNECT_INTERVAL = 3.0
+DEFAULT_MODELS: List[Type[Event]] = []
+for model_name in dir(event):
+    model = getattr(event, model_name)
+    if not inspect.isclass(model) or not issubclass(model, Event):
+        continue
+    DEFAULT_MODELS.append(model)
 
 
 class Adapter(BaseAdapter):
-    event_models = StringTrie = StringTrie(separator=".")
-
-    for model_name in dir(event):
-        model = getattr(event, model_name)
-        if inspect.isclass(model) and issubclass(model, Event):
-            event_models["." + model.full_type()] = model
+    event_models: StringTrie = StringTrie(separator="/")
+    event_models["/"] = Collator(
+        "OneBot V11",
+        DEFAULT_MODELS,
+        ("type", "detail_type", "sub_type"),
+    )
 
     @classmethod
     @overrides(BaseAdapter)
@@ -94,7 +101,7 @@ class Adapter(BaseAdapter):
                 )
             )
         if self.onebot_config.onebot_ws_urls:
-            if isinstance(self.driver, ReverseDriver):
+            if not isinstance(self.driver, ForwardDriver):
                 log(
                     "WARNING",
                     f"Current driver {self.config.driver} don't support forward connections! Ignored",
@@ -316,14 +323,35 @@ class Adapter(BaseAdapter):
             await asyncio.sleep(RECONNECT_INTERVAL)
 
     @classmethod
-    def add_custom_model(cls, model: Type[Event]) -> None:
-        cls.event_models["." + model.full_type()] = model
+    def add_custom_model(
+        cls,
+        *model: Type[Event],
+        impl: Optional[str] = None,
+        platform: Optional[str] = None,
+    ) -> None:
+        if platform is not None and impl is None:
+            raise ValueError("Impl must be specified")
+        if impl is not None and platform is None:
+            raise ValueError("platform must be specified")
+        key = f"/{impl}/{platform}" if impl and platform else ""
+        if key not in cls.event_models:
+            cls.event_models[key] = Collator(
+                "OneBot V11",
+                [],
+                ("post_type", "detail_type", "sub_type"),
+            )
+        cls.event_models[key].add_model(*model)  # type: ignore
 
     @classmethod
-    def get_event_model(cls, event_type: str) -> List[Type[Event]]:
-        return [model.value for model in cls.event_models.prefixes("." + event_type)][
-            ::-1
-        ]
+    def get_event_model(cls, data: Dict[str, Any]) -> List[Type[Event]]:
+        """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
+        key = f"/{data.get('impl')}/{data.get('platform')}"
+        models = []
+        for platform_collator in reversed(
+            [c.value for c in cls.event_models.prefixes(key)]
+        ):
+            models.extend(platform_collator.get_model(data))
+        return models
 
     @classmethod
     def json2event(
@@ -338,12 +366,7 @@ class Adapter(BaseAdapter):
             return None
 
         try:
-            event_type = json_data["type"]
-            detail_type = json_data.get("detail_type", "")
-            event_type = event_type + f".{detail_type}" if detail_type else event_type
-            sub_type = json_data.get("sub_type", "")
-            event_type = event_type + f".{sub_type}" if sub_type else event_type
-            for model in cls.get_event_model(event_type):
+            for model in cls.get_event_model(json_data):
                 try:
                     event = model.parse_obj(json_data)
                     break
