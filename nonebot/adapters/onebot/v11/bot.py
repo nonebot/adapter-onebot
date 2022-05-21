@@ -131,8 +131,8 @@ async def send(
     bot: "Bot",
     event: Event,
     message: Union[str, Message, MessageSegment],
-    reply_message: bool = False,
     at_sender: bool = False,
+    reply_message: bool = False,
     **params: Any,  # extra options passed to send_msg API
 ) -> Any:
     """默认回复消息处理函数。"""

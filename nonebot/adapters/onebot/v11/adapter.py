@@ -2,7 +2,8 @@ import hmac
 import json
 import asyncio
 import inspect
-from typing import Any, Dict, List, Type, Union, Callable, Optional, cast
+import contextlib
+from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 from pygtrie import StringTrie
 from nonebot.typing import overrides
@@ -22,14 +23,16 @@ from nonebot.drivers import (
 
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
+from nonebot.adapters.onebot.store import ResultStore
+from nonebot.adapters.onebot.exception import NetworkError, ApiNotAvailable
+from nonebot.adapters.onebot.utils import get_auth_bearer, handle_api_result
 
 from . import event
 from .bot import Bot
+from .utils import log
 from .config import Config
 from .event import Event, LifecycleMetaEvent
 from .message import Message, MessageSegment
-from .exception import NetworkError, ApiNotAvailable
-from .utils import ResultStore, log, get_auth_bearer, _handle_api_result
 
 RECONNECT_INTERVAL = 3.0
 DEFAULT_MODELS: List[Type[Event]] = []
@@ -51,6 +54,8 @@ class Adapter(BaseAdapter):
             "sub_type",
         ),
     )
+
+    _result_store = ResultStore()
 
     @overrides(BaseAdapter)
     def __init__(self, driver: Driver, **kwargs: Any):
@@ -112,14 +117,14 @@ class Adapter(BaseAdapter):
         log("DEBUG", f"Calling API <y>{api}</y>")
 
         if websocket:
-            seq = ResultStore.get_seq()
+            seq = self._result_store.get_seq()
             json_data = json.dumps(
-                {"action": api, "params": data, "echo": {"seq": seq}},
+                {"action": api, "params": data, "echo": str(seq)},
                 cls=DataclassEncoder,
             )
             await websocket.send(json_data)
-            return _handle_api_result(
-                await ResultStore.fetch(bot.self_id, seq, timeout)
+            return handle_api_result(
+                await self._result_store.fetch(bot.self_id, seq, timeout)
             )
 
         elif isinstance(self.driver, ForwardDriver):
@@ -150,7 +155,7 @@ class Adapter(BaseAdapter):
                     if not response.content:
                         raise ValueError("Empty response")
                     result = json.loads(response.content)
-                    return _handle_api_result(result)
+                    return handle_api_result(result)
                 raise NetworkError(
                     f"HTTP request received unexpected "
                     f"status code: {response.status_code}"
@@ -185,7 +190,7 @@ class Adapter(BaseAdapter):
             json_data = json.loads(data)
             event = self.json_to_event(json_data)
             if event:
-                bot = self.bots.get(self_id)
+                bot = self.bots.get(self_id, None)
                 if not bot:
                     bot = Bot(self, self_id)
                     self.bot_connect(bot)
@@ -233,15 +238,12 @@ class Adapter(BaseAdapter):
         except Exception as e:
             log(
                 "ERROR",
-                "<r><bg #f8bbd0>Error while process data from websocket"
-                f"for bot {escape_tag(self_id)}.</bg #f8bbd0></r>",
+                f"<r><bg #f8bbd0>Error while process data from websocketfor bot {escape_tag(self_id)}.</bg #f8bbd0></r>",
                 e,
             )
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 await websocket.close()
-            except Exception:
-                pass
             self.connections.pop(self_id, None)
             self.bot_disconnect(bot)
 
@@ -277,14 +279,8 @@ class Adapter(BaseAdapter):
                 if token
                 else "Missing Authorization Header"
             )
-            log(
-                "WARNING",
-                msg,
-            )
-            return Response(
-                403,
-                content=msg,
-            )
+            log("WARNING", msg)
+            return Response(403, content=msg)
 
     async def _start_forward(self) -> None:
         for url in self.onebot_config.onebot_ws_urls:
@@ -375,6 +371,22 @@ class Adapter(BaseAdapter):
             await asyncio.sleep(RECONNECT_INTERVAL)
 
     @classmethod
+    def add_custom_model(cls, *model: Type[Event]) -> None:
+        """插入或覆盖一个自定义的 Event 类型。
+
+        参数:
+            model: 自定义的 Event 类型
+        """
+        cls.event_models.add_model(*model)
+
+    @classmethod
+    def get_event_model(
+        cls, data: Dict[str, Any]
+    ) -> Generator[Type[Event], None, None]:
+        """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
+        yield from cls.event_models.get_model(data)
+
+    @classmethod
     def json_to_event(
         cls, json_data: Any, self_id: Optional[str] = None
     ) -> Optional[Event]:
@@ -394,12 +406,11 @@ class Adapter(BaseAdapter):
 
         if "post_type" not in json_data:
             if self_id is not None:
-                ResultStore.add_result(self_id, json_data)
+                cls._result_store.add_result(self_id, json_data)
             return
 
         try:
-            models = cls.get_event_model(json_data)
-            for model in models:
+            for model in cls.get_event_model(json_data):
                 try:
                     event = model.parse_obj(json_data)
                     break
@@ -416,20 +427,6 @@ class Adapter(BaseAdapter):
                 f"Raw: {escape_tag(str(json_data))}</bg #f8bbd0></r>",
                 e,
             )
-
-    @classmethod
-    def add_custom_model(cls, *model: Type[Event]) -> None:
-        """插入或覆盖一个自定义的 Event 类型。
-
-        参数:
-            model: 自定义的 Event 类型
-        """
-        cls.event_models.add_model(*model)
-
-    @classmethod
-    def get_event_model(cls, data: Dict[str, Any]) -> List[Type[Event]]:
-        """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
-        return cls.event_models.get_model(data)
 
     @classmethod
     def custom_send(

@@ -1,14 +1,17 @@
-from typing import Iterable, Type, Union
+from typing import Any, Type, Union, Iterable
 
 from nonebot.typing import overrides
+
 from nonebot.adapters import Message as BaseMessage
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
+    """OneBot v12 协议 MessageSegment 适配。具体方法参考协议消息段类型或源码。"""
+
     @classmethod
     @overrides(BaseMessageSegment)
-    def get_message_class(cls) -> BaseMessage["Message"]:
+    def get_message_class(cls) -> Type["Message"]:
         return Message
 
     @overrides(BaseMessageSegment)
@@ -21,63 +24,40 @@ class MessageSegment(BaseMessageSegment["Message"]):
         return f"[{self.type}:{params}]"
 
     @overrides(BaseMessageSegment)
-    def __add__(
-        self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
-    ) -> "Message":
-        return Message(self) + (
-            MessageSegment.text(other) if isinstance(other, str) else other
-        )
-
-    @overrides(BaseMessageSegment)
-    def __radd__(
-        self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
-    ) -> "Message":
-        return (
-            MessageSegment.text(other) if isinstance(other, str) else Message(other)
-        ) + self
-
-    @overrides(BaseMessageSegment)
     def is_text(self) -> bool:
         return self.type == "text"
 
     @staticmethod
     def text(text: str, **kwargs) -> "MessageSegment":
-        kwargs["text"] = text
-        return MessageSegment("text", kwargs)
+        return MessageSegment("text", {**kwargs, "text": text})
 
     @staticmethod
     def mention(user_id: str, **kwargs) -> "MessageSegment":
-        kwargs["user_id"] = user_id
-        return MessageSegment("mention", kwargs)
+        return MessageSegment("mention", {**kwargs, "user_id": user_id})
 
     @staticmethod
     def mention_all(**kwargs) -> "MessageSegment":
-        return MessageSegment("mention_all", kwargs)
+        return MessageSegment("mention_all", {**kwargs})
 
     @staticmethod
     def image(file_id: str, **kwargs) -> "MessageSegment":
-        kwargs["file_id"] = file_id
-        return MessageSegment("image", kwargs)
+        return MessageSegment("image", {**kwargs, "file_id": file_id})
 
     @staticmethod
     def voice(file_id: str, **kwargs) -> "MessageSegment":
-        kwargs["file_id"] = file_id
-        return MessageSegment("voice", kwargs)
+        return MessageSegment("voice", {**kwargs, "file_id": file_id})
 
     @staticmethod
     def audio(file_id: str, **kwargs) -> "MessageSegment":
-        kwargs["file_id"] = file_id
-        return MessageSegment("audio", kwargs)
+        return MessageSegment("audio", {**kwargs, "file_id": file_id})
 
     @staticmethod
     def video(file_id: str, **kwargs) -> "MessageSegment":
-        kwargs["file_id"] = file_id
-        return MessageSegment("video", kwargs)
+        return MessageSegment("video", {**kwargs, "file_id": file_id})
 
     @staticmethod
     def file(file_id: str, **kwargs) -> "MessageSegment":
-        kwargs["file_id"] = file_id
-        return MessageSegment("file", kwargs)
+        return MessageSegment("file", {**kwargs, "file_id": file_id})
 
     @staticmethod
     def location(
@@ -87,20 +67,20 @@ class MessageSegment(BaseMessageSegment["Message"]):
         content: str,
         **kwargs,
     ) -> "MessageSegment":
-        kwargs["latitude"] = latitude
-        kwargs["longitude"] = longitude
-        kwargs["title"] = title
-        kwargs["content"] = content
         return MessageSegment(
             "location",
-            kwargs,
+            {
+                **kwargs,
+                "latitude": latitude,
+                "longitude": longitude,
+                "title": title,
+                "content": content,
+            },
         )
 
     @staticmethod
-    def reply(message_id: str, user_id: str, **kwargs) -> "MessageSegment":
-        kwargs["message_id"] = message_id
-        kwargs["user_id"] = user_id
-        return MessageSegment("reply", kwargs)
+    def reply(message_id: str, **kwargs: Any) -> "MessageSegment":
+        return MessageSegment("reply", {**kwargs, "message_id": message_id})
 
 
 class Message(BaseMessage[MessageSegment]):
@@ -108,22 +88,6 @@ class Message(BaseMessage[MessageSegment]):
     @overrides(BaseMessage)
     def get_segment_class(cls) -> Type[MessageSegment]:
         return MessageSegment
-
-    @overrides(BaseMessage)
-    def __add__(
-        self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
-    ) -> "Message":
-        return super(Message, self).__add__(
-            MessageSegment.text(other) if isinstance(other, str) else other
-        )
-
-    @overrides(BaseMessage)
-    def __radd__(
-        self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
-    ) -> "Message":
-        return super(Message, self).__radd__(
-            MessageSegment.text(other) if isinstance(other, str) else other
-        )
 
     @staticmethod
     @overrides(BaseMessage)

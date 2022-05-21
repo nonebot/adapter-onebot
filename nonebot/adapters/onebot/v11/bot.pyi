@@ -12,8 +12,8 @@ async def send(
     bot: "Bot",
     event: Event,
     message: Union[str, Message, MessageSegment],
-    reply_message: bool = ...,
     at_sender: bool = ...,
+    reply_message: bool = ...,
     **kwargs: Any,
 ) -> Any: ...
 

@@ -56,7 +56,7 @@ class Collator(Generic[E]):
                     raise ValueError(f"Invalid data with incorrect fields: {fields}")
                 field = fields[0] if fields else None
             else:
-                field = data.get(key, None)
+                field = data.get(key)
             keys.append(field)
         return self._generate_key(keys)
 

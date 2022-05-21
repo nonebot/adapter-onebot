@@ -1,16 +1,14 @@
-import inspect
 from typing_extensions import Literal
-from typing import TYPE_CHECKING, List, Type, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
-from pygtrie import StringTrie
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag
 
 from nonebot.adapters import Event as BaseEvent
+from nonebot.adapters.onebot.exception import NoLogException
 
 from .message import Message
-from .exception import NoLogException
 
 if TYPE_CHECKING:
     from .bot import Bot
@@ -22,7 +20,6 @@ class Event(BaseEvent):
     [OneBot 文档]: https://github.com/botuniverse/onebot-11/blob/master/README.md
     """
 
-    __event__ = ""
     time: int
     self_id: int
     post_type: str
@@ -41,10 +38,6 @@ class Event(BaseEvent):
 
     @overrides(BaseEvent)
     def get_message(self) -> Message:
-        raise ValueError("Event has no message!")
-
-    @overrides(BaseEvent)
-    def get_plaintext(self) -> str:
         raise ValueError("Event has no message!")
 
     @overrides(BaseEvent)
@@ -119,7 +112,6 @@ class Status(BaseModel):
 class MessageEvent(Event):
     """消息事件"""
 
-    __event__ = "message"
     post_type: Literal["message"]
     sub_type: str
     user_id: int
@@ -154,10 +146,6 @@ class MessageEvent(Event):
         return self.message
 
     @overrides(Event)
-    def get_plaintext(self) -> str:
-        return self.message.extract_plain_text()
-
-    @overrides(Event)
     def get_user_id(self) -> str:
         return str(self.user_id)
 
@@ -173,7 +161,6 @@ class MessageEvent(Event):
 class PrivateMessageEvent(MessageEvent):
     """私聊消息"""
 
-    __event__ = "message.private"
     message_type: Literal["private"]
 
     @overrides(Event)
@@ -195,7 +182,6 @@ class PrivateMessageEvent(MessageEvent):
 class GroupMessageEvent(MessageEvent):
     """群消息"""
 
-    __event__ = "message.group"
     message_type: Literal["group"]
     group_id: int
     anonymous: Optional[Anonymous] = None
@@ -224,7 +210,6 @@ class GroupMessageEvent(MessageEvent):
 class NoticeEvent(Event):
     """通知事件"""
 
-    __event__ = "notice"
     post_type: Literal["notice"]
     notice_type: str
 
@@ -239,7 +224,6 @@ class NoticeEvent(Event):
 class GroupUploadNoticeEvent(NoticeEvent):
     """群文件上传事件"""
 
-    __event__ = "notice.group_upload"
     notice_type: Literal["group_upload"]
     user_id: int
     group_id: int
@@ -257,7 +241,6 @@ class GroupUploadNoticeEvent(NoticeEvent):
 class GroupAdminNoticeEvent(NoticeEvent):
     """群管理员变动"""
 
-    __event__ = "notice.group_admin"
     notice_type: Literal["group_admin"]
     sub_type: str
     user_id: int
@@ -279,7 +262,6 @@ class GroupAdminNoticeEvent(NoticeEvent):
 class GroupDecreaseNoticeEvent(NoticeEvent):
     """群成员减少事件"""
 
-    __event__ = "notice.group_decrease"
     notice_type: Literal["group_decrease"]
     sub_type: str
     user_id: int
@@ -302,7 +284,6 @@ class GroupDecreaseNoticeEvent(NoticeEvent):
 class GroupIncreaseNoticeEvent(NoticeEvent):
     """群成员增加事件"""
 
-    __event__ = "notice.group_increase"
     notice_type: Literal["group_increase"]
     sub_type: str
     user_id: int
@@ -325,7 +306,6 @@ class GroupIncreaseNoticeEvent(NoticeEvent):
 class GroupBanNoticeEvent(NoticeEvent):
     """群禁言事件"""
 
-    __event__ = "notice.group_ban"
     notice_type: Literal["group_ban"]
     sub_type: str
     user_id: int
@@ -349,7 +329,6 @@ class GroupBanNoticeEvent(NoticeEvent):
 class FriendAddNoticeEvent(NoticeEvent):
     """好友添加事件"""
 
-    __event__ = "notice.friend_add"
     notice_type: Literal["friend_add"]
     user_id: int
 
@@ -365,7 +344,6 @@ class FriendAddNoticeEvent(NoticeEvent):
 class GroupRecallNoticeEvent(NoticeEvent):
     """群消息撤回事件"""
 
-    __event__ = "notice.group_recall"
     notice_type: Literal["group_recall"]
     user_id: int
     group_id: int
@@ -388,7 +366,6 @@ class GroupRecallNoticeEvent(NoticeEvent):
 class FriendRecallNoticeEvent(NoticeEvent):
     """好友消息撤回事件"""
 
-    __event__ = "notice.friend_recall"
     notice_type: Literal["friend_recall"]
     user_id: int
     message_id: int
@@ -405,7 +382,6 @@ class FriendRecallNoticeEvent(NoticeEvent):
 class NotifyEvent(NoticeEvent):
     """提醒事件"""
 
-    __event__ = "notice.notify"
     notice_type: Literal["notify"]
     sub_type: str
     user_id: int
@@ -423,7 +399,6 @@ class NotifyEvent(NoticeEvent):
 class PokeNotifyEvent(NotifyEvent):
     """戳一戳提醒事件"""
 
-    __event__ = "notice.notify.poke"
     sub_type: Literal["poke"]
     target_id: int
     group_id: Optional[int] = None
@@ -442,7 +417,6 @@ class PokeNotifyEvent(NotifyEvent):
 class LuckyKingNotifyEvent(NotifyEvent):
     """群红包运气王提醒事件"""
 
-    __event__ = "notice.notify.lucky_king"
     sub_type: Literal["lucky_king"]
     target_id: int
 
@@ -462,7 +436,6 @@ class LuckyKingNotifyEvent(NotifyEvent):
 class HonorNotifyEvent(NotifyEvent):
     """群荣誉变更提醒事件"""
 
-    __event__ = "notice.notify.honor"
     sub_type: Literal["honor"]
     honor_type: str
 
@@ -475,7 +448,6 @@ class HonorNotifyEvent(NotifyEvent):
 class RequestEvent(Event):
     """请求事件"""
 
-    __event__ = "request"
     post_type: Literal["request"]
     request_type: str
 
@@ -490,7 +462,6 @@ class RequestEvent(Event):
 class FriendRequestEvent(RequestEvent):
     """加好友请求事件"""
 
-    __event__ = "request.friend"
     request_type: Literal["friend"]
     user_id: int
     comment: str
@@ -516,7 +487,6 @@ class FriendRequestEvent(RequestEvent):
 class GroupRequestEvent(RequestEvent):
     """加群请求/邀请事件"""
 
-    __event__ = "request.group"
     request_type: Literal["group"]
     sub_type: str
     group_id: int
@@ -547,7 +517,6 @@ class GroupRequestEvent(RequestEvent):
 class MetaEvent(Event):
     """元事件"""
 
-    __event__ = "meta_event"
     post_type: Literal["meta_event"]
     meta_event_type: str
 
@@ -566,7 +535,6 @@ class MetaEvent(Event):
 class LifecycleMetaEvent(MetaEvent):
     """生命周期元事件"""
 
-    __event__ = "meta_event.lifecycle"
     meta_event_type: Literal["lifecycle"]
     sub_type: str
 
@@ -574,7 +542,6 @@ class LifecycleMetaEvent(MetaEvent):
 class HeartbeatMetaEvent(MetaEvent):
     """心跳元事件"""
 
-    __event__ = "meta_event.heartbeat"
     meta_event_type: Literal["heartbeat"]
     status: Status
     interval: int

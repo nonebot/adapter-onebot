@@ -12,6 +12,7 @@ async def send(
     event: Event,
     message: Union[str, Message, MessageSegment],
     at_sender: bool = ...,
+    reply_message: bool = ...,
     **kwargs: Any,
 ) -> Any: ...
 
@@ -40,9 +41,11 @@ class Bot(BaseBot):
     async def send_message(
         self,
         *,
-        detail_type: Optional[str],
-        group_id: Optional[str],
-        user_id: Optional[str],
+        detail_type: str,
+        user_id: Optional[str] = ...,
+        group_id: Optional[str] = ...,
+        guild_id: Optional[str] = ...,
+        channel_id: Optional[str] = ...,
         message: Union[str, Message],
     ) -> Dict[str, Any]:
         """发送消息

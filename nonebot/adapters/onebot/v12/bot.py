@@ -1,13 +1,52 @@
 import re
-from typing import Callable, Union, Any
+from typing import Any, Union, Callable
 
-from nonebot.adapters import Bot as BaseBot
 from nonebot.typing import overrides
 from nonebot.message import handle_event
 
-from .utils import log
-from .event import Event, MessageEvent
+from nonebot.adapters import Bot as BaseBot
+
+from .log import log
 from .message import Message, MessageSegment
+from .event import Event, Reply, MessageEvent
+
+
+def _check_reply(bot: "Bot", event: MessageEvent) -> None:
+    """检查消息中存在的回复，去除并赋值 `event.reply`, `event.to_me`。
+
+    参数:
+        bot: Bot 对象
+        event: MessageEvent 对象
+    """
+    try:
+        index = list(map(lambda x: x.type == "reply", event.message)).index(True)
+    except ValueError:
+        return
+
+    msg_seg = event.message[index]
+
+    try:
+        event.reply = Reply.parse_obj(msg_seg.data)
+        # event.reply = Reply.parse_obj(
+        #     await bot.get_msg(message_id=msg_seg.data["id"])
+        # )
+    except Exception as e:
+        log("WARNING", f"Error when getting message reply info: {repr(e)}", e)
+        return
+
+    # ensure string comparation
+    if str(event.reply.user_id) == str(event.self_id):
+        event.to_me = True
+
+    del event.message[index]
+    if len(event.message) > index and event.message[index].type == "at":
+        del event.message[index]
+    if len(event.message) > index and event.message[index].type == "text":
+        event.message[index].data["text"] = event.message[index].data["text"].lstrip()
+        if not event.message[index].data["text"]:
+            del event.message[index]
+    if not event.message:
+        event.message.append(MessageSegment.text(""))
 
 
 def _check_to_me(bot: "Bot", event: MessageEvent) -> None:
@@ -101,10 +140,13 @@ async def send(
     event: Event,
     message: Union[str, Message, MessageSegment],
     at_sender: bool = False,
+    reply_message: bool = False,
     **params: Any,
 ) -> Any:
     """默认回复消息处理函数。"""
     event_dict = event.dict()
+
+    params.setdefault("detail_type", event_dict["detail_type"])
 
     if "user_id" in event_dict:  # copy the user_id to the API params if exists
         params.setdefault("user_id", event_dict["user_id"])
@@ -114,15 +156,15 @@ async def send(
     if "group_id" in event_dict:  # copy the group_id to the API params if exists
         params.setdefault("group_id", event_dict["group_id"])
 
-    if "detail_type" not in params:  # guess the detail_type
-        if "group_id" in params:
-            params["detail_type"] = "group"
-        elif "user_id" in params:
-            params["detail_type"] = "private"
-        else:
-            raise ValueError("Cannot guess message type to reply!")
+    if (
+        "guild_id" in event_dict and "channel_id" in event_dict
+    ):  # copy the guild_id to the API params if exists
+        params.setdefault("guild_id", event_dict["guild_id"])
+        params.setdefault("channel_id", event_dict["channel_id"])
 
     full_message = Message()  # create a new message with at sender segment
+    if reply_message and "message_id" in event_dict:
+        full_message += MessageSegment.reply(event_dict["message_id"])
     if at_sender and params["detail_type"] != "private":
         full_message += MessageSegment.mention(params["user_id"]) + " "
     full_message += message
@@ -143,6 +185,7 @@ class Bot(BaseBot):
 
     async def handle_event(self, event: Event) -> None:
         if isinstance(event, MessageEvent):
+            _check_reply(self, event)
             _check_to_me(self, event)
             _check_nickname(self, event)
         await handle_event(self, event)
