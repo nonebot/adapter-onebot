@@ -1,4 +1,8 @@
+from base64 import b64encode
 from typing import Any, Dict, Optional
+
+from nonebot.typing import overrides
+from nonebot.utils import DataclassEncoder
 
 from .exception import ActionFailed
 
@@ -33,3 +37,13 @@ def handle_api_result(result: Optional[Dict[str, Any]]) -> Any:
         if result.get("status") == "failed":
             raise ActionFailed(**result)
         return result.get("data")
+
+
+class CustomEncoder(DataclassEncoder):
+    """OneBot V12 使用的 `JSONEncoder`"""
+
+    @overrides(DataclassEncoder)
+    def default(self, o):
+        if isinstance(o, bytes):
+            return b64encode(o).decode()
+        return super(CustomEncoder, self).default(o)

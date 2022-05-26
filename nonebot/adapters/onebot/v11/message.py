@@ -2,14 +2,15 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing import Any, Type, Tuple, Union, Iterable, Optional, cast
+from typing import Type, Tuple, Union, Iterable, Optional, cast
 
 from nonebot.typing import overrides
 
+from nonebot.adapters.onebot.utils import b2s
 from nonebot.adapters import Message as BaseMessage
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
-from .utils import log, _b2s, escape, unescape
+from .utils import log, escape, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -56,7 +57,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @staticmethod
     def anonymous(ignore_failure: Optional[bool] = None) -> "MessageSegment":
-        return MessageSegment("anonymous", {"ignore": _b2s(ignore_failure)})
+        return MessageSegment("anonymous", {"ignore": b2s(ignore_failure)})
 
     @staticmethod
     def at(user_id: Union[int, str]) -> "MessageSegment":
@@ -106,8 +107,8 @@ class MessageSegment(BaseMessageSegment["Message"]):
             {
                 "file": file,
                 "type": type_,
-                "cache": _b2s(cache),
-                "proxy": _b2s(proxy),
+                "cache": b2s(cache),
+                "proxy": b2s(proxy),
                 "timeout": timeout,
             },
         )
@@ -191,9 +192,9 @@ class MessageSegment(BaseMessageSegment["Message"]):
             "record",
             {
                 "file": file,
-                "magic": _b2s(magic),
-                "cache": _b2s(cache),
-                "proxy": _b2s(proxy),
+                "magic": b2s(magic),
+                "cache": b2s(cache),
+                "proxy": b2s(proxy),
                 "timeout": timeout,
             },
         )
@@ -242,8 +243,8 @@ class MessageSegment(BaseMessageSegment["Message"]):
             "video",
             {
                 "file": file,
-                "cache": _b2s(cache),
-                "proxy": _b2s(proxy),
+                "cache": b2s(cache),
+                "proxy": b2s(proxy),
                 "timeout": timeout,
             },
         )

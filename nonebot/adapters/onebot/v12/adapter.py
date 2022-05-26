@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Type, Optional, Generator, cast
 import msgpack
 from pygtrie import StringTrie
 from nonebot.typing import overrides
+from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
-from nonebot.utils import DataclassEncoder, escape_tag
 from nonebot.drivers import (
     URL,
     Driver,
@@ -25,7 +25,11 @@ from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.exception import NetworkError, ApiNotAvailable
-from nonebot.adapters.onebot.utils import get_auth_bearer, handle_api_result
+from nonebot.adapters.onebot.utils import (
+    CustomEncoder,
+    get_auth_bearer,
+    handle_api_result,
+)
 
 from . import event
 from .bot import Bot
@@ -127,7 +131,7 @@ class Adapter(BaseAdapter):
             seq = self._result_store.get_seq()
             json_data = json.dumps(
                 {"action": api, "params": data, "echo": str(seq)},
-                cls=DataclassEncoder,
+                cls=CustomEncoder,
             )
             await websocket.send(json_data)
             return handle_api_result(
@@ -150,9 +154,7 @@ class Adapter(BaseAdapter):
                 api_url,
                 headers=headers,
                 timeout=timeout,
-                content=json.dumps(
-                    {"action": api, "params": data}, cls=DataclassEncoder
-                ),
+                content=json.dumps({"action": api, "params": data}, cls=CustomEncoder),
             )
 
             try:
