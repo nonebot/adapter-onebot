@@ -1,5 +1,5 @@
-import asyncio
 import re
+import asyncio
 from enum import IntEnum, auto
 from collections import defaultdict
 from asyncio import get_running_loop
@@ -8,9 +8,9 @@ from typing import Any, Dict, List, Union, Optional, DefaultDict
 from nonebot.matcher import Matcher
 from nonebot.params import Depends, EventMessage
 
-from .message import Message, MessageSegment
-from .event import MessageEvent, GroupMessageEvent, Event
 from .bot import Bot
+from .message import Message, MessageSegment
+from .event import Event, MessageEvent, GroupMessageEvent
 
 
 def extract_image_urls(message: Message) -> List[str]:
@@ -287,7 +287,7 @@ async def autorevoke_send(
     at_sender: bool = False,
     revoke_interval: int = 60,
     **kwargs,
-):
+) -> asyncio.TimerHandle:
     """发出消息指定时间后自动撤回
 
     参数:
@@ -298,7 +298,7 @@ async def autorevoke_send(
         revoke_interval: 撤回消息的间隔时间, 单位为秒
 
     返回:
-        [`TimeHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
+        asyncio.TimerHandle: [`TimerHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
     """
     message_data: Dict[str, Any] = await bot.send(
         event, message, at_sender=at_sender, **kwargs
