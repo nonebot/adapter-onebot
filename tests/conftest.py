@@ -16,7 +16,8 @@ def import_hook():
 @pytest.fixture
 async def init_adapter(app: App, import_hook):
     import nonebot
-    from nonebot.adapters.onebot.v11 import Adapter
+    from nonebot.adapters.onebot import V11Adapter, V12Adapter
 
     driver = nonebot.get_driver()
-    driver.register_adapter(Adapter)
+    driver.register_adapter(V11Adapter)
+    driver.register_adapter(V12Adapter)

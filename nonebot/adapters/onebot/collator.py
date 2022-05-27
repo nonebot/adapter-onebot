@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Dict, List, Type, Tuple, Union, Generic, TypeVar, Optional
 
 from pygtrie import StringTrie
@@ -81,7 +80,8 @@ class Collator(Generic[E]):
                 "Invalid model with incorrect prefix "
                 f"keys: {dict(zip(self.keys, keys))}"
             )
-        return SEPARATOR + SEPARATOR.join(filter(None, keys))
+        tree_keys = [""] + list(filter(None, keys))
+        return SEPARATOR.join(tree_keys)
 
     def _check_key_list(self, keys: List[Optional[str]]) -> bool:
         return all(keys) or not any(keys[keys.index(None) :])
