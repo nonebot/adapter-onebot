@@ -84,7 +84,8 @@ class Collator(Generic[E]):
         return SEPARATOR.join(tree_keys)
 
     def _check_key_list(self, keys: List[Optional[str]]) -> bool:
-        return all(keys) or not any(keys[keys.index(None) :])
+        truthy = tuple(map(bool, keys))
+        return all(truthy) or not any(truthy[truthy.index(False) :])
 
     def _get_model_field(self, model: Type[E], field: str) -> Optional[ModelField]:
         return model.__fields__.get(field, None)
