@@ -29,6 +29,7 @@ nonebot2 = "^2.0.0-beta.3"
 isort = "^5.10.1"
 black = "^22.1.0"
 pytest-cov = "^3.0.0"
+pre-commit = "^2.19.0"
 pytest-asyncio = "^0.18.1"
 nonebug = { git = "https://github.com/nonebot/nonebug.git" }
 nonebot2 = { git = "https://github.com/nonebot/nonebot2.git" }
