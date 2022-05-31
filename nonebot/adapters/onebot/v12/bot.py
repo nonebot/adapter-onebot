@@ -1,8 +1,8 @@
-"""OneBot v11 机器人定义。
+"""OneBot v12 机器人定义。
 
 FrontMatter:
     sidebar_position: 3
-    description: onebot.v11.bot 模块
+    description: onebot.v12.bot 模块
 """
 
 import re
@@ -13,12 +13,12 @@ from nonebot.message import handle_event
 
 from nonebot.adapters import Bot as BaseBot
 
-from .utils import log, escape
+from .log import log
 from .message import Message, MessageSegment
 from .event import Event, Reply, MessageEvent
 
 
-async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
+def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     """检查消息中存在的回复，去除并赋值 `event.reply`, `event.to_me`。
 
     参数:
@@ -29,15 +29,22 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
         index = list(map(lambda x: x.type == "reply", event.message)).index(True)
     except ValueError:
         return
+
     msg_seg = event.message[index]
+
     try:
-        event.reply = Reply.parse_obj(await bot.get_msg(message_id=msg_seg.data["id"]))
+        event.reply = Reply.parse_obj(msg_seg.data)
+        # event.reply = Reply.parse_obj(
+        #     await bot.get_msg(message_id=msg_seg.data["id"])
+        # )
     except Exception as e:
         log("WARNING", f"Error when getting message reply info: {repr(e)}", e)
         return
+
     # ensure string comparation
-    if str(event.reply.sender.user_id) == str(event.self_id):
+    if str(event.reply.user_id) == str(event.self_id):
         event.to_me = True
+
     del event.message[index]
     if len(event.message) > index and event.message[index].type == "at":
         del event.message[index]
@@ -49,7 +56,7 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
         event.message.append(MessageSegment.text(""))
 
 
-def _check_at_me(bot: "Bot", event: MessageEvent) -> None:
+def _check_to_me(bot: "Bot", event: MessageEvent) -> None:
     """检查消息开头或结尾是否存在 @机器人，去除并赋值 `event.to_me`。
 
     参数:
@@ -63,24 +70,25 @@ def _check_at_me(bot: "Bot", event: MessageEvent) -> None:
     if not event.message:
         event.message.append(MessageSegment.text(""))
 
-    if event.message_type == "private":
+    if event.detail_type == "private":
         event.to_me = True
     else:
 
-        def _is_at_me_seg(segment: MessageSegment):
-            return segment.type == "at" and str(segment.data.get("qq", "")) == str(
-                event.self_id
+        def _is_mention_me_seg(segment: MessageSegment) -> bool:
+            return (
+                segment.type == "mention"
+                and str(segment.data.get("user_id", "")) == event.self_id
             )
 
         # check the first segment
-        if _is_at_me_seg(event.message[0]):
+        if _is_mention_me_seg(event.message[0]):
             event.to_me = True
             event.message.pop(0)
             if event.message and event.message[0].type == "text":
                 event.message[0].data["text"] = event.message[0].data["text"].lstrip()
                 if not event.message[0].data["text"]:
                     del event.message[0]
-            if event.message and _is_at_me_seg(event.message[0]):
+            if event.message and _is_mention_me_seg(event.message[0]):
                 event.message.pop(0)
                 if event.message and event.message[0].type == "text":
                     event.message[0].data["text"] = (
@@ -101,7 +109,7 @@ def _check_at_me(bot: "Bot", event: MessageEvent) -> None:
                 i -= 1
                 last_msg_seg = event.message[i]
 
-            if _is_at_me_seg(last_msg_seg):
+            if _is_mention_me_seg(last_msg_seg):
                 event.to_me = True
                 del event.message[i:]
 
@@ -140,13 +148,12 @@ async def send(
     message: Union[str, Message, MessageSegment],
     at_sender: bool = False,
     reply_message: bool = False,
-    **params: Any,  # extra options passed to send_msg API
+    **params: Any,
 ) -> Any:
     """默认回复消息处理函数。"""
     event_dict = event.dict()
 
-    if "message_id" not in event_dict:
-        reply_message = False  # if no message_id, force disable reply_message
+    params.setdefault("detail_type", event_dict["detail_type"])
 
     if "user_id" in event_dict:  # copy the user_id to the API params if exists
         params.setdefault("user_id", event_dict["user_id"])
@@ -156,29 +163,24 @@ async def send(
     if "group_id" in event_dict:  # copy the group_id to the API params if exists
         params.setdefault("group_id", event_dict["group_id"])
 
-    if "message_type" not in params:  # guess the message_type
-        if "group_id" in params:
-            params["message_type"] = "group"
-        elif "user_id" in params:
-            params["message_type"] = "private"
-        else:
-            raise ValueError("Cannot guess message type to reply!")
+    if (
+        "guild_id" in event_dict and "channel_id" in event_dict
+    ):  # copy the guild_id to the API params if exists
+        params.setdefault("guild_id", event_dict["guild_id"])
+        params.setdefault("channel_id", event_dict["channel_id"])
 
     full_message = Message()  # create a new message with at sender segment
-    if reply_message:
+    if reply_message and "message_id" in event_dict:
         full_message += MessageSegment.reply(event_dict["message_id"])
-    if at_sender and params["message_type"] != "private":
-        full_message += MessageSegment.at(params["user_id"]) + " "
+    if at_sender and params["detail_type"] != "private":
+        full_message += MessageSegment.mention(params["user_id"]) + " "
     full_message += message
     params.setdefault("message", full_message)
 
-    return await bot.send_msg(**params)
+    return await bot.send_message(**params)
 
 
 class Bot(BaseBot):
-    """
-    OneBot v11 协议 Bot 适配。
-    """
 
     send_handler: Callable[
         ["Bot", Event, Union[str, Message, MessageSegment]], Any
@@ -187,18 +189,14 @@ class Bot(BaseBot):
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""
         if isinstance(event, MessageEvent):
-            await _check_reply(self, event)
-            _check_at_me(self, event)
+            _check_reply(self, event)
+            _check_to_me(self, event)
             _check_nickname(self, event)
-
         await handle_event(self, event)
 
     @overrides(BaseBot)
     async def send(
-        self,
-        event: Event,
-        message: Union[str, Message, MessageSegment],
-        **kwargs: Any,
+        self, event: Event, message: Union[str, Message, MessageSegment], **kwargs: Any
     ) -> Any:
         """根据 `event` 向触发事件的主体回复消息。
 
@@ -207,7 +205,7 @@ class Bot(BaseBot):
             message: 要发送的消息
             at_sender (bool): 是否 @ 事件主体
             reply_message (bool): 是否回复事件消息
-            kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v11.adapter.Adapter.custom_send` 配合使用
+            kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v12.adapter.Adapter.custom_send` 配合使用
 
         返回:
             API 调用返回数据

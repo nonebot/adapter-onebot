@@ -12,21 +12,36 @@ async def send(
     bot: "Bot",
     event: Event,
     message: Union[str, Message, MessageSegment],
-    reply_message: bool = ...,
     at_sender: bool = ...,
+    reply_message: bool = ...,
     **kwargs: Any,
 ) -> Any: ...
 
 class Bot(BaseBot):
+    async def call_api(self, api: str, **data) -> Any:
+        """调用 OneBot 协议 API。
+
+        参数:
+            api: API 名称
+            data: API 参数
+
+        返回:
+            API 调用返回数据
+
+        异常:
+            nonebot.adapters.onebot.exception.NetworkError: 网络错误
+            nonebot.adapters.onebot.exception.ActionFailed: API 调用失败
+        """
+        ...
     async def handle_event(self, event: Event) -> None: ...
     async def send(
-        self, event: Event, message: Union[str, Message, MessageSegment], **kwargs: Any
+        self, event: Event, message: str | Message | MessageSegment, **kwargs: Any
     ) -> Any: ...
     async def send_private_msg(
         self,
         *,
         user_id: int,
-        message: Union[str, Message],
+        message: str | Message,
         auto_escape: bool = ...,
     ) -> Dict[str, Any]:
         """发送私聊消息。
@@ -41,7 +56,7 @@ class Bot(BaseBot):
         self,
         *,
         group_id: int,
-        message: Union[str, Message],
+        message: str | Message,
         auto_escape: bool = ...,
     ) -> Dict[str, Any]:
         """发送群消息。

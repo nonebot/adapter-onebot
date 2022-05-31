@@ -1,4 +1,9 @@
-import warnings
+"""OneBot 事件模型搜索树。
+
+FrontMatter:
+    sidebar_position: 1
+    description: onebot.collator 模块
+"""
 from typing import Any, Dict, List, Type, Tuple, Union, Generic, TypeVar, Optional
 
 from pygtrie import StringTrie
@@ -56,7 +61,7 @@ class Collator(Generic[E]):
                     raise ValueError(f"Invalid data with incorrect fields: {fields}")
                 field = fields[0] if fields else None
             else:
-                field = data.get(key, None)
+                field = data.get(key)
             keys.append(field)
         return self._generate_key(keys)
 
@@ -81,10 +86,12 @@ class Collator(Generic[E]):
                 "Invalid model with incorrect prefix "
                 f"keys: {dict(zip(self.keys, keys))}"
             )
-        return SEPARATOR + SEPARATOR.join(filter(None, keys))
+        tree_keys = [""] + list(filter(None, keys))
+        return SEPARATOR.join(tree_keys)
 
     def _check_key_list(self, keys: List[Optional[str]]) -> bool:
-        return all(keys) or not any(keys[keys.index(None) :])
+        truthy = tuple(map(bool, keys))
+        return all(truthy) or not any(truthy[truthy.index(False) :])
 
     def _get_model_field(self, model: Type[E], field: str) -> Optional[ModelField]:
         return model.__fields__.get(field, None)

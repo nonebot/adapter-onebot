@@ -1,19 +1,21 @@
-"""OneBot v11 适配器。
+"""OneBot v12 适配器。
 
 FrontMatter:
     sidebar_position: 1
-    description: onebot.v11.adapter 模块
+    description: onebot.v12.adapter 模块
 """
-import hmac
+
 import json
 import asyncio
 import inspect
 import contextlib
 from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
+import msgpack
+from pygtrie import StringTrie
 from nonebot.typing import overrides
+from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
-from nonebot.utils import DataclassEncoder, escape_tag
 from nonebot.drivers import (
     URL,
     Driver,
@@ -30,13 +32,17 @@ from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.exception import NetworkError, ApiNotAvailable
-from nonebot.adapters.onebot.utils import get_auth_bearer, handle_api_result
+from nonebot.adapters.onebot.utils import (
+    CustomEncoder,
+    get_auth_bearer,
+    handle_api_result,
+)
 
 from . import event
 from .bot import Bot
-from .utils import log
+from .log import log
+from .event import Event
 from .config import Config
-from .event import Event, LifecycleMetaEvent
 from .message import Message, MessageSegment
 
 RECONNECT_INTERVAL = 3.0
@@ -50,61 +56,69 @@ for model_name in dir(event):
 
 class Adapter(BaseAdapter):
 
-    event_models = Collator(
+    event_models: StringTrie = StringTrie(separator="/")
+    event_models[""] = Collator(
         "OneBot V11",
         DEFAULT_MODELS,
-        (
-            "post_type",
-            ("message_type", "notice_type", "request_type", "meta_event_type"),
-            "sub_type",
-        ),
+        ("type", "detail_type", "sub_type"),
     )
 
     _result_store = ResultStore()
+
+    @classmethod
+    @overrides(BaseAdapter)
+    def get_name(cls) -> str:
+        return "OneBot V12"
 
     @overrides(BaseAdapter)
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
-        """OneBot V11 配置"""
         self.connections: Dict[str, WebSocket] = {}
         self.tasks: List["asyncio.Task"] = []
         self._setup()
 
-    @classmethod
-    @overrides(BaseAdapter)
-    def get_name(cls) -> str:
-        """适配器名称: `OneBot V11`"""
-        return "OneBot V11"
-
     def _setup(self) -> None:
         if isinstance(self.driver, ReverseDriver):
-            http_setup = HTTPServerSetup(
-                URL("/onebot/v11/"), "POST", self.get_name(), self._handle_http
+            self.setup_http_server(
+                HTTPServerSetup(
+                    URL("/onebot/v12/"),
+                    "POST",
+                    self.get_name(),
+                    self._handle_http,
+                )
             )
-            self.setup_http_server(http_setup)
-            http_setup = HTTPServerSetup(
-                URL("/onebot/v11/http"), "POST", self.get_name(), self._handle_http
+            self.setup_http_server(
+                HTTPServerSetup(
+                    URL("/onebot/v12/http"),
+                    "POST",
+                    self.get_name(),
+                    self._handle_http,
+                )
             )
-            self.setup_http_server(http_setup)
-            http_setup = HTTPServerSetup(
-                URL("/onebot/v11/http/"), "POST", self.get_name(), self._handle_http
+            self.setup_http_server(
+                HTTPServerSetup(
+                    URL("/onebot/v12/http/"),
+                    "POST",
+                    self.get_name(),
+                    self._handle_http,
+                )
             )
-            self.setup_http_server(http_setup)
-
-            ws_setup = WebSocketServerSetup(
-                URL("/onebot/v11/"), self.get_name(), self._handle_ws
+            self.setup_websocket_server(
+                WebSocketServerSetup(
+                    URL("/onebot/v12/"), self.get_name(), self._handle_ws
+                )
             )
-            self.setup_websocket_server(ws_setup)
-            ws_setup = WebSocketServerSetup(
-                URL("/onebot/v11/ws"), self.get_name(), self._handle_ws
+            self.setup_websocket_server(
+                WebSocketServerSetup(
+                    URL("/onebot/v12/ws"), self.get_name(), self._handle_ws
+                )
             )
-            self.setup_websocket_server(ws_setup)
-            ws_setup = WebSocketServerSetup(
-                URL("/onebot/v11/ws/"), self.get_name(), self._handle_ws
+            self.setup_websocket_server(
+                WebSocketServerSetup(
+                    URL("/onebot/v12/ws/"), self.get_name(), self._handle_ws
+                )
             )
-            self.setup_websocket_server(ws_setup)
-
         if self.onebot_config.onebot_ws_urls:
             if not isinstance(self.driver, ForwardDriver):
                 log(
@@ -125,7 +139,7 @@ class Adapter(BaseAdapter):
             seq = self._result_store.get_seq()
             json_data = json.dumps(
                 {"action": api, "params": data, "echo": str(seq)},
-                cls=DataclassEncoder,
+                cls=CustomEncoder,
             )
             await websocket.send(json_data)
             return handle_api_result(
@@ -133,11 +147,9 @@ class Adapter(BaseAdapter):
             )
 
         elif isinstance(self.driver, ForwardDriver):
-            api_root = self.onebot_config.onebot_api_roots.get(bot.self_id)
-            if not api_root:
+            api_url = self.onebot_config.onebot_api_roots.get(bot.self_id)
+            if not api_url:
                 raise ApiNotAvailable
-            elif not api_root.endswith("/"):
-                api_root += "/"
 
             headers = {"Content-Type": "application/json"}
             if self.onebot_config.onebot_access_token is not None:
@@ -147,10 +159,10 @@ class Adapter(BaseAdapter):
 
             request = Request(
                 "POST",
-                api_root + api,
+                api_url,
                 headers=headers,
                 timeout=timeout,
-                content=json.dumps(data, cls=DataclassEncoder),
+                content=json.dumps({"action": api, "params": data}, cls=CustomEncoder),
             )
 
             try:
@@ -180,11 +192,6 @@ class Adapter(BaseAdapter):
             log("WARNING", "Missing X-Self-ID Header")
             return Response(400, content="Missing X-Self-ID Header")
 
-        # check signature
-        response = self._check_signature(request)
-        if response is not None:
-            return response
-
         # check access_token
         response = self._check_access_token(request)
         if response is not None:
@@ -205,7 +212,7 @@ class Adapter(BaseAdapter):
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
-        self_id = websocket.request.headers.get("x-self-id")
+        self_id = websocket.request.headers.get("X-Self-Id")
 
         # check self_id
         if not self_id:
@@ -234,8 +241,10 @@ class Adapter(BaseAdapter):
         try:
             while True:
                 data = await websocket.receive()
-                json_data = json.loads(data)
-                event = self.json_to_event(json_data, self_id)
+                raw_data = (
+                    json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
+                )
+                event = self.json_to_event(raw_data, self_id)
                 if event:
                     asyncio.create_task(bot.handle_event(event))
         except WebSocketClosed as e:
@@ -246,36 +255,15 @@ class Adapter(BaseAdapter):
                 f"<r><bg #f8bbd0>Error while process data from websocketfor bot {escape_tag(self_id)}.</bg #f8bbd0></r>",
                 e,
             )
+
         finally:
             with contextlib.suppress(Exception):
                 await websocket.close()
             self.connections.pop(self_id, None)
             self.bot_disconnect(bot)
 
-    def _check_signature(self, request: Request) -> Optional[Response]:
-        x_signature = request.headers.get("x-signature")
-
-        secret = self.onebot_config.onebot_secret
-        if secret:
-            if not x_signature:
-                log("WARNING", "Missing Signature Header")
-                return Response(401, content="Missing Signature", request=request)
-
-            if request.content is None:
-                return Response(400, content="Missing Content", request=request)
-
-            body: bytes = (
-                request.content
-                if isinstance(request.content, bytes)
-                else request.content.encode("utf-8")
-            )
-            sig = hmac.new(secret.encode("utf-8"), body, "sha1").hexdigest()
-            if x_signature != "sha1=" + sig:
-                log("WARNING", "Signature Header is invalid")
-                return Response(403, content="Signature is invalid")
-
     def _check_access_token(self, request: Request) -> Optional[Response]:
-        token = get_auth_bearer(request.headers.get("authorization"))
+        token = get_auth_bearer(request.headers.get("Authorization"))
 
         access_token = self.onebot_config.onebot_access_token
         if access_token and access_token != token:
@@ -305,21 +293,17 @@ class Adapter(BaseAdapter):
             if not task.done():
                 task.cancel()
 
-        await asyncio.gather(*self.tasks, return_exceptions=True)
-
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
         if self.onebot_config.onebot_access_token:
             headers[
                 "Authorization"
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
-        request = Request("GET", url, headers=headers, timeout=30.0)
-
+        req = Request("GET", url, headers=headers, timeout=30.0)
         bot: Optional[Bot] = None
-
         while True:
             try:
-                async with self.websocket(request) as ws:
+                async with self.websocket(req) as ws:
                     log(
                         "DEBUG",
                         f"WebSocket Connection to {escape_tag(str(url))} established",
@@ -327,19 +311,18 @@ class Adapter(BaseAdapter):
                     try:
                         while True:
                             data = await ws.receive()
-                            json_data = json.loads(data)
-                            event = self.json_to_event(json_data, bot and bot.self_id)
+                            raw_data = (
+                                json.loads(data)
+                                if isinstance(data, str)
+                                else msgpack.unpackb(data)
+                            )
+                            event = self.json_to_event(raw_data, bot and bot.self_id)
                             if not event:
                                 continue
                             if not bot:
-                                if (
-                                    not isinstance(event, LifecycleMetaEvent)
-                                    or event.sub_type != "connect"
-                                ):
-                                    continue
                                 self_id = event.self_id
-                                bot = Bot(self, str(self_id))
-                                self.connections[str(self_id)] = ws
+                                bot = Bot(self, self_id)
+                                self.connections[self_id] = ws
                                 self.bot_connect(bot)
                                 log(
                                     "INFO",
@@ -349,7 +332,7 @@ class Adapter(BaseAdapter):
                     except WebSocketClosed as e:
                         log(
                             "ERROR",
-                            f"<r><bg #f8bbd0>WebSocket Closed</bg #f8bbd0></r>",
+                            "<r><bg #f8bbd0>WebSocket Closed</bg #f8bbd0></r>",
                             e,
                         )
                     except Exception as e:
@@ -376,43 +359,48 @@ class Adapter(BaseAdapter):
             await asyncio.sleep(RECONNECT_INTERVAL)
 
     @classmethod
-    def add_custom_model(cls, *model: Type[Event]) -> None:
-        """插入或覆盖一个自定义的 Event 类型。
-
-        参数:
-            model: 自定义的 Event 类型
-        """
-        cls.event_models.add_model(*model)
+    def add_custom_model(
+        cls,
+        *model: Type[Event],
+        impl: Optional[str] = None,
+        platform: Optional[str] = None,
+    ) -> None:
+        if platform is not None and impl is None:
+            raise ValueError("Impl must be specified")
+        if impl is not None and platform is None:
+            raise ValueError("platform must be specified")
+        key = f"/{impl}/{platform}" if impl and platform else ""
+        if key not in cls.event_models:
+            cls.event_models[key] = Collator(
+                "OneBot V11",
+                [],
+                ("post_type", "detail_type", "sub_type"),
+            )
+        cls.event_models[key].add_model(*model)  # type: ignore
 
     @classmethod
     def get_event_model(
         cls, data: Dict[str, Any]
     ) -> Generator[Type[Event], None, None]:
         """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
-        yield from cls.event_models.get_model(data)
+        key = f"/{data.get('impl')}/{data.get('platform')}"
+        platform_collator: Collator[Event]
+        for platform_collator in reversed(
+            [c.value for c in cls.event_models.prefixes(key)]
+        ):
+            yield from platform_collator.get_model(data)
 
     @classmethod
     def json_to_event(
         cls, json_data: Any, self_id: Optional[str] = None
     ) -> Optional[Event]:
-        """将 json 数据转换为 Event 对象。
-
-        如果为 API 调用返回数据且提供了 Event 对应 Bot，则将数据存入 ResultStore。
-
-        参数:
-            json_data: json 数据
-            self_id: 当前 Event 对应的 Bot
-
-        返回:
-            Event 对象，如果解析失败或为 API 调用返回数据，则返回 None
-        """
         if not isinstance(json_data, dict):
             return None
 
-        if "post_type" not in json_data:
+        if "type" not in json_data:
             if self_id is not None:
                 cls._result_store.add_result(self_id, json_data)
-            return
+            return None
 
         try:
             for model in cls.get_event_model(json_data):
@@ -420,18 +408,19 @@ class Adapter(BaseAdapter):
                     event = model.parse_obj(json_data)
                     break
                 except Exception as e:
-                    log("DEBUG", "Event Parser Error", e)
+                    log("DEBUG", "Event Parse Error", e)
             else:
                 event = Event.parse_obj(json_data)
-
             return event
+
         except Exception as e:
             log(
                 "ERROR",
                 "<r><bg #f8bbd0>Failed to parse event. "
-                f"Raw: {escape_tag(str(json_data))}</bg #f8bbd0></r>",
+                f"Raw: {str(json_data)}</bg #f8bbd0></r>",
                 e,
             )
+            return None
 
     @classmethod
     def custom_send(
