@@ -177,30 +177,8 @@ class Bot(BaseBot):
         ["Bot", Event, Union[str, Message, MessageSegment]], Any
     ] = send
 
-    @overrides(BaseBot)
-    async def call_api(self, api: str, **data) -> Any:
-        """
-        :说明:
-
-          调用 OneBot 协议 API
-
-        :参数:
-
-          * ``api: str``: API 名称
-          * ``**data: Any``: API 参数
-
-        :返回:
-
-          - ``Any``: API 调用返回数据
-
-        :异常:
-
-          - ``NetworkError``: 网络错误
-          - ``ActionFailed``: API 调用失败
-        """
-        return await super().call_api(api, **data)
-
     async def handle_event(self, event: Event) -> None:
+        """处理收到的事件。"""
         if isinstance(event, MessageEvent):
             await _check_reply(self, event)
             _check_at_me(self, event)
@@ -220,8 +198,8 @@ class Bot(BaseBot):
         参数:
             event: Event 对象
             message: 要发送的消息
-            reply_message (bool): 是否回复事件消息
             at_sender (bool): 是否 @ 事件主体
+            reply_message (bool): 是否回复事件消息
             kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v11.adapter.Adapter.custom_send` 配合使用
 
         返回:

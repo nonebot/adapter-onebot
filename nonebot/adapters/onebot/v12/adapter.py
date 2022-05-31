@@ -2,7 +2,7 @@ import json
 import asyncio
 import inspect
 import contextlib
-from typing import Any, Dict, List, Type, Optional, Generator, cast
+from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 import msgpack
 from pygtrie import StringTrie
@@ -36,6 +36,7 @@ from .bot import Bot
 from .log import log
 from .event import Event
 from .config import Config
+from .message import Message, MessageSegment
 
 RECONNECT_INTERVAL = 3.0
 DEFAULT_MODELS: List[Type[Event]] = []
@@ -413,3 +414,11 @@ class Adapter(BaseAdapter):
                 e,
             )
             return None
+
+    @classmethod
+    def custom_send(
+        cls,
+        send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
+    ):
+        """自定义 Bot 的回复函数。"""
+        setattr(Bot, "send_handler", send_func)
