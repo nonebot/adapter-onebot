@@ -1,3 +1,10 @@
+"""OneBot 错误类型。
+
+FrontMatter:
+    sidebar_position: 3
+    description: onebot.exception 模块
+"""
+
 from typing import Optional
 
 from nonebot.exception import AdapterException

@@ -1,3 +1,10 @@
+"""OneBot v11 适配器配置项。
+
+FrontMatter:
+    sidebar_position: 2
+    description: onebot.v11.config 模块
+"""
+
 from typing import Set, Dict, Optional
 
 from pydantic import Field, AnyUrl, BaseModel

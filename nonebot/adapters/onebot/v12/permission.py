@@ -1,3 +1,10 @@
+"""OneBot v12 权限辅助。
+
+FrontMatter:
+    sidebar_position: 6
+    description: onebot.v12.permission 模块
+"""
+
 from nonebot.permission import Permission
 
 from .event import GroupMessageEvent, PrivateMessageEvent

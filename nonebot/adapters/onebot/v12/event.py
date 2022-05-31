@@ -1,3 +1,10 @@
+"""OneBot v12 事件模型。
+
+FrontMatter:
+    sidebar_position: 4
+    description: onebot.v12.event 模块
+"""
+
 from datetime import datetime
 from typing_extensions import Literal
 from typing import TYPE_CHECKING, Optional

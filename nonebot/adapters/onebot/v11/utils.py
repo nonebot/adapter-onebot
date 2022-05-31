@@ -1,3 +1,10 @@
+"""OneBot v11 CQ 码转义。
+
+FrontMatter:
+    sidebar_position: 8
+    description: onebot.v11.utils 模块
+"""
+
 from nonebot.utils import logger_wrapper
 
 log = logger_wrapper("OneBot V11")

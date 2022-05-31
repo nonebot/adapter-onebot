@@ -1,3 +1,10 @@
+"""OneBot v11 机器人定义。
+
+FrontMatter:
+    sidebar_position: 3
+    description: onebot.v11.bot 模块
+"""
+
 import re
 from typing import Any, Union, Callable
 

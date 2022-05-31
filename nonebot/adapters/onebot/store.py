@@ -1,3 +1,10 @@
+"""OneBot API 回调存储。
+
+FrontMatter:
+    sidebar_position: 2
+    description: onebot.store 模块
+"""
+
 import sys
 import asyncio
 from typing import Any, Dict, Tuple, Optional

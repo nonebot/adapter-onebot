@@ -1,4 +1,11 @@
-from typing import Any, Type, Union, Iterable
+"""OneBot v11 消息类型。
+
+FrontMatter:
+    sidebar_position: 5
+    description: onebot.v11.message 模块
+"""
+
+from typing import Any, Type, Iterable
 
 from nonebot.typing import overrides
 

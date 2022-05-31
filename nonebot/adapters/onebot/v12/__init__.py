@@ -1,6 +1,10 @@
-"""OneBot v12 协议适配
+"""OneBot v12 协议适配。
 
 协议详情请看: [OneBot V12](https://12.1bot.dev/)
+
+FrontMatter:
+    sidebar_position: 0
+    description: onebot.v12 模块
 """
 
 from nonebot.adapters.onebot.exception import ActionFailed as ActionFailed

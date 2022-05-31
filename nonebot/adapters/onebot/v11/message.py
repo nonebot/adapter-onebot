@@ -1,3 +1,10 @@
+"""OneBot v11 消息类型。
+
+FrontMatter:
+    sidebar_position: 5
+    description: onebot.v11.message 模块
+"""
+
 import re
 from io import BytesIO
 from pathlib import Path

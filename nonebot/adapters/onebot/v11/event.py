@@ -1,3 +1,10 @@
+"""OneBot v11 事件模型。
+
+FrontMatter:
+    sidebar_position: 4
+    description: onebot.v11.event 模块
+"""
+
 from typing_extensions import Literal
 from typing import TYPE_CHECKING, Optional
 

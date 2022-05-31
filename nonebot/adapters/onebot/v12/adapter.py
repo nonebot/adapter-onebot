@@ -1,3 +1,10 @@
+"""OneBot v12 适配器。
+
+FrontMatter:
+    sidebar_position: 1
+    description: onebot.v12.adapter 模块
+"""
+
 import json
 import asyncio
 import inspect

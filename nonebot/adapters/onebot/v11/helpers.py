@@ -1,3 +1,10 @@
+"""OneBot v11 流程辅助。
+
+FrontMatter:
+    sidebar_position: 7
+    description: onebot.v11.helpers 模块
+"""
+
 import re
 import asyncio
 from enum import IntEnum, auto

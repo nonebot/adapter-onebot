@@ -1,3 +1,10 @@
+"""OneBot 辅助函数。
+
+FrontMatter:
+    sidebar_position: 4
+    description: onebot.utils 模块
+"""
+
 from base64 import b64encode
 from typing import Any, Dict, Optional
 

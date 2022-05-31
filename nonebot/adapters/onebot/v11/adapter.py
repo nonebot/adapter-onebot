@@ -1,3 +1,9 @@
+"""OneBot v11 适配器。
+
+FrontMatter:
+    sidebar_position: 1
+    description: onebot.v11.adapter 模块
+"""
 import hmac
 import json
 import asyncio
@@ -5,7 +11,6 @@ import inspect
 import contextlib
 from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
-from pygtrie import StringTrie
 from nonebot.typing import overrides
 from nonebot.exception import WebSocketClosed
 from nonebot.utils import DataclassEncoder, escape_tag
