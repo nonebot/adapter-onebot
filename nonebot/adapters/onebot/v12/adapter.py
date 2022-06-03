@@ -58,7 +58,7 @@ class Adapter(BaseAdapter):
 
     event_models: StringTrie = StringTrie(separator="/")
     event_models[""] = Collator(
-        "OneBot V11",
+        "OneBot V12",
         DEFAULT_MODELS,
         ("type", "detail_type", "sub_type"),
     )
