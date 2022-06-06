@@ -5,12 +5,13 @@ FrontMatter:
     description: onebot.v11.event 模块
 """
 
+from copy import deepcopy
 from typing_extensions import Literal
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from pydantic import BaseModel
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag
+from pydantic import BaseModel, root_validator
 
 from nonebot.adapters import Event as BaseEvent
 from nonebot.adapters.onebot.exception import NoLogException
@@ -125,6 +126,7 @@ class MessageEvent(Event):
     message_type: str
     message_id: int
     message: Message
+    original_message: Message
     raw_message: str
     font: int
     sender: Sender
@@ -140,6 +142,12 @@ class MessageEvent(Event):
 
     :类型: ``Optional[Reply]``
     """
+
+    @root_validator(pre=True)
+    def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if "message" in values:
+            values["original_message"] = deepcopy(values["message"])
+        return values
 
     @overrides(Event)
     def get_event_name(self) -> str:
