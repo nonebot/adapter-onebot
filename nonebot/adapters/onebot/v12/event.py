@@ -99,7 +99,7 @@ class MessageEvent(Event):
     :类型: ``Optional[Reply]``
     """
 
-    @root_validator(pre=True)
+    @root_validator(pre=True, allow_reuse=True)
     def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "message" in values:
             values["original_message"] = deepcopy(values["message"])
