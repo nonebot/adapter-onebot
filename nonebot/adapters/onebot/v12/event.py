@@ -79,6 +79,8 @@ class Reply(BaseModel, extra=Extra.allow):
 
 # Message Event
 class MessageEvent(Event):
+    """消息事件"""
+
     type: Literal["message"]
     message_id: str
     message: Message
@@ -123,6 +125,8 @@ class MessageEvent(Event):
 
 
 class PrivateMessageEvent(MessageEvent):
+    """私聊消息"""
+
     detail_type: Literal["private"]
 
     @overrides(Event)
@@ -142,6 +146,8 @@ class PrivateMessageEvent(MessageEvent):
 
 
 class GroupMessageEvent(MessageEvent):
+    """群消息"""
+
     detail_type: Literal["group"]
     group_id: str
 
@@ -166,6 +172,8 @@ class GroupMessageEvent(MessageEvent):
 
 
 class ChannelMessageEvent(MessageEvent):
+    """频道消息"""
+
     detail_type: Literal["channel"]
     guild_id: str
     channel_id: str
@@ -192,25 +200,35 @@ class ChannelMessageEvent(MessageEvent):
 
 
 class NoticeEvent(Event):
+    """通知事件"""
+
     type: Literal["notice"]
 
 
 class FriendIncreaseEvent(NoticeEvent):
+    """好友增加事件"""
+
     detail_type: Literal["friend_increase"]
     user_id: str
 
 
 class FriendDecreaseEvent(NoticeEvent):
+    """好友减少事件"""
+
     detail_type: Literal["friend_decrease"]
     user_id: str
 
 
 class PrivateMessageDeleteEvent(NoticeEvent):
+    """私聊消息删除"""
+
     detail_type: Literal["private_message_delete"]
     message_id: str
 
 
 class GroupMemberIncreaseEvent(NoticeEvent):
+    """群成员增加事件"""
+
     detail_type: Literal["group_member_increase"]
     group_id: str
     user_id: str
@@ -218,6 +236,8 @@ class GroupMemberIncreaseEvent(NoticeEvent):
 
 
 class GroupMemberDecreaseEvent(NoticeEvent):
+    """群成员减少事件"""
+
     detail_type: Literal["group_member_decrease"]
     group_id: str
     user_id: str
@@ -225,6 +245,8 @@ class GroupMemberDecreaseEvent(NoticeEvent):
 
 
 class GroupMemberBanEvent(NoticeEvent):
+    """群成员禁言事件"""
+
     detail_type: Literal["group_member_ban"]
     group_id: str
     user_id: str
@@ -232,6 +254,8 @@ class GroupMemberBanEvent(NoticeEvent):
 
 
 class GroupMemberUnbanEvent(NoticeEvent):
+    """群成员解除禁言事件"""
+
     detail_type: Literal["group_member_unban"]
     group_id: str
     user_id: str
@@ -239,6 +263,8 @@ class GroupMemberUnbanEvent(NoticeEvent):
 
 
 class GroupAdminSetEvent(NoticeEvent):
+    """群管理员设置事件"""
+
     detail_type: Literal["group_admin_set"]
     group_id: str
     user_id: str
@@ -246,6 +272,8 @@ class GroupAdminSetEvent(NoticeEvent):
 
 
 class GroupAdminUnsetEvent(NoticeEvent):
+    """群管理员取消设置事件"""
+
     detail_type: Literal["group_admin_unset"]
     group_id: str
     user_id: str
@@ -253,6 +281,8 @@ class GroupAdminUnsetEvent(NoticeEvent):
 
 
 class GroupMessageDeleteEvent(NoticeEvent):
+    """群消息删除事件"""
+
     detail_type: Literal["group_message_delete"]
     group_id: str
     message_id: str
@@ -261,6 +291,8 @@ class GroupMessageDeleteEvent(NoticeEvent):
 
 
 class GuildMemberIncreaseEvent(NoticeEvent):
+    """群组成员增加事件"""
+
     detail_type: Literal["guild_member_increase"]
     guild_id: str
     user_id: str
@@ -268,14 +300,18 @@ class GuildMemberIncreaseEvent(NoticeEvent):
 
 
 class GuildMemberDecreaseEvent(NoticeEvent):
+    """群组成员减少事件"""
+
     detail_type: Literal["guild_member_decrease"]
     guild_id: str
     user_id: str
     operator_id: str
 
 
-class GuildMessageDeleteEvent(NoticeEvent):
-    detail_type: Literal["guild_message_delete"]
+class ChannelMessageDeleteEvent(NoticeEvent):
+    """频道消息删除事件"""
+
+    detail_type: Literal["channel_message_delete"]
     guild_id: str
     channel_id: str
     message_id: str
@@ -284,6 +320,8 @@ class GuildMessageDeleteEvent(NoticeEvent):
 
 
 class ChannelCreateEvent(NoticeEvent):
+    """频道新建事件"""
+
     detail_type: Literal["channel_create"]
     guild_id: str
     channel_id: str
@@ -291,6 +329,8 @@ class ChannelCreateEvent(NoticeEvent):
 
 
 class ChannelDeleteEvent(NoticeEvent):
+    """频道删除事件"""
+
     detail_type: Literal["channel_delete"]
     guild_id: str
     channel_id: str
@@ -299,11 +339,15 @@ class ChannelDeleteEvent(NoticeEvent):
 
 # Request Events
 class RequestEvent(Event):
+    """请求事件"""
+
     type: Literal["request"]
 
 
 # Meta Events
 class MetaEvent(Event):
+    """元事件"""
+
     type: Literal["meta"]
 
     @overrides(Event)
@@ -312,6 +356,8 @@ class MetaEvent(Event):
 
 
 class HeartbeatMetaEvent(MetaEvent):
+    """心跳事件"""
+
     detail_type: Literal["heartbeat"]
     interval: int
     status: Status
