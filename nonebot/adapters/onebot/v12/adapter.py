@@ -372,9 +372,9 @@ class Adapter(BaseAdapter):
         key = f"/{impl}/{platform}" if impl and platform else ""
         if key not in cls.event_models:
             cls.event_models[key] = Collator(
-                "OneBot V11",
+                "OneBot V12",
                 [],
-                ("post_type", "detail_type", "sub_type"),
+                ("type", "detail_type", "sub_type"),
             )
         cls.event_models[key].add_model(*model)  # type: ignore
 
