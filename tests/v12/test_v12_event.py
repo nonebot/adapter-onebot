@@ -8,7 +8,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_event(init_adapter):
-    from nonebot.adapters.onebot.v12 import Event, Adapter, PrivateMessageEvent
+    from nonebot.adapters.onebot.v12 import Adapter
 
     with (Path(__file__).parent / "events.json").open("r") as f:
         test_events = json.load(f)
@@ -18,8 +18,17 @@ async def test_event(init_adapter):
         event = Adapter.json_to_event(event_data)
         assert model_name == event.__class__.__name__
 
-    class MessageSelfEvent(Event):
-        type: Literal["message_self"]
+
+@pytest.mark.asyncio
+async def test_custom_model(init_adapter):
+    from nonebot.adapters.onebot.v12 import Event, Adapter, MessageEvent
+
+    class MessageSelfEvent(MessageEvent):
+        detail_type: Literal["self"]
+
+    class PlatformEvent(Event):
+        impl: Literal["test"]
+        platform: Literal["test"]
 
     event = MessageSelfEvent(
         id="0",
@@ -27,11 +36,19 @@ async def test_event(init_adapter):
         platform="test",
         self_id="0",
         time=datetime.now(),
-        type="message_self",
-        detail_type="",
+        type="message",
+        detail_type="self",
         sub_type="",
-    )
+        message_id="0",
+        message=[{"type": "text", "data": {"text": "test"}}],
+        alt_message="test",
+        user_id="0",
+    )  # type: ignore
 
     Adapter.add_custom_model(MessageSelfEvent)
     parsed = Adapter.json_to_event(event.dict())
-    assert parsed == event
+    assert isinstance(parsed, MessageSelfEvent)
+
+    Adapter.add_custom_model(PlatformEvent, impl="test", platform="test")
+    parsed = Adapter.json_to_event(event.dict())
+    assert isinstance(parsed, PlatformEvent)
