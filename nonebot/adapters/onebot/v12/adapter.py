@@ -46,6 +46,7 @@ from .config import Config
 from .message import Message, MessageSegment
 
 RECONNECT_INTERVAL = 3.0
+COLLATOR_KEY = ("type", "detail_type", "sub_type")
 DEFAULT_MODELS: List[Type[Event]] = []
 for model_name in dir(event):
     model = getattr(event, model_name)
@@ -60,7 +61,7 @@ class Adapter(BaseAdapter):
     event_models[""] = Collator(
         "OneBot V12",
         DEFAULT_MODELS,
-        ("type", "detail_type", "sub_type"),
+        COLLATOR_KEY,
     )
 
     _result_store = ResultStore()
@@ -374,7 +375,7 @@ class Adapter(BaseAdapter):
             cls.event_models[key] = Collator(
                 "OneBot V12",
                 [],
-                ("type", "detail_type", "sub_type"),
+                COLLATOR_KEY,
             )
         cls.event_models[key].add_model(*model)  # type: ignore
 
