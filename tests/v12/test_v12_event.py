@@ -4,6 +4,7 @@ from datetime import datetime
 from typing_extensions import Literal
 
 import pytest
+from pydantic import BaseModel
 
 
 @pytest.mark.asyncio
@@ -23,32 +24,37 @@ async def test_event(init_adapter):
 async def test_custom_model(init_adapter):
     from nonebot.adapters.onebot.v12 import Event, Adapter, MessageEvent
 
+    class QQExtended(BaseModel):
+        key: str
+
     class MessageSelfEvent(MessageEvent):
         detail_type: Literal["self"]
+        qq: QQExtended
 
     class PlatformEvent(Event):
         impl: Literal["test"]
         platform: Literal["test"]
 
-    event = MessageSelfEvent(
-        id="0",
-        impl="test",
-        platform="test",
-        self_id="0",
-        time=datetime.now(),
-        type="message",
-        detail_type="self",
-        sub_type="",
-        message_id="0",
-        message=[{"type": "text", "data": {"text": "test"}}],
-        alt_message="test",
-        user_id="0",
-    )  # type: ignore
+    event = {
+        "id": "0",
+        "impl": "test",
+        "platform": "test",
+        "self_id": "0",
+        "time": datetime.now(),
+        "type": "message",
+        "detail_type": "self",
+        "sub_type": "",
+        "message_id": "0",
+        "message": [{"type": "text", "data": {"text": "test"}}],
+        "alt_message": "test",
+        "user_id": "0",
+        "qq.key": "value",
+    }
 
     Adapter.add_custom_model(MessageSelfEvent)
-    parsed = Adapter.json_to_event(event.dict())
+    parsed = Adapter.json_to_event(event)
     assert isinstance(parsed, MessageSelfEvent)
 
     Adapter.add_custom_model(PlatformEvent, impl="test", platform="test")
-    parsed = Adapter.json_to_event(event.dict())
+    parsed = Adapter.json_to_event(event)
     assert isinstance(parsed, PlatformEvent)
