@@ -36,6 +36,7 @@ from nonebot.adapters.onebot.utils import (
     CustomEncoder,
     get_auth_bearer,
     handle_api_result,
+    flattened_to_nested,
 )
 
 from . import event
@@ -397,6 +398,9 @@ class Adapter(BaseAdapter):
     ) -> Optional[Event]:
         if not isinstance(json_data, dict):
             return None
+
+        # transform flattened dict to nested
+        json_data = flattened_to_nested(json_data)
 
         if "type" not in json_data:
             if self_id is not None:
