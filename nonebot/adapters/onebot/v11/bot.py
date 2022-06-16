@@ -144,9 +144,6 @@ async def send(
 ) -> Any:
     """默认回复消息处理函数。"""
     event_dict = event.dict()
-    message = (
-        escape(message, escape_comma=False) if isinstance(message, str) else message
-    )
 
     if "message_id" not in event_dict:
         reply_message = False  # if no message_id, force disable reply_message

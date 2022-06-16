@@ -285,6 +285,14 @@ class Message(BaseMessage[MessageSegment]):
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
+    @overrides(BaseMessage)
+    def __iadd__(
+        self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
+    ) -> "Message":
+        return super().__iadd__(
+            MessageSegment.text(other) if isinstance(other, str) else other
+        )
+
     @staticmethod
     @overrides(BaseMessage)
     def _construct(msg: str) -> Iterable[MessageSegment]:
