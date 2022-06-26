@@ -35,3 +35,15 @@ nonebot.init()
 driver = nonebot.get_driver()
 driver.register_adapter(Adapter)
 ```
+
+### OneBot V12
+
+```python title=bot.py {2,7}
+import nonebot
+from nonebot.adapters.onebot.v12 import Adapter
+
+nonebot.init()
+
+driver = nonebot.get_driver()
+driver.register_adapter(Adapter)
+```
