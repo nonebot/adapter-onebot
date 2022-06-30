@@ -1,8 +1,8 @@
-"""OneBot 错误类型。
+"""OneBot v11 错误类型。
 
 FrontMatter:
-    sidebar_position: 3
-    description: onebot.exception 模块
+    sidebar_position: 8
+    description: onebot.v11.exception 模块
 """
 
 from typing import Optional
@@ -14,16 +14,35 @@ from nonebot.exception import NoLogException as BaseNoLogException
 from nonebot.exception import ApiNotAvailable as BaseApiNotAvailable
 
 
-class OneBotAdapterException(AdapterException):
+class OneBotV11AdapterException(AdapterException):
     def __init__(self):
-        super().__init__("onebot")
+        super().__init__("OneBot V11")
 
 
-class NoLogException(BaseNoLogException, OneBotAdapterException):
+class NoLogException(BaseNoLogException, OneBotV11AdapterException):
     pass
 
 
-class ActionFailed(BaseActionFailed, OneBotAdapterException):
+class NetworkError(BaseNetworkError, OneBotV11AdapterException):
+    """网络错误。"""
+
+    def __init__(self, msg: Optional[str] = None):
+        super().__init__()
+        self.msg: Optional[str] = msg
+        """错误原因"""
+
+    def __repr__(self):
+        return f"<NetWorkError message={self.msg}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class ApiNotAvailable(BaseApiNotAvailable, OneBotV11AdapterException):
+    pass
+
+
+class ActionFailed(BaseActionFailed, OneBotV11AdapterException):
     """API 请求返回错误信息。
 
     参数:
@@ -43,22 +62,3 @@ class ActionFailed(BaseActionFailed, OneBotAdapterException):
 
     def __str__(self):
         return self.__repr__()
-
-
-class NetworkError(BaseNetworkError, OneBotAdapterException):
-    """网络错误。"""
-
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__()
-        self.msg: Optional[str] = msg
-        """错误原因"""
-
-    def __repr__(self):
-        return f"<NetWorkError message={self.msg}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-class ApiNotAvailable(BaseApiNotAvailable, OneBotAdapterException):
-    pass

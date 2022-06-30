@@ -9,8 +9,6 @@ import sys
 import asyncio
 from typing import Any, Dict, Tuple, Optional
 
-from .exception import NetworkError
-
 
 class ResultStore:
     def __init__(self) -> None:
@@ -36,7 +34,5 @@ class ResultStore:
         self._futures[(self_id, seq)] = future
         try:
             return await asyncio.wait_for(future, timeout)
-        except asyncio.TimeoutError:
-            raise NetworkError("WebSocket API call timeout") from None
         finally:
             del self._futures[(self_id, seq)]

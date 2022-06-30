@@ -31,20 +31,15 @@ from nonebot.drivers import (
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
-from nonebot.adapters.onebot.exception import NetworkError, ApiNotAvailable
-from nonebot.adapters.onebot.utils import (
-    CustomEncoder,
-    get_auth_bearer,
-    handle_api_result,
-    flattened_to_nested,
-)
+from nonebot.adapters.onebot.utils import get_auth_bearer
 
 from . import event
 from .bot import Bot
-from .log import log
 from .event import Event
 from .config import Config
 from .message import Message, MessageSegment
+from .exception import NetworkError, ApiNotAvailable
+from .utils import CustomEncoder, log, handle_api_result, flattened_to_nested
 
 RECONNECT_INTERVAL = 3.0
 COLLATOR_KEY = ("type", "detail_type", "sub_type")
@@ -144,9 +139,12 @@ class Adapter(BaseAdapter):
                 cls=CustomEncoder,
             )
             await websocket.send(json_data)
-            return handle_api_result(
-                await self._result_store.fetch(bot.self_id, seq, timeout)
-            )
+            try:
+                return handle_api_result(
+                    await self._result_store.fetch(bot.self_id, seq, timeout)
+                )
+            except asyncio.TimeoutError:
+                raise NetworkError(f"WebSocket call api {api} timeout") from None
 
         elif isinstance(self.driver, ForwardDriver):
             api_url = self.onebot_config.onebot_api_roots.get(bot.self_id)
