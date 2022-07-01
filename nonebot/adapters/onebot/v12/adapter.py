@@ -12,9 +12,9 @@ import contextlib
 from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 import msgpack
-from pygtrie import StringTrie
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag
+from pygtrie import CharTrie, StringTrie
 from nonebot.exception import WebSocketClosed
 from nonebot.drivers import (
     URL,
@@ -33,13 +33,18 @@ from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.utils import get_auth_bearer
 
-from . import event
 from .bot import Bot
 from .event import Event
 from .config import Config
+from . import event, exception
 from .message import Message, MessageSegment
-from .exception import NetworkError, ApiNotAvailable
-from .utils import CustomEncoder, log, handle_api_result, flattened_to_nested
+from .utils import CustomEncoder, log, flattened_to_nested
+from .exception import (
+    NetworkError,
+    ApiNotAvailable,
+    ActionMissingField,
+    ActionFailedWithRetcode,
+)
 
 RECONNECT_INTERVAL = 3.0
 COLLATOR_KEY = ("type", "detail_type", "sub_type")
@@ -50,6 +55,13 @@ for model_name in dir(event):
         continue
     DEFAULT_MODELS.append(model)
 
+DEFAULT_EXCEPTIONS: List[Type[ActionFailedWithRetcode]] = []
+for exc_name in dir(exception):
+    Exc = getattr(exception, exc_name)
+    if not inspect.isclass(Exc) or not issubclass(Exc, ActionFailedWithRetcode):
+        continue
+    DEFAULT_EXCEPTIONS.append(Exc)
+
 
 class Adapter(BaseAdapter):
 
@@ -58,6 +70,10 @@ class Adapter(BaseAdapter):
         "OneBot V12",
         DEFAULT_MODELS,
         COLLATOR_KEY,
+    )
+
+    exc_classes: CharTrie = CharTrie(
+        (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
     )
 
     _result_store = ResultStore()
@@ -140,7 +156,7 @@ class Adapter(BaseAdapter):
             )
             await websocket.send(json_data)
             try:
-                return handle_api_result(
+                return self._handle_api_result(
                     await self._result_store.fetch(bot.self_id, seq, timeout)
                 )
             except asyncio.TimeoutError:
@@ -172,7 +188,7 @@ class Adapter(BaseAdapter):
                     if not response.content:
                         raise ValueError("Empty response")
                     result = json.loads(response.content)
-                    return handle_api_result(result)
+                    return self._handle_api_result(result)
                 raise NetworkError(
                     f"HTTP request received unexpected "
                     f"status code: {response.status_code}"
@@ -183,6 +199,35 @@ class Adapter(BaseAdapter):
                 raise NetworkError("HTTP request failed") from e
         else:
             raise ApiNotAvailable
+
+    def _handle_api_result(self, result: Any) -> Any:
+        """处理 API 请求返回值。
+
+        参数:
+            result: API 返回数据
+
+        返回:
+            API 调用返回数据
+
+        异常:
+            ActionFailed: API 调用失败
+        """
+        if not isinstance(result, dict):
+            raise ActionMissingField(result)
+        elif not set(result.keys()).issuperset(
+            {"status", "retcode", "data", "message"}
+        ):
+            raise ActionMissingField(result)
+
+        if result["status"] == "failed":
+            retcode = result["retcode"]
+            if not isinstance(retcode, int):
+                raise ActionMissingField(result)
+
+            Exc = self.get_exception(retcode)
+
+            raise Exc(**result)
+        return result["data"]
 
     async def _handle_http(self, request: Request) -> Response:
         self_id = request.headers.get("x-self-id")
@@ -389,6 +434,25 @@ class Adapter(BaseAdapter):
             [c.value for c in cls.event_models.prefixes(key)]
         ):
             yield from platform_collator.get_model(data)
+
+    @classmethod
+    def add_custom_exception(cls, exc: Type[ActionFailedWithRetcode]):
+        for retcode in exc.__retcode__:
+            if retcode in cls.exc_classes:
+                log(
+                    "WARNING",
+                    f"Exception for retcode {retcode} is is overridden by {exc}",
+                )
+            cls.exc_classes[retcode] = exc
+
+    @classmethod
+    def get_exception(cls, retcode: int) -> Type[ActionFailedWithRetcode]:
+        if retcode < 100000:
+            Exc = cls.exc_classes.longest_prefix(str(retcode).rjust(5, "0"))
+            Exc = Exc.value if Exc else ActionFailedWithRetcode
+        else:
+            Exc = ActionFailedWithRetcode
+        return Exc
 
     @classmethod
     def json_to_event(

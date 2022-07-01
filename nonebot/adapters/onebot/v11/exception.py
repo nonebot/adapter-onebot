@@ -57,7 +57,9 @@ class ActionFailed(BaseActionFailed, OneBotV11AdapterException):
 
     def __repr__(self):
         return (
-            "<ActionFailed " + ", ".join(f"{k}={v}" for k, v in self.info.items()) + ">"
+            "<ActionFailed "
+            + ", ".join(f"{k}={v!r}" for k, v in self.info.items())
+            + ">"
         )
 
     def __str__(self):

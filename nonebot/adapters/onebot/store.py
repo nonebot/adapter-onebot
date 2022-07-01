@@ -15,6 +15,10 @@ class ResultStore:
         self._seq: int = 1
         self._futures: Dict[Tuple[str, int], asyncio.Future] = {}
 
+    @property
+    def current_seq(self) -> int:
+        return self._seq
+
     def get_seq(self) -> int:
         s = self._seq
         self._seq = (self._seq + 1) % sys.maxsize
