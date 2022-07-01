@@ -12,9 +12,9 @@ import contextlib
 from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 import msgpack
+from pygtrie import CharTrie
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag
-from pygtrie import CharTrie, StringTrie
 from nonebot.exception import WebSocketClosed
 from nonebot.drivers import (
     URL,
@@ -65,12 +65,13 @@ for exc_name in dir(exception):
 
 class Adapter(BaseAdapter):
 
-    event_models: StringTrie = StringTrie(separator="/")
-    event_models[""] = Collator(
-        "OneBot V12",
-        DEFAULT_MODELS,
-        COLLATOR_KEY,
-    )
+    event_models: Dict[str, Collator[Event]] = {
+        "": Collator(
+            "OneBot V12",
+            DEFAULT_MODELS,
+            COLLATOR_KEY,
+        )
+    }
 
     exc_classes: CharTrie = CharTrie(
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
@@ -429,11 +430,9 @@ class Adapter(BaseAdapter):
     ) -> Generator[Type[Event], None, None]:
         """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
         key = f"/{data.get('impl')}/{data.get('platform')}"
-        platform_collator: Collator[Event]
-        for platform_collator in reversed(
-            [c.value for c in cls.event_models.prefixes(key)]
-        ):
-            yield from platform_collator.get_model(data)
+        if key in cls.event_models:
+            yield from cls.event_models[key].get_model(data)
+        yield from cls.event_models[""].get_model(data)
 
     @classmethod
     def add_custom_exception(cls, exc: Type[ActionFailedWithRetcode]):

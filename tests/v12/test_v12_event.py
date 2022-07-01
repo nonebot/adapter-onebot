@@ -53,9 +53,20 @@ async def test_custom_model(app: App, init_adapter):
     }
 
     Adapter.add_custom_model(MessageSelfEvent)
+    assert list(Adapter.get_event_model(event)) == [
+        MessageSelfEvent,
+        MessageEvent,
+        Event,
+    ]
     parsed = Adapter.json_to_event(event)
     assert isinstance(parsed, MessageSelfEvent)
 
     Adapter.add_custom_model(PlatformEvent, impl="test", platform="test")
+    assert list(Adapter.get_event_model(event)) == [
+        PlatformEvent,
+        MessageSelfEvent,
+        MessageEvent,
+        Event,
+    ]
     parsed = Adapter.json_to_event(event)
     assert isinstance(parsed, PlatformEvent)
