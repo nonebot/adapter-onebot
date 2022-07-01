@@ -1,8 +1,8 @@
-"""OneBot v11 消息类型。
+"""OneBot v12 消息类型。
 
 FrontMatter:
     sidebar_position: 5
-    description: onebot.v11.message 模块
+    description: onebot.v12.message 模块
 """
 
 from typing import Any, Type, Iterable

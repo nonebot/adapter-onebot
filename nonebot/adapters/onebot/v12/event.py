@@ -15,9 +15,9 @@ from nonebot.utils import escape_tag
 from pydantic import Extra, BaseModel, root_validator
 
 from nonebot.adapters import Event as BaseEvent
-from nonebot.adapters.onebot.exception import NoLogException
 
 from .message import Message
+from .exception import NoLogException
 
 if TYPE_CHECKING:
     from .bot import Bot

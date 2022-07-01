@@ -13,7 +13,7 @@ from nonebot.message import handle_event
 
 from nonebot.adapters import Bot as BaseBot
 
-from .log import log
+from .utils import log
 from .message import Message, MessageSegment
 from .event import Event, Reply, MessageEvent
 

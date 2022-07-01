@@ -4,11 +4,12 @@ from datetime import datetime
 from typing_extensions import Literal
 
 import pytest
+from nonebug import App
 from pydantic import BaseModel
 
 
 @pytest.mark.asyncio
-async def test_event(init_adapter):
+async def test_event(app: App, init_adapter):
     from nonebot.adapters.onebot.v12 import Adapter
 
     with (Path(__file__).parent / "events.json").open("r") as f:
@@ -21,7 +22,7 @@ async def test_event(init_adapter):
 
 
 @pytest.mark.asyncio
-async def test_custom_model(init_adapter):
+async def test_custom_model(app: App, init_adapter):
     from nonebot.adapters.onebot.v12 import Event, Adapter, MessageEvent
 
     class QQExtended(BaseModel):
