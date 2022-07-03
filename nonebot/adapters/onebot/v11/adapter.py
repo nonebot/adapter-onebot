@@ -246,7 +246,8 @@ class Adapter(BaseAdapter):
         except Exception as e:
             log(
                 "ERROR",
-                f"<r><bg #f8bbd0>Error while process data from websocketfor bot {escape_tag(self_id)}.</bg #f8bbd0></r>",
+                "<r><bg #f8bbd0>Error while process data from websocket "
+                f"for bot {escape_tag(self_id)}.</bg #f8bbd0></r>",
                 e,
             )
         finally:
