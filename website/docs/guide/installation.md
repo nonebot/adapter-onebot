@@ -13,7 +13,7 @@ options:
 ## 安装 NoneBot OneBot 适配器
 
 ```bash
-nb adapter install nonebot-adpater-onebot
+nb adapter install nonebot-adapter-onebot
 ```
 
 或者使用 pip
