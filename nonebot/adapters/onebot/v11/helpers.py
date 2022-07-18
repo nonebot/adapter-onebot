@@ -128,7 +128,6 @@ CHINESE_DECLINE_WORD = {
     "不ok",
     "不可以",
     "不能",
-    "不可以",
 }
 CHINESE_TRAILING_WORD = ",.!?~，。！？～了的呢吧呀啊呗啦"
 
