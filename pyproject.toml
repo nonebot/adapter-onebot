@@ -28,17 +28,13 @@ nonebot2 = "^2.0.0-beta.3"
 [tool.poetry.dev-dependencies]
 isort = "^5.10.1"
 black = "^22.1.0"
+nonemoji = "^0.1.2"
 pytest-cov = "^3.0.0"
 pre-commit = "^2.19.0"
 pytest-asyncio = "^0.18.1"
 nonebug = { git = "https://github.com/nonebot/nonebug.git" }
 nonebot2 = { git = "https://github.com/nonebot/nonebot2.git" }
 nb-autodoc = { git = "https://github.com/nonebot/nb-autodoc.git" }
-
-# [[tool.poetry.source]]
-# name = "aliyun"
-# url = "https://mirrors.aliyun.com/pypi/simple/"
-# default = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

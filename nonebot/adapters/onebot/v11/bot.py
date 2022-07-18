@@ -157,9 +157,9 @@ async def send(
         params.setdefault("group_id", event_dict["group_id"])
 
     if "message_type" not in params:  # guess the message_type
-        if "group_id" in params:
+        if params.get("group_id") is not None:
             params["message_type"] = "group"
-        elif "user_id" in params:
+        elif params.get("message_id") is not None:
             params["message_type"] = "private"
         else:
             raise ValueError("Cannot guess message type to reply!")
