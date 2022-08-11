@@ -159,7 +159,7 @@ async def send(
     if "message_type" not in params:  # guess the message_type
         if params.get("group_id") is not None:
             params["message_type"] = "group"
-        elif params.get("message_id") is not None:
+        elif params.get("user_id") is not None:
             params["message_type"] = "private"
         else:
             raise ValueError("Cannot guess message type to reply!")
