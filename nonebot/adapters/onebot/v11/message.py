@@ -152,11 +152,13 @@ class MessageSegment(BaseMessageSegment["Message"]):
         title: str,
         content: Optional[str] = None,
         img_url: Optional[str] = None,
+        subtype: Optional[str] = None,
     ) -> "MessageSegment":
         return MessageSegment(
             "music",
             {
                 "type": "custom",
+                "subtype": subtype or "163",
                 "url": url,
                 "audio": audio,
                 "title": title,
