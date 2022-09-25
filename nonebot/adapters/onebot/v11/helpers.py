@@ -256,7 +256,7 @@ def Cooldown(
             del running[key]
         return
 
-    async def dependency(matcher: Matcher, event: MessageEvent):
+    async def dependency(matcher: Matcher, event: Event):
         loop = get_running_loop()
 
         if isolate_level is CooldownIsolateLevel.GROUP:
