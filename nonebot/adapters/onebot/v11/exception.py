@@ -32,10 +32,7 @@ class NetworkError(BaseNetworkError, OneBotV11AdapterException):
         """错误原因"""
 
     def __repr__(self):
-        return f"<NetWorkError message={self.msg}>"
-
-    def __str__(self):
-        return self.__repr__()
+        return f"NetWorkError(message={self.msg!r})"
 
 
 class ApiNotAvailable(BaseApiNotAvailable, OneBotV11AdapterException):
@@ -57,10 +54,7 @@ class ActionFailed(BaseActionFailed, OneBotV11AdapterException):
 
     def __repr__(self):
         return (
-            "<ActionFailed "
+            "ActionFailed("
             + ", ".join(f"{k}={v!r}" for k, v in self.info.items())
-            + ">"
+            + ")"
         )
-
-    def __str__(self):
-        return self.__repr__()

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
+from typing import Literal
 from datetime import datetime
-from typing_extensions import Literal
 
 import pytest
 from nonebug import App

@@ -47,7 +47,7 @@ class Collator(Generic[E]):
             key = self._key_from_model(model)
             if key in self.tree:
                 self.logger(
-                    "WARNING",
+                    "DEBUG",
                     f'Model for key "{key}" {self.tree[key]} is overridden by {model}',
                 )
             self.tree[key] = model

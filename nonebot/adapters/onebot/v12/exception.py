@@ -32,10 +32,7 @@ class NetworkError(BaseNetworkError, OneBotV12AdapterException):
         """错误原因"""
 
     def __repr__(self):
-        return f"<NetWorkError message={self.msg}>"
-
-    def __str__(self):
-        return self.__repr__()
+        return f"NetWorkError(message={self.msg!r})"
 
 
 class ApiNotAvailable(BaseApiNotAvailable, OneBotV12AdapterException):
@@ -55,10 +52,7 @@ class ActionMissingField(ActionFailed):
         """Action 返回数据"""
 
     def __repr__(self):
-        return f"<ActionMissingField data={self.data!r}>"
-
-    def __str__(self):
-        return self.__repr__()
+        return f"ActionMissingField(data={self.data!r})"
 
 
 class ActionFailedWithRetcode(ActionFailed):
@@ -86,17 +80,14 @@ class ActionFailedWithRetcode(ActionFailed):
 
     def __repr__(self):
         return (
-            "<ActionFailed "
+            "ActionFailed("
             + f"status={self.status!r}, "
             + f"retcode={self.retcode!r}, "
             + f"message={self.message!r}, "
             + f"data={self.data!r}"
             + "".join(f", {k}={v!r}" for k, v in self.extra.items())
-            + ">"
+            + ")"
         )
-
-    def __str__(self):
-        return self.__repr__()
 
 
 # 1xxxx

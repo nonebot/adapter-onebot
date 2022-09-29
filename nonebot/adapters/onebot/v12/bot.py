@@ -128,18 +128,17 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
     if first_msg_seg.type != "text":
         return
 
-    first_text = first_msg_seg.data["text"]
-
     nicknames = set(filter(lambda n: n, bot.config.nickname))
-    if nicknames:
-        # check if the user is calling me with my nickname
-        nickname_regex = "|".join(nicknames)
-        m = re.search(rf"^({nickname_regex})([\s,，]*|$)", first_text, re.IGNORECASE)
-        if m:
-            nickname = m.group(1)
-            log("DEBUG", f"User is calling me {nickname}")
-            event.to_me = True
-            first_msg_seg.data["text"] = first_text[m.end() :]
+    if not nicknames:
+        return
+
+    # check if the user is calling me with my nickname
+    nickname_regex = "|".join(nicknames)
+    first_text = first_msg_seg.data["text"]
+    if m := re.search(rf"^({nickname_regex})([\s,，]*|$)", first_text, re.IGNORECASE):
+        log("DEBUG", f"User is calling me {m[1]}")
+        event.to_me = True
+        first_msg_seg.data["text"] = first_text[m.end() :]
 
 
 async def send(

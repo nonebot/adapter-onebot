@@ -9,7 +9,7 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing import Type, Tuple, Union, Iterable, Optional, cast
+from typing import Type, Tuple, Union, Iterable, Optional
 
 from nonebot.typing import overrides
 

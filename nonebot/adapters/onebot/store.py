@@ -27,8 +27,7 @@ class ResultStore:
     def add_result(self, self_id: str, result: Dict[str, Any]):
         echo = result.get("echo")
         if isinstance(echo, str) and echo.isdecimal():
-            future = self._futures.get((self_id, int(echo)))
-            if future:
+            if future := self._futures.get((self_id, int(echo))):
                 future.set_result(result)
 
     async def fetch(

@@ -7,8 +7,7 @@ FrontMatter:
 
 from copy import deepcopy
 from datetime import datetime
-from typing_extensions import Literal
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
 
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag

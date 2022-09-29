@@ -246,8 +246,7 @@ class Adapter(BaseAdapter):
         data = request.content
         if data is not None:
             json_data = json.loads(data)
-            event = self.json_to_event(json_data)
-            if event:
+            if event := self.json_to_event(json_data):
                 bot = self.bots.get(self_id, None)
                 if not bot:
                     bot = Bot(self, self_id)
@@ -290,8 +289,7 @@ class Adapter(BaseAdapter):
                 raw_data = (
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
-                event = self.json_to_event(raw_data, self_id)
-                if event:
+                if event := self.json_to_event(raw_data, self_id):
                     asyncio.create_task(bot.handle_event(event))
         except WebSocketClosed as e:
             log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
@@ -440,7 +438,7 @@ class Adapter(BaseAdapter):
         for retcode in exc.__retcode__:
             if retcode in cls.exc_classes:
                 log(
-                    "WARNING",
+                    "DEBUG",
                     f"Exception for retcode {retcode} is is overridden by {exc}",
                 )
             cls.exc_classes[retcode] = exc

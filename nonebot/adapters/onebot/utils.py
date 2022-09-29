@@ -12,9 +12,7 @@ def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
     if not access_token:
         return None
     scheme, _, param = access_token.partition(" ")
-    if scheme.lower() not in ["bearer", "token"]:
-        return None
-    return param
+    return param if scheme.lower() in ["bearer", "token"] else None
 
 
 def b2s(b: Optional[bool]) -> Optional[str]:
