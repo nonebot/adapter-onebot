@@ -228,7 +228,7 @@ def Cooldown(
     isolate_level: CooldownIsolateLevel = CooldownIsolateLevel.USER,
     parallel: int = 1,
 ) -> None:
-    """依赖注入形式的命令冷却
+    """依赖注入形式的事件冷却
 
     用法:
         ```python
@@ -238,9 +238,9 @@ def Cooldown(
         ```
 
     参数:
-        cooldown: 命令冷却间隔
-        prompt: 当命令冷却时发送给用户的提示消息
-        isolate_level: 命令冷却的隔离级别, 参考 `CooldownIsolateLevel`
+        cooldown: 冷却间隔
+        prompt: 当触发冷却时发送给用户的提示消息
+        isolate_level: 事件冷却的隔离级别, 参考 `CooldownIsolateLevel`
         parallel: 并行执行的命令数量
     """
     if not isinstance(isolate_level, CooldownIsolateLevel):
@@ -256,25 +256,28 @@ def Cooldown(
             del running[key]
         return
 
-    async def dependency(matcher: Matcher, event: MessageEvent):
+    async def dependency(matcher: Matcher, event: Event):
         loop = get_running_loop()
 
+        group_id = getattr(event, "group_id", None)
+        if group_id:
+            group_id = str(group_id)
+        try:
+            user_id = event.get_user_id()
+        except Exception:
+            user_id = None
+
         if isolate_level is CooldownIsolateLevel.GROUP:
-            key = str(
-                event.group_id
-                if isinstance(event, GroupMessageEvent)
-                else event.user_id,
-            )
+            key = group_id or user_id
         elif isolate_level is CooldownIsolateLevel.USER:
-            key = str(event.user_id)
+            key = user_id
         elif isolate_level is CooldownIsolateLevel.GROUP_USER:
-            key = (
-                f"{event.group_id}_{event.user_id}"
-                if isinstance(event, GroupMessageEvent)
-                else str(event.user_id)
-            )
+            key = f"{group_id}_{user_id}" if group_id else user_id
         else:
             key = CooldownIsolateLevel.GLOBAL.name
+
+        if not key:
+            return
 
         if running[key] <= 0:
             await matcher.finish(prompt)
