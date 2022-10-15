@@ -188,11 +188,6 @@ class Adapter(BaseAdapter):
         if response is not None:
             return response
 
-        # check access_token
-        response = self._check_access_token(request)
-        if response is not None:
-            return response
-
         data = request.content
         if data is not None:
             json_data = json.loads(data)
