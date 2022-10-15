@@ -37,7 +37,7 @@ from .config import Config
 from .utils import log, handle_api_result
 from .event import Event, LifecycleMetaEvent
 from .message import Message, MessageSegment
-from .exception import NetworkError, ApiNotAvailable
+from .exception import NetworkError, ApiNotAvailable, OneBotV11AdapterException
 
 RECONNECT_INTERVAL = 3.0
 DEFAULT_MODELS: List[Type[Event]] = []
@@ -168,7 +168,7 @@ class Adapter(BaseAdapter):
                     f"HTTP request received unexpected "
                     f"status code: {response.status_code}"
                 )
-            except NetworkError:
+            except OneBotV11AdapterException:
                 raise
             except Exception as e:
                 raise NetworkError("HTTP request failed") from e
