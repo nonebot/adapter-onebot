@@ -259,7 +259,9 @@ def Cooldown(
     async def dependency(matcher: Matcher, event: Event):
         loop = get_running_loop()
 
-        group_id: Optional[str] = getattr(event, "group_id", None)
+        group_id = getattr(event, "group_id", None)
+        if group_id:
+            group_id = str(group_id)
         try:
             user_id = event.get_user_id()
         except Exception:
