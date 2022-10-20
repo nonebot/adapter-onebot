@@ -188,17 +188,17 @@ class Adapter(BaseAdapter):
         if response is not None:
             return response
 
-        data = request.content
-        if data is not None:
+        if data := request.content:
             json_data = json.loads(data)
             if event := self.json_to_event(json_data):
-                bot = self.bots.get(self_id, None)
-                if not bot:
+                if not (bot := self.bots.get(self_id, None)):
                     bot = Bot(self, self_id)
                     self.bot_connect(bot)
                     log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                 bot = cast(Bot, bot)
                 asyncio.create_task(bot.handle_event(event))
+        else:
+            return Response(400, content="Invalid request body")
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
