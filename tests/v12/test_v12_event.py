@@ -39,8 +39,10 @@ async def test_custom_model(app: App, init_adapter):
     event = {
         "id": "0",
         "impl": "test",
-        "platform": "test",
-        "self_id": "0",
+        "self": {
+            "platform": "test",
+            "user_id": "0",
+        },
         "time": datetime.now(),
         "type": "message",
         "detail_type": "self",
