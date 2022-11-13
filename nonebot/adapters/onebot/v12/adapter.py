@@ -34,7 +34,6 @@ from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.utils import get_auth_bearer
 
 from .bot import Bot
-from .event import Event
 from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
@@ -44,6 +43,13 @@ from .exception import (
     ApiNotAvailable,
     ActionMissingField,
     ActionFailedWithRetcode,
+)
+from .event import (
+    Event,
+    NoticeEvent,
+    MessageEvent,
+    HeartbeatMetaEvent,
+    StatusUpdateMetaEvent,
 )
 
 RECONNECT_INTERVAL = 3.0
@@ -257,18 +263,6 @@ class Adapter(BaseAdapter):
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
-        self_id = websocket.request.headers.get("X-Self-Id")
-
-        # check self_id
-        if not self_id:
-            log("WARNING", "Missing X-Self-ID Header")
-            await websocket.close(1008, "Missing X-Self-ID Header")
-            return
-        elif self_id in self.bots:
-            log("WARNING", f"There's already a bot {self_id}, ignored")
-            await websocket.close(1008, "Duplicate X-Self-ID")
-            return
-
         # check access_token
         response = self._check_access_token(websocket.request)
         if response is not None:
@@ -277,11 +271,8 @@ class Adapter(BaseAdapter):
             return
 
         await websocket.accept()
-        bot = Bot(self, self_id)
-        self.connections[self_id] = websocket
-        self.bot_connect(bot)
 
-        log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
+        bots: dict[str, Bot] = {}
 
         try:
             while True:
@@ -289,11 +280,42 @@ class Adapter(BaseAdapter):
                 raw_data = (
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
-                if event := self.json_to_event(raw_data, self_id):
-                    asyncio.create_task(bot.handle_event(event))
+                if event := self.json_to_event(raw_data):
+                    if isinstance(event, HeartbeatMetaEvent):
+                        pass
+                    elif isinstance(event, StatusUpdateMetaEvent):
+                        for bot_status in event.status.bots:
+                            if (
+                                bot_status.self.user_id not in bots
+                                and bot_status.online
+                            ):
+                                bot = Bot(self, bot_status.self.user_id)
+                                bots[bot.self_id] = bot
+                                self.connections[bot.self_id] = websocket
+                                self.bot_connect(bot)
+                                log(
+                                    "INFO",
+                                    f"<y>Bot {escape_tag(bot.self_id)}</y> connected",
+                                )
+                            elif bot := bots.get(bot_status.self.user_id):
+                                if not bot_status.online:
+                                    bots.pop(bot.self_id, None)
+                                    self.connections.pop(bot.self_id, None)
+                                    self.bot_disconnect(bot)
+                                    log(
+                                        "INFO",
+                                        f"<y>Bot {escape_tag(bot.self_id)}</y> disconnected",
+                                    )
+                    else:
+                        event = cast(MessageEvent, event)
+                        if bot := bots.get(event.self.user_id):
+                            asyncio.create_task(bot.handle_event(event))
+
         except WebSocketClosed as e:
+            self_id = ", ".join(bots)
             log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
         except Exception as e:
+            self_id = ", ".join(bots)
             log(
                 "ERROR",
                 "<r><bg #f8bbd0>Error while process data from websocket "
@@ -304,8 +326,9 @@ class Adapter(BaseAdapter):
         finally:
             with contextlib.suppress(Exception):
                 await websocket.close()
-            self.connections.pop(self_id, None)
-            self.bot_disconnect(bot)
+            for bot_id, bot in bots.items():
+                self.connections.pop(bot_id, None)
+                self.bot_disconnect(bot)
 
     def _check_access_token(self, request: Request) -> Optional[Response]:
         token = get_auth_bearer(request.headers.get("Authorization"))
