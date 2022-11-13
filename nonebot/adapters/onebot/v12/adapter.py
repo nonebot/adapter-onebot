@@ -296,8 +296,18 @@ class Adapter(BaseAdapter):
                             self._handle_status_update(event, bots, websocket)
                     else:
                         event = cast(MessageEvent, event)
-                        if bot := bots.get(event.self.user_id):
-                            asyncio.create_task(bot.handle_event(event))
+                        self_id = event.self.user_id
+                        bot = bots.get(self_id)
+                        if not bot:
+                            bot = Bot(self, self_id)
+                            bots[self_id] = bot
+                            self.connections[self_id] = websocket, event.self.platform
+                            self.bot_connect(bot)
+                            log(
+                                "INFO",
+                                f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
+                            )
+                        asyncio.create_task(bot.handle_event(event))
 
         except WebSocketClosed as e:
             self_id = ", ".join(bots)
@@ -380,8 +390,18 @@ class Adapter(BaseAdapter):
                                     self._handle_status_update(event, bots, ws)
                             else:
                                 event = cast(MessageEvent, event)
-                                if bot := bots.get(event.self.user_id):
-                                    asyncio.create_task(bot.handle_event(event))
+                                self_id = event.self.user_id
+                                bot = bots.get(self_id)
+                                if not bot:
+                                    bot = Bot(self, self_id)
+                                    bots[self_id] = bot
+                                    self.connections[self_id] = ws, event.self.platform
+                                    self.bot_connect(bot)
+                                    log(
+                                        "INFO",
+                                        f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
+                                    )
+                                asyncio.create_task(bot.handle_event(event))
                     except WebSocketClosed as e:
                         log(
                             "ERROR",
