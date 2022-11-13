@@ -164,7 +164,7 @@ class Adapter(BaseAdapter):
             await websocket.send(json_data)
             try:
                 return self._handle_api_result(
-                    await self._result_store.fetch(bot.self_id, seq, timeout)
+                    await self._result_store.fetch(seq, timeout)
                 )
             except asyncio.TimeoutError:
                 raise NetworkError(f"WebSocket call api {api} timeout") from None
@@ -384,7 +384,7 @@ class Adapter(BaseAdapter):
                                 if isinstance(data, str)
                                 else msgpack.unpackb(data)
                             )
-                            event = self.json_to_event(raw_data, bot and bot.self_id)
+                            event = self.json_to_event(raw_data)
                             if not event:
                                 continue
                             if not bot:
@@ -476,9 +476,7 @@ class Adapter(BaseAdapter):
         return Exc
 
     @classmethod
-    def json_to_event(
-        cls, json_data: Any, self_id: Optional[str] = None
-    ) -> Optional[Event]:
+    def json_to_event(cls, json_data: Any) -> Optional[Event]:
         if not isinstance(json_data, dict):
             return None
 
@@ -486,8 +484,7 @@ class Adapter(BaseAdapter):
         json_data = flattened_to_nested(json_data)
 
         if "type" not in json_data:
-            if self_id is not None:
-                cls._result_store.add_result(self_id, json_data)
+            cls._result_store.add_result(json_data)
             return None
 
         try:
