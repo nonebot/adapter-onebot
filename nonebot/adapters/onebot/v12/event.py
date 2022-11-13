@@ -66,6 +66,9 @@ class BotSelf(BaseModel, extra=Extra.allow):
     platform: str
     user_id: str
 
+    def __str__(self) -> str:
+        return f"{self.platform}:{self.user_id}"
+
 
 class BotStatus(BaseModel, extra=Extra.allow):
     """机器人的状态"""

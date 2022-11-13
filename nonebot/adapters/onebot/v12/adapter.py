@@ -38,18 +38,12 @@ from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
 from .utils import CustomEncoder, log, flattened_to_nested
+from .event import Event, MetaEvent, MessageEvent, StatusUpdateMetaEvent
 from .exception import (
     NetworkError,
     ApiNotAvailable,
     ActionMissingField,
     ActionFailedWithRetcode,
-)
-from .event import (
-    Event,
-    NoticeEvent,
-    MessageEvent,
-    HeartbeatMetaEvent,
-    StatusUpdateMetaEvent,
 )
 
 RECONNECT_INTERVAL = 3.0
@@ -157,8 +151,17 @@ class Adapter(BaseAdapter):
 
         if websocket:
             seq = self._result_store.get_seq()
+            platform, user_id = bot.self_id.split(":", 1)
             json_data = json.dumps(
-                {"action": api, "params": data, "echo": str(seq)},
+                {
+                    "action": api,
+                    "params": data,
+                    "echo": str(seq),
+                    "self": {
+                        "platform": platform,
+                        "user_id": user_id,
+                    },
+                },
                 cls=CustomEncoder,
             )
             await websocket.send(json_data)
@@ -281,15 +284,12 @@ class Adapter(BaseAdapter):
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
                 if event := self.json_to_event(raw_data):
-                    if isinstance(event, HeartbeatMetaEvent):
-                        pass
-                    elif isinstance(event, StatusUpdateMetaEvent):
+                    if isinstance(event, MetaEvent):
+                        if not isinstance(event, StatusUpdateMetaEvent):
+                            continue
                         for bot_status in event.status.bots:
-                            if (
-                                bot_status.self.user_id not in bots
-                                and bot_status.online
-                            ):
-                                bot = Bot(self, bot_status.self.user_id)
+                            if str(bot_status.self) not in bots and bot_status.online:
+                                bot = Bot(self, str(bot_status.self))
                                 bots[bot.self_id] = bot
                                 self.connections[bot.self_id] = websocket
                                 self.bot_connect(bot)
@@ -297,7 +297,7 @@ class Adapter(BaseAdapter):
                                     "INFO",
                                     f"<y>Bot {escape_tag(bot.self_id)}</y> connected",
                                 )
-                            elif bot := bots.get(bot_status.self.user_id):
+                            elif bot := bots.get(str(bot_status.self)):
                                 if not bot_status.online:
                                     bots.pop(bot.self_id, None)
                                     self.connections.pop(bot.self_id, None)
@@ -308,7 +308,7 @@ class Adapter(BaseAdapter):
                                     )
                     else:
                         event = cast(MessageEvent, event)
-                        if bot := bots.get(event.self.user_id):
+                        if bot := bots.get(str(event.self)):
                             asyncio.create_task(bot.handle_event(event))
 
         except WebSocketClosed as e:
