@@ -9,7 +9,18 @@ import json
 import asyncio
 import inspect
 import contextlib
-from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Type,
+    Tuple,
+    Union,
+    Callable,
+    Optional,
+    Generator,
+    cast,
+)
 
 import msgpack
 from pygtrie import CharTrie
@@ -88,7 +99,7 @@ class Adapter(BaseAdapter):
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
-        self.connections: Dict[str, WebSocket] = {}
+        self.connections: Dict[str, Tuple[WebSocket, str]] = {}
         self.tasks: List["asyncio.Task"] = []
         self._setup()
 
@@ -145,13 +156,12 @@ class Adapter(BaseAdapter):
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
-        websocket = self.connections.get(bot.self_id, None)
+        websocket, platform = self.connections.get(bot.self_id, (None, None))
         timeout: float = data.get("_timeout", self.config.api_timeout)
         log("DEBUG", f"Calling API <y>{api}</y>")
 
         if websocket:
             seq = self._result_store.get_seq()
-            platform, user_id = bot.self_id.split(":", 1)
             json_data = json.dumps(
                 {
                     "action": api,
@@ -159,7 +169,7 @@ class Adapter(BaseAdapter):
                     "echo": str(seq),
                     "self": {
                         "platform": platform,
-                        "user_id": user_id,
+                        "user_id": bot.self_id,
                     },
                 },
                 cls=CustomEncoder,
@@ -251,7 +261,7 @@ class Adapter(BaseAdapter):
             if event := self.json_to_event(json_data):
                 if not isinstance(event, MetaEvent):
                     event = cast(MessageEvent, event)
-                    self_id = str(event.self)
+                    self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
                     if not bot:
                         bot = Bot(self, self_id)
@@ -271,7 +281,7 @@ class Adapter(BaseAdapter):
 
         await websocket.accept()
 
-        bots: dict[str, Bot] = {}
+        bots: Dict[str, Bot] = {}
 
         try:
             while True:
@@ -280,31 +290,13 @@ class Adapter(BaseAdapter):
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
                 if event := self.json_to_event(raw_data):
+                    # 除了 MetaEvent 以外均拥有 self 字段
                     if isinstance(event, MetaEvent):
-                        if not isinstance(event, StatusUpdateMetaEvent):
-                            continue
-                        for bot_status in event.status.bots:
-                            if str(bot_status.self) not in bots and bot_status.online:
-                                bot = Bot(self, str(bot_status.self))
-                                bots[bot.self_id] = bot
-                                self.connections[bot.self_id] = websocket
-                                self.bot_connect(bot)
-                                log(
-                                    "INFO",
-                                    f"<y>Bot {escape_tag(bot.self_id)}</y> connected",
-                                )
-                            elif bot := bots.get(str(bot_status.self)):
-                                if not bot_status.online:
-                                    bots.pop(bot.self_id, None)
-                                    self.connections.pop(bot.self_id, None)
-                                    self.bot_disconnect(bot)
-                                    log(
-                                        "INFO",
-                                        f"<y>Bot {escape_tag(bot.self_id)}</y> disconnected",
-                                    )
+                        if isinstance(event, StatusUpdateMetaEvent):
+                            self._handle_status_update(event, bots, websocket)
                     else:
                         event = cast(MessageEvent, event)
-                        if bot := bots.get(str(event.self)):
+                        if bot := bots.get(event.self.user_id):
                             asyncio.create_task(bot.handle_event(event))
 
         except WebSocketClosed as e:
@@ -322,8 +314,8 @@ class Adapter(BaseAdapter):
         finally:
             with contextlib.suppress(Exception):
                 await websocket.close()
-            for bot_id, bot in bots.items():
-                self.connections.pop(bot_id, None)
+            for self_id, bot in bots.items():
+                self.connections.pop(self_id, None)
                 self.bot_disconnect(bot)
 
     def _check_access_token(self, request: Request) -> Optional[Response]:
@@ -364,7 +356,7 @@ class Adapter(BaseAdapter):
                 "Authorization"
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
         req = Request("GET", url, headers=headers, timeout=30.0)
-        bots: dict[str, Bot] = {}
+        bots: Dict[str, Bot] = {}
         while True:
             try:
                 async with self.websocket(req) as ws:
@@ -384,31 +376,11 @@ class Adapter(BaseAdapter):
                             if not event:
                                 continue
                             if isinstance(event, MetaEvent):
-                                if not isinstance(event, StatusUpdateMetaEvent):
-                                    continue
-                                for bot_status in event.status.bots:
-                                    if (
-                                        str(bot_status.self) not in bots
-                                        and bot_status.online
-                                    ):
-                                        bot = Bot(self, str(bot_status.self))
-                                        bots[bot.self_id] = bot
-                                        self.bot_connect(bot)
-                                        log(
-                                            "INFO",
-                                            f"<y>Bot {escape_tag(bot.self_id)}</y> connected",
-                                        )
-                                    elif bot := bots.get(str(bot_status.self)):
-                                        if not bot_status.online:
-                                            bots.pop(bot.self_id, None)
-                                            self.bot_disconnect(bot)
-                                            log(
-                                                "INFO",
-                                                f"<y>Bot {escape_tag(bot.self_id)}</y> disconnected",
-                                            )
+                                if isinstance(event, StatusUpdateMetaEvent):
+                                    self._handle_status_update(event, bots, ws)
                             else:
                                 event = cast(MessageEvent, event)
-                                if bot := bots.get(str(event.self)):
+                                if bot := bots.get(event.self.user_id):
                                     asyncio.create_task(bot.handle_event(event))
                     except WebSocketClosed as e:
                         log(
@@ -424,8 +396,8 @@ class Adapter(BaseAdapter):
                             e,
                         )
                     finally:
-                        for bot_id, bot in bots.items():
-                            self.connections.pop(bot_id, None)
+                        for self_id, bot in bots.items():
+                            self.connections.pop(self_id, None)
                             self.bot_disconnect(bot)
                         bots = {}
 
@@ -438,6 +410,30 @@ class Adapter(BaseAdapter):
                 )
 
             await asyncio.sleep(RECONNECT_INTERVAL)
+
+    def _handle_status_update(
+        self, event: StatusUpdateMetaEvent, bots: Dict[str, Bot], websocket: WebSocket
+    ) -> None:
+        for bot_status in event.status.bots:
+            self_id = bot_status.self.user_id
+            if self_id not in bots and bot_status.online:
+                bot = Bot(self, self_id)
+                bots[self_id] = bot
+                self.connections[self_id] = (websocket, self_id)
+                self.bot_connect(bot)
+                log(
+                    "INFO",
+                    f"<y>Bot {escape_tag(self_id)}</y> connected",
+                )
+            elif bot := bots.get(self_id):
+                if not bot_status.online:
+                    bots.pop(self_id, None)
+                    self.connections.pop(self_id, None)
+                    self.bot_disconnect(bot)
+                    log(
+                        "INFO",
+                        f"<y>Bot {escape_tag(self_id)}</y> disconnected",
+                    )
 
     @classmethod
     def add_custom_model(
