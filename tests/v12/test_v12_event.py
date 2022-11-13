@@ -23,6 +23,7 @@ async def test_event(app: App, init_adapter):
 
 @pytest.mark.asyncio
 async def test_custom_model(app: App, init_adapter):
+    from nonebot.adapters.onebot.v12.event import BotSelf
     from nonebot.adapters.onebot.v12 import Event, Adapter, MessageEvent
 
     class QQExtended(BaseModel):
@@ -34,7 +35,7 @@ async def test_custom_model(app: App, init_adapter):
 
     class PlatformEvent(Event):
         impl: Literal["test"]
-        platform: Literal["test"]
+        self: BotSelf
 
     event = {
         "id": "0",

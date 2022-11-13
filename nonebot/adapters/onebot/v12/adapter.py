@@ -290,7 +290,7 @@ class Adapter(BaseAdapter):
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
                 if event := self.json_to_event(raw_data):
-                    # 除了 MetaEvent 以外均拥有 self 字段
+                    # 除元事件以外均拥有 self 字段
                     if isinstance(event, MetaEvent):
                         if isinstance(event, StatusUpdateMetaEvent):
                             self._handle_status_update(event, bots, websocket)
@@ -480,7 +480,11 @@ class Adapter(BaseAdapter):
         cls, data: Dict[str, Any]
     ) -> Generator[Type[Event], None, None]:
         """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
-        key = f"/{data.get('impl')}/{data.get('platform')}"
+        platform = ""
+        # 元事件没有 self 字段
+        if "self" in data:
+            platform = data["self"]["platform"]
+        key = f"/{data.get('impl')}/{platform}"
         if key in cls.event_models:
             yield from cls.event_models[key].get_model(data)
         yield from cls.event_models[""].get_model(data)
