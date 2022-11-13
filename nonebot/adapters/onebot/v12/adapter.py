@@ -240,13 +240,6 @@ class Adapter(BaseAdapter):
         return result["data"]
 
     async def _handle_http(self, request: Request) -> Response:
-        self_id = request.headers.get("x-self-id")
-
-        # check self_id
-        if not self_id:
-            log("WARNING", "Missing X-Self-ID Header")
-            return Response(400, content="Missing X-Self-ID Header")
-
         # check access_token
         response = self._check_access_token(request)
         if response is not None:
@@ -256,13 +249,16 @@ class Adapter(BaseAdapter):
         if data is not None:
             json_data = json.loads(data)
             if event := self.json_to_event(json_data):
-                bot = self.bots.get(self_id, None)
-                if not bot:
-                    bot = Bot(self, self_id)
-                    self.bot_connect(bot)
-                    log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
-                bot = cast(Bot, bot)
-                asyncio.create_task(bot.handle_event(event))
+                if not isinstance(event, MetaEvent):
+                    event = cast(MessageEvent, event)
+                    self_id = str(event.self)
+                    bot = self.bots.get(self_id, None)
+                    if not bot:
+                        bot = Bot(self, self_id)
+                        self.bot_connect(bot)
+                        log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
+                    bot = cast(Bot, bot)
+                    asyncio.create_task(bot.handle_event(event))
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
@@ -368,7 +364,7 @@ class Adapter(BaseAdapter):
                 "Authorization"
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
         req = Request("GET", url, headers=headers, timeout=30.0)
-        bot: Optional[Bot] = None
+        bots: dict[str, Bot] = {}
         while True:
             try:
                 async with self.websocket(req) as ws:
@@ -387,16 +383,33 @@ class Adapter(BaseAdapter):
                             event = self.json_to_event(raw_data)
                             if not event:
                                 continue
-                            if not bot:
-                                self_id = event.self_id
-                                bot = Bot(self, self_id)
-                                self.connections[self_id] = ws
-                                self.bot_connect(bot)
-                                log(
-                                    "INFO",
-                                    f"<y>Bot {escape_tag(str(self_id))}</y> connected",
-                                )
-                            asyncio.create_task(bot.handle_event(event))
+                            if isinstance(event, MetaEvent):
+                                if not isinstance(event, StatusUpdateMetaEvent):
+                                    continue
+                                for bot_status in event.status.bots:
+                                    if (
+                                        str(bot_status.self) not in bots
+                                        and bot_status.online
+                                    ):
+                                        bot = Bot(self, str(bot_status.self))
+                                        bots[bot.self_id] = bot
+                                        self.bot_connect(bot)
+                                        log(
+                                            "INFO",
+                                            f"<y>Bot {escape_tag(bot.self_id)}</y> connected",
+                                        )
+                                    elif bot := bots.get(str(bot_status.self)):
+                                        if not bot_status.online:
+                                            bots.pop(bot.self_id, None)
+                                            self.bot_disconnect(bot)
+                                            log(
+                                                "INFO",
+                                                f"<y>Bot {escape_tag(bot.self_id)}</y> disconnected",
+                                            )
+                            else:
+                                event = cast(MessageEvent, event)
+                                if bot := bots.get(str(event.self)):
+                                    asyncio.create_task(bot.handle_event(event))
                     except WebSocketClosed as e:
                         log(
                             "ERROR",
@@ -411,10 +424,10 @@ class Adapter(BaseAdapter):
                             e,
                         )
                     finally:
-                        if bot:
-                            self.connections.pop(bot.self_id, None)
+                        for bot_id, bot in bots.items():
+                            self.connections.pop(bot_id, None)
                             self.bot_disconnect(bot)
-                            bot = None
+                        bots = {}
 
             except Exception as e:
                 log(
