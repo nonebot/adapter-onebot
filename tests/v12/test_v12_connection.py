@@ -13,7 +13,7 @@ from nonebug import App
 async def test_http(app: App, init_adapter, endpoints: str):
     import nonebot
 
-    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
+    with (Path(__file__).parent / "events.json").open("r") as f:
         test_events = json.load(f)
 
     async with app.test_server() as ctx:
@@ -44,7 +44,7 @@ async def test_http(app: App, init_adapter, endpoints: str):
 async def test_ws(app: App, init_adapter, endpoints: str):
     import nonebot
 
-    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
+    with (Path(__file__).parent / "events.json").open("r") as f:
         test_events = json.load(f)
 
     async with app.test_server() as ctx:
