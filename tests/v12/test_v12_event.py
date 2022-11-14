@@ -12,7 +12,7 @@ from pydantic import BaseModel
 async def test_event(app: App, init_adapter):
     from nonebot.adapters.onebot.v12 import Adapter
 
-    with (Path(__file__).parent / "events.json").open("r") as f:
+    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
         test_events = json.load(f)
 
     for event_data in test_events:
