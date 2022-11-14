@@ -99,7 +99,8 @@ class Adapter(BaseAdapter):
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
-        self.connections: Dict[str, Tuple[WebSocket, str]] = {}
+        self.connections: Dict[str, WebSocket] = {}
+        self.platforms: Dict[str, str] = {}
         self.tasks: List["asyncio.Task"] = []
         self._setup()
 
@@ -156,24 +157,27 @@ class Adapter(BaseAdapter):
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
-        websocket, platform = self.connections.get(bot.self_id, (None, None))
+        meta_action = [
+            "get_latest_events",
+            "get_supported_actions",
+            "get_status",
+            "get_version",
+        ]
+
+        websocket = self.connections.get(bot.self_id)
+        platform = self.platforms.get(bot.self_id)
         timeout: float = data.get("_timeout", self.config.api_timeout)
         log("DEBUG", f"Calling API <y>{api}</y>")
 
+        action_data = {"action": api, "params": data}
+        # 元动作不需要 self 字段
+        if platform and api not in meta_action:
+            action_data["self"] = {"platform": platform, "user_id": bot.self_id}
+
         if websocket:
             seq = self._result_store.get_seq()
-            json_data = json.dumps(
-                {
-                    "action": api,
-                    "params": data,
-                    "echo": str(seq),
-                    "self": {
-                        "platform": platform,
-                        "user_id": bot.self_id,
-                    },
-                },
-                cls=CustomEncoder,
-            )
+            action_data["echo"] = str(seq)
+            json_data = json.dumps(action_data, cls=CustomEncoder)
             await websocket.send(json_data)
             try:
                 return self._handle_api_result(
@@ -198,7 +202,7 @@ class Adapter(BaseAdapter):
                 api_url,
                 headers=headers,
                 timeout=timeout,
-                content=json.dumps({"action": api, "params": data}, cls=CustomEncoder),
+                content=json.dumps(action_data, cls=CustomEncoder),
             )
 
             try:
@@ -265,10 +269,13 @@ class Adapter(BaseAdapter):
                     bot = self.bots.get(self_id, None)
                     if not bot:
                         bot = Bot(self, self_id)
+                        self.platforms[self_id] = event.self.platform
                         self.bot_connect(bot)
                         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                     bot = cast(Bot, bot)
                     asyncio.create_task(bot.handle_event(event))
+                elif isinstance(event, StatusUpdateMetaEvent):
+                    self._handle_status_update(event)
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
@@ -301,7 +308,8 @@ class Adapter(BaseAdapter):
                         if not bot:
                             bot = Bot(self, self_id)
                             bots[self_id] = bot
-                            self.connections[self_id] = websocket, event.self.platform
+                            self.connections[self_id] = websocket
+                            self.platforms[self_id] = event.self.platform
                             self.bot_connect(bot)
                             log(
                                 "INFO",
@@ -326,6 +334,7 @@ class Adapter(BaseAdapter):
                 await websocket.close()
             for self_id, bot in bots.items():
                 self.connections.pop(self_id, None)
+                self.platforms.pop(self_id, None)
                 self.bot_disconnect(bot)
 
     def _check_access_token(self, request: Request) -> Optional[Response]:
@@ -395,7 +404,8 @@ class Adapter(BaseAdapter):
                                 if not bot:
                                     bot = Bot(self, self_id)
                                     bots[self_id] = bot
-                                    self.connections[self_id] = ws, event.self.platform
+                                    self.connections[self_id] = ws
+                                    self.platforms[self_id] = event.self.platform
                                     self.bot_connect(bot)
                                     log(
                                         "INFO",
@@ -418,6 +428,7 @@ class Adapter(BaseAdapter):
                     finally:
                         for self_id, bot in bots.items():
                             self.connections.pop(self_id, None)
+                            self.platforms.pop(self_id, None)
                             self.bot_disconnect(bot)
                         bots = {}
 
@@ -432,24 +443,35 @@ class Adapter(BaseAdapter):
             await asyncio.sleep(RECONNECT_INTERVAL)
 
     def _handle_status_update(
-        self, event: StatusUpdateMetaEvent, bots: Dict[str, Bot], websocket: WebSocket
+        self,
+        event: StatusUpdateMetaEvent,
+        bots: Optional[Dict[str, Bot]] = None,
+        websocket: Optional[WebSocket] = None,
     ) -> None:
         for bot_status in event.status.bots:
             self_id = bot_status.self.user_id
-            if self_id not in bots and bot_status.online:
+            platform = bot_status.self.platform
+            if self_id not in self.bots and bot_status.online:
                 bot = Bot(self, self_id)
-                bots[self_id] = bot
-                self.connections[self_id] = (websocket, self_id)
+
+                if bots is not None and websocket is not None:
+                    bots[self_id] = bot
+                    self.connections[self_id] = websocket
+                self.platforms[self_id] = platform
                 self.bot_connect(bot)
+
                 log(
                     "INFO",
                     f"<y>Bot {escape_tag(self_id)}</y> connected",
                 )
-            elif bot := bots.get(self_id):
+            elif bot := self.bots.get(self_id):
                 if not bot_status.online:
-                    bots.pop(self_id, None)
-                    self.connections.pop(self_id, None)
+                    if bots is not None and websocket is not None:
+                        bots.pop(self_id, None)
+                        self.connections.pop(self_id, None)
+                    self.platforms.pop(self_id, None)
                     self.bot_disconnect(bot)
+
                     log(
                         "INFO",
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
