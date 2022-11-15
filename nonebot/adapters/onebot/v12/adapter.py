@@ -484,7 +484,20 @@ class Adapter(BaseAdapter):
         for bot_status in event.status.bots:
             self_id = bot_status.self.user_id
             platform = bot_status.self.platform
-            if bot_status.online and self_id not in self.bots:
+            if not bot_status.online:
+                if bot := self.bots.get(self_id):
+                    if bots is not None and websocket is not None:
+                        bots.pop(self_id, None)
+                        self.connections.pop(self_id, None)
+                    else:
+                        self.platforms.pop(self_id, None)
+                    self.bot_disconnect(bot)
+
+                    log(
+                        "INFO",
+                        f"<y>Bot {escape_tag(self_id)}</y> disconnected",
+                    )
+            elif self_id not in self.bots:
                 bot = Bot(self, self_id)
 
                 # 正向与反向 WebSocket 连接需要额外保存连接信息
@@ -499,19 +512,7 @@ class Adapter(BaseAdapter):
                     "INFO",
                     f"<y>Bot {escape_tag(self_id)}</y> connected",
                 )
-            elif not bot_status.online:
-                if bot := self.bots.get(self_id):
-                    if bots is not None and websocket is not None:
-                        bots.pop(self_id, None)
-                        self.connections.pop(self_id, None)
-                    else:
-                        self.platforms.pop(self_id, None)
-                    self.bot_disconnect(bot)
 
-                    log(
-                        "INFO",
-                        f"<y>Bot {escape_tag(self_id)}</y> disconnected",
-                    )
 
     @classmethod
     def add_custom_model(
