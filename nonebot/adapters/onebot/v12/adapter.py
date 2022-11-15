@@ -38,7 +38,7 @@ from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
 from .utils import CustomEncoder, log, flattened_to_nested
-from .event import Event, MetaEvent, MessageEvent, StatusUpdateMetaEvent
+from .event import Event, BotEvent, MetaEvent, StatusUpdateMetaEvent
 from .exception import (
     NetworkError,
     ApiNotAvailable,
@@ -253,7 +253,7 @@ class Adapter(BaseAdapter):
             json_data = json.loads(data)
             if event := self.json_to_event(json_data, impl):
                 if not isinstance(event, MetaEvent):
-                    event = cast(MessageEvent, event)
+                    event = cast(BotEvent, event)
                     self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
                     if not bot:
@@ -299,7 +299,7 @@ class Adapter(BaseAdapter):
                         if isinstance(event, StatusUpdateMetaEvent):
                             self._handle_status_update(event, bots, websocket)
                     else:
-                        event = cast(MessageEvent, event)
+                        event = cast(BotEvent, event)
                         self_id = event.self.user_id
                         bot = bots.get(self_id)
                         if not bot:
@@ -412,7 +412,7 @@ class Adapter(BaseAdapter):
                                 if isinstance(event, StatusUpdateMetaEvent):
                                     self._handle_status_update(event, bots, ws)
                             else:
-                                event = cast(MessageEvent, event)
+                                event = cast(BotEvent, event)
                                 self_id = event.self.user_id
                                 bot = bots.get(self_id)
                                 if not bot:

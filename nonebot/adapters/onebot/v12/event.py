@@ -86,12 +86,17 @@ class Reply(BaseModel, extra=Extra.allow):
     user_id: str
 
 
+class BotEvent(Event):
+    """包含 self 字段的机器人事件"""
+
+    self: BotSelf
+
+
 # Message Event
-class MessageEvent(Event):
+class MessageEvent(BotEvent):
     """消息事件"""
 
     type: Literal["message"]
-    self: BotSelf
     message_id: str
     message: Message
     original_message: Message
@@ -209,11 +214,10 @@ class ChannelMessageEvent(MessageEvent):
         return f"guild_{self.guild_id}_channel_{self.channel_id}_{self.user_id}"
 
 
-class NoticeEvent(Event):
+class NoticeEvent(BotEvent):
     """通知事件"""
 
     type: Literal["notice"]
-    self: BotSelf
 
 
 class FriendIncreaseEvent(NoticeEvent):
@@ -349,11 +353,10 @@ class ChannelDeleteEvent(NoticeEvent):
 
 
 # Request Events
-class RequestEvent(Event):
+class RequestEvent(BotEvent):
     """请求事件"""
 
     type: Literal["request"]
-    self: BotSelf
 
 
 # Meta Events
