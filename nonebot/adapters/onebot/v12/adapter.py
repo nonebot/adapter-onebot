@@ -513,7 +513,6 @@ class Adapter(BaseAdapter):
                     f"<y>Bot {escape_tag(self_id)}</y> connected",
                 )
 
-
     @classmethod
     def add_custom_model(
         cls,
