@@ -462,7 +462,7 @@ class Adapter(BaseAdapter):
                         for self_id, bot in bots.items():
                             self.connections.pop(self_id, None)
                             self.bot_disconnect(bot)
-                        bots = {}
+                        bots.clear()
 
             except Exception as e:
                 log(
