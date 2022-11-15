@@ -252,7 +252,13 @@ class Adapter(BaseAdapter):
         if data is not None:
             json_data = json.loads(data)
             if event := self.json_to_event(json_data, impl):
-                if not isinstance(event, MetaEvent):
+                if isinstance(event, StatusUpdateMetaEvent):
+                    self._handle_status_update(event)
+                if isinstance(event, MetaEvent):
+                    for bot in self.bots.values():
+                        bot = cast(Bot, bot)
+                        asyncio.create_task(bot.handle_event(event))
+                else:
                     event = cast(BotEvent, event)
                     self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
@@ -263,8 +269,6 @@ class Adapter(BaseAdapter):
                         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                     bot = cast(Bot, bot)
                     asyncio.create_task(bot.handle_event(event))
-                elif isinstance(event, StatusUpdateMetaEvent):
-                    self._handle_status_update(event)
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
@@ -294,10 +298,11 @@ class Adapter(BaseAdapter):
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
                 if event := self.json_to_event(raw_data, impl):
-                    # 除元事件以外均拥有 self 字段
+                    if isinstance(event, StatusUpdateMetaEvent):
+                        self._handle_status_update(event, bots, websocket)
                     if isinstance(event, MetaEvent):
-                        if isinstance(event, StatusUpdateMetaEvent):
-                            self._handle_status_update(event, bots, websocket)
+                        for bot in bots.values():
+                            asyncio.create_task(bot.handle_event(event))
                     else:
                         event = cast(BotEvent, event)
                         self_id = event.self.user_id
@@ -408,9 +413,11 @@ class Adapter(BaseAdapter):
                             event = self.json_to_event(raw_data, impl)
                             if not event:
                                 continue
+                            if isinstance(event, StatusUpdateMetaEvent):
+                                self._handle_status_update(event, bots, ws)
                             if isinstance(event, MetaEvent):
-                                if isinstance(event, StatusUpdateMetaEvent):
-                                    self._handle_status_update(event, bots, ws)
+                                for bot in bots.values():
+                                    asyncio.create_task(bot.handle_event(event))
                             else:
                                 event = cast(BotEvent, event)
                                 self_id = event.self.user_id
