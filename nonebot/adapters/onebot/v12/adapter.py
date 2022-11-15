@@ -9,18 +9,7 @@ import json
 import asyncio
 import inspect
 import contextlib
-from typing import (
-    Any,
-    Dict,
-    List,
-    Type,
-    Tuple,
-    Union,
-    Callable,
-    Optional,
-    Generator,
-    cast,
-)
+from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 import msgpack
 from pygtrie import CharTrie
@@ -254,6 +243,12 @@ class Adapter(BaseAdapter):
         return result["data"]
 
     async def _handle_http(self, request: Request) -> Response:
+        impl = request.headers.get("X-Impl")
+        # check impl
+        if not impl:
+            log("WARNING", "Missing X-Impl Header")
+            return Response(400, content="Missing X-Impl Header")
+
         # check access_token
         response = self._check_access_token(request)
         if response is not None:
@@ -262,7 +257,7 @@ class Adapter(BaseAdapter):
         data = request.content
         if data is not None:
             json_data = json.loads(data)
-            if event := self.json_to_event(json_data):
+            if event := self.json_to_event(json_data, impl):
                 if not isinstance(event, MetaEvent):
                     event = cast(MessageEvent, event)
                     self_id = event.self.user_id
@@ -279,6 +274,14 @@ class Adapter(BaseAdapter):
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
+        impl = websocket.request.headers.get("X-Impl")
+
+        # check impl
+        if not impl:
+            log("WARNING", "Missing X-Impl Header")
+            await websocket.close(1008, "Missing X-Impl Header")
+            return
+
         # check access_token
         response = self._check_access_token(websocket.request)
         if response is not None:
@@ -296,7 +299,7 @@ class Adapter(BaseAdapter):
                 raw_data = (
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
-                if event := self.json_to_event(raw_data):
+                if event := self.json_to_event(raw_data, impl):
                     # 除元事件以外均拥有 self 字段
                     if isinstance(event, MetaEvent):
                         if isinstance(event, StatusUpdateMetaEvent):
@@ -376,6 +379,7 @@ class Adapter(BaseAdapter):
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
         req = Request("GET", url, headers=headers, timeout=30.0)
         bots: Dict[str, Bot] = {}
+        impl = ""
         while True:
             try:
                 async with self.websocket(req) as ws:
@@ -384,6 +388,15 @@ class Adapter(BaseAdapter):
                         f"WebSocket Connection to {escape_tag(str(url))} established",
                     )
                     try:
+                        await ws.send_text(
+                            json.dumps(
+                                {
+                                    "action": "get_version",
+                                    "params": {},
+                                    "echo": "get_version",
+                                }
+                            )
+                        )
                         while True:
                             data = await ws.receive()
                             raw_data = (
@@ -391,7 +404,14 @@ class Adapter(BaseAdapter):
                                 if isinstance(data, str)
                                 else msgpack.unpackb(data)
                             )
-                            event = self.json_to_event(raw_data)
+                            if not impl and raw_data.get("echo") == "get_version":
+                                impl = raw_data["data"]["impl"]
+                                if not impl:
+                                    log("WARNING", "Missing Impl")
+                                    await ws.close(1008, "Missing Impl")
+                                    return
+                                continue
+                            event = self.json_to_event(raw_data, impl)
                             if not event:
                                 continue
                             if isinstance(event, MetaEvent):
@@ -499,14 +519,14 @@ class Adapter(BaseAdapter):
 
     @classmethod
     def get_event_model(
-        cls, data: Dict[str, Any]
+        cls, data: Dict[str, Any], impl: str
     ) -> Generator[Type[Event], None, None]:
         """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
         platform = ""
         # 元事件没有 self 字段
         if "self" in data:
             platform = data["self"]["platform"]
-        key = f"/{data.get('impl')}/{platform}"
+        key = f"/{impl}/{platform}"
         if key in cls.event_models:
             yield from cls.event_models[key].get_model(data)
         yield from cls.event_models[""].get_model(data)
@@ -531,7 +551,7 @@ class Adapter(BaseAdapter):
         return Exc
 
     @classmethod
-    def json_to_event(cls, json_data: Any) -> Optional[Event]:
+    def json_to_event(cls, json_data: Any, impl: str) -> Optional[Event]:
         if not isinstance(json_data, dict):
             return None
 
@@ -543,7 +563,7 @@ class Adapter(BaseAdapter):
             return None
 
         try:
-            for model in cls.get_event_model(json_data):
+            for model in cls.get_event_model(json_data, impl):
                 try:
                     event = model.parse_obj(json_data)
                     break

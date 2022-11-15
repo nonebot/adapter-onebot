@@ -17,7 +17,7 @@ async def test_event(app: App, init_adapter):
 
     for event_data in test_events:
         model_name: str = event_data.pop("_model")
-        event = Adapter.json_to_event(event_data)
+        event = Adapter.json_to_event(event_data, "")
         assert model_name == event.__class__.__name__
 
 
@@ -34,12 +34,11 @@ async def test_custom_model(app: App, init_adapter):
         qq: QQExtended
 
     class PlatformEvent(Event):
-        impl: Literal["test"]
         self: BotSelf
 
+    impl = "test"
     event = {
         "id": "0",
-        "impl": "test",
         "self": {
             "platform": "test",
             "user_id": "0",
@@ -56,20 +55,20 @@ async def test_custom_model(app: App, init_adapter):
     }
 
     Adapter.add_custom_model(MessageSelfEvent)
-    assert list(Adapter.get_event_model(event)) == [
+    assert list(Adapter.get_event_model(event, impl)) == [
         MessageSelfEvent,
         MessageEvent,
         Event,
     ]
-    parsed = Adapter.json_to_event(event)
+    parsed = Adapter.json_to_event(event, impl)
     assert isinstance(parsed, MessageSelfEvent)
 
     Adapter.add_custom_model(PlatformEvent, impl="test", platform="test")
-    assert list(Adapter.get_event_model(event)) == [
+    assert list(Adapter.get_event_model(event, impl)) == [
         PlatformEvent,
         MessageSelfEvent,
         MessageEvent,
         Event,
     ]
-    parsed = Adapter.json_to_event(event)
+    parsed = Adapter.json_to_event(event, impl)
     assert isinstance(parsed, PlatformEvent)

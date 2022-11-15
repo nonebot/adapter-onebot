@@ -19,7 +19,6 @@ async def test_http(app: App, init_adapter, endpoints: str):
     async with app.test_server() as ctx:
         client = ctx.get_client()
         event = test_events[0]
-        model = event.pop("_model")
         headers = {
             "X-OneBot-Version": "12",
             "X-Impl": "test",
