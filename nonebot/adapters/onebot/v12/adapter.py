@@ -287,7 +287,9 @@ class Adapter(BaseAdapter):
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
-        impl = websocket.request.headers.get("X-Impl")
+        onebot_version, impl = websocket.request.headers.get(
+            "Sec-WebSocket-Protocol", ""
+        ).split(".", 1)
 
         # check impl
         if not impl:
