@@ -146,22 +146,16 @@ class Adapter(BaseAdapter):
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
-        meta_action = [
-            "get_latest_events",
-            "get_supported_actions",
-            "get_status",
-            "get_version",
-        ]
-
         websocket = self.connections.get(bot.self_id)
         platform = self.platforms.get(bot.self_id)
         timeout: float = data.get("_timeout", self.config.api_timeout)
         log("DEBUG", f"Calling API <y>{api}</y>")
 
-        action_data = {"action": api, "params": data}
-        # 元动作不需要 self 字段
-        if platform and api not in meta_action:
-            action_data["self"] = {"platform": platform, "user_id": bot.self_id}
+        action_data = {
+            "action": api,
+            "params": data,
+            "self": {"platform": platform, "user_id": bot.self_id},
+        }
 
         if websocket:
             seq = self._result_store.get_seq()
