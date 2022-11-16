@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Union, Literal, Optional, TypedDict
 
 from nonebot.adapters import Bot as BaseBot
 
+from .adapter import Adapter
 from .event import Event, MessageEvent
 from .message import Message, MessageSegment
 
@@ -30,6 +31,8 @@ async def send(
 ) -> Any: ...
 
 class Bot(BaseBot):
+    platform: str
+    def __init__(self, adapter: Adapter, self_id: str, platform: str): ...
     async def call_api(self, api: str, **data) -> Any:
         """调用 OneBot 协议 API。
 

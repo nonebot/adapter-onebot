@@ -9,18 +9,7 @@ import json
 import asyncio
 import inspect
 import contextlib
-from typing import (
-    Any,
-    Dict,
-    List,
-    Type,
-    Tuple,
-    Union,
-    Callable,
-    Optional,
-    Generator,
-    cast,
-)
+from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 import msgpack
 from pygtrie import CharTrie
@@ -99,8 +88,7 @@ class Adapter(BaseAdapter):
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
-        self.connections: Dict[str, Tuple[WebSocket, str]] = {}
-        self.platforms: Dict[str, str] = {}
+        self.connections: Dict[str, WebSocket] = {}
         self.tasks: List["asyncio.Task"] = []
         self._setup()
 
@@ -157,18 +145,19 @@ class Adapter(BaseAdapter):
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
-        websocket, platform = self.connections.get(bot.self_id, (None, None))
+        websocket = self.connections.get(bot.self_id)
         timeout: float = data.get("_timeout", self.config.api_timeout)
         log("DEBUG", f"Calling API <y>{api}</y>")
 
+        action_data = {
+            "action": api,
+            "params": data,
+            "self": {"platform": bot.platform, "user_id": bot.self_id},
+        }
+
         if websocket:
             seq = self._result_store.get_seq()
-            action_data = {
-                "action": api,
-                "params": data,
-                "self": {"platform": platform, "user_id": bot.self_id},
-                "echo": str(seq),
-            }
+            action_data["echo"] = str(seq)
             json_data = json.dumps(action_data, cls=CustomEncoder)
             await websocket.send(json_data)
             try:
@@ -189,12 +178,6 @@ class Adapter(BaseAdapter):
                     "Bearer " + self.onebot_config.onebot_access_token
                 )
 
-            platform = self.platforms.get(bot.self_id)
-            action_data = {
-                "action": api,
-                "params": data,
-                "self": {"platform": platform, "user_id": bot.self_id},
-            }
             request = Request(
                 "POST",
                 api_url,
@@ -278,8 +261,7 @@ class Adapter(BaseAdapter):
                     self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
                     if not bot:
-                        bot = Bot(self, self_id)
-                        self.platforms[self_id] = event.self.platform
+                        bot = Bot(self, self_id, event.self.platform)
                         self.bot_connect(bot)
                         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                     bot = cast(Bot, bot)
@@ -325,9 +307,9 @@ class Adapter(BaseAdapter):
                         self_id = event.self.user_id
                         bot = bots.get(self_id)
                         if not bot:
-                            bot = Bot(self, self_id)
+                            bot = Bot(self, self_id, event.self.platform)
                             bots[self_id] = bot
-                            self.connections[self_id] = websocket, event.self.platform
+                            self.connections[self_id] = websocket
                             self.bot_connect(bot)
                             log(
                                 "INFO",
@@ -438,9 +420,9 @@ class Adapter(BaseAdapter):
                                 self_id = event.self.user_id
                                 bot = bots.get(self_id)
                                 if not bot:
-                                    bot = Bot(self, self_id)
+                                    bot = Bot(self, self_id, event.self.platform)
                                     bots[self_id] = bot
-                                    self.connections[self_id] = ws, event.self.platform
+                                    self.connections[self_id] = ws
                                     self.bot_connect(bot)
                                     log(
                                         "INFO",
@@ -491,8 +473,6 @@ class Adapter(BaseAdapter):
                     if bots is not None and websocket is not None:
                         bots.pop(self_id, None)
                         self.connections.pop(self_id, None)
-                    else:
-                        self.platforms.pop(self_id, None)
                     self.bot_disconnect(bot)
 
                     log(
@@ -500,14 +480,12 @@ class Adapter(BaseAdapter):
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
                     )
             elif self_id not in self.bots:
-                bot = Bot(self, self_id)
+                bot = Bot(self, self_id, platform)
 
                 # 正向与反向 WebSocket 连接需要额外保存连接信息
                 if bots is not None and websocket is not None:
                     bots[self_id] = bot
-                    self.connections[self_id] = websocket, platform
-                else:
-                    self.platforms[self_id] = platform
+                    self.connections[self_id] = websocket
                 self.bot_connect(bot)
 
                 log(

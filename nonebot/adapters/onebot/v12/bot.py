@@ -6,7 +6,7 @@ FrontMatter:
 """
 
 import re
-from typing import Any, Union, Callable
+from typing import TYPE_CHECKING, Any, Union, Callable
 
 from nonebot.typing import overrides
 from nonebot.message import handle_event
@@ -16,6 +16,9 @@ from nonebot.adapters import Bot as BaseBot
 from .utils import log
 from .message import Message, MessageSegment
 from .event import Event, Reply, MessageEvent
+
+if TYPE_CHECKING:
+    from .adapter import Adapter
 
 
 def _check_reply(bot: "Bot", event: MessageEvent) -> None:
@@ -184,6 +187,10 @@ class Bot(BaseBot):
     send_handler: Callable[
         ["Bot", Event, Union[str, Message, MessageSegment]], Any
     ] = send
+
+    def __init__(self, adapter: "Adapter", self_id: str, platform: str):
+        super().__init__(adapter, self_id)
+        self.platform = platform
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""
