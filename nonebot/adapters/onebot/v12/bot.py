@@ -188,7 +188,7 @@ class Bot(BaseBot):
         ["Bot", Event, Union[str, Message, MessageSegment]], Any
     ] = send
 
-    def __init__(self, adapter: "Adapter", self_id: str, platform: str):
+    def __init__(self, adapter: "Adapter", self_id: str, platform: str) -> None:
         super().__init__(adapter, self_id)
         self.platform = platform
 

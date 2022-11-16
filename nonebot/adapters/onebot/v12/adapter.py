@@ -85,7 +85,7 @@ class Adapter(BaseAdapter):
         return "OneBot V12"
 
     @overrides(BaseAdapter)
-    def __init__(self, driver: Driver, **kwargs: Any):
+    def __init__(self, driver: Driver, **kwargs: Any) -> None:
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
         self.connections: Dict[str, WebSocket] = {}
@@ -528,7 +528,7 @@ class Adapter(BaseAdapter):
         yield from cls.event_models[""].get_model(data)
 
     @classmethod
-    def add_custom_exception(cls, exc: Type[ActionFailedWithRetcode]):
+    def add_custom_exception(cls, exc: Type[ActionFailedWithRetcode]) -> None:
         for retcode in exc.__retcode__:
             if retcode in cls.exc_classes:
                 log(
@@ -582,6 +582,6 @@ class Adapter(BaseAdapter):
     def custom_send(
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
-    ):
+    ) -> None:
         """自定义 Bot 的回复函数。"""
         setattr(Bot, "send_handler", send_func)
