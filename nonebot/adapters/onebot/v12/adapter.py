@@ -293,8 +293,8 @@ class Adapter(BaseAdapter):
 
         # check impl
         if not impl:
-            log("WARNING", "Missing X-Impl Header")
-            await websocket.close(1008, "Missing X-Impl Header")
+            log("WARNING", "Missing Sec-WebSocket-Protocol Header")
+            await websocket.close(1008, "Missing Sec-WebSocket-Protocol Header")
             return
 
         # check access_token

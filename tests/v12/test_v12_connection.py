@@ -49,8 +49,7 @@ async def test_ws(app: App, init_adapter, endpoints: str):
     async with app.test_server() as ctx:
         client = ctx.get_client()
         headers = {
-            "X-OneBot-Version": "12",
-            "X-Impl": "test",
+            "Sec-WebSocket-Protocol": "12.test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(test_events[0])
