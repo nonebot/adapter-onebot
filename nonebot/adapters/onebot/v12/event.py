@@ -370,6 +370,19 @@ class MetaEvent(Event):
         raise NoLogException
 
 
+class ImplVersion(BaseModel, extra=Extra.allow):
+    impl: str
+    version: str
+    onebot_version: str
+
+
+class ConnectMetaEvent(MetaEvent):
+    """连接事件"""
+
+    detail_type: Literal["connect"]
+    version: ImplVersion
+
+
 class HeartbeatMetaEvent(MetaEvent):
     """心跳事件"""
 

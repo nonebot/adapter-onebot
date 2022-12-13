@@ -38,7 +38,7 @@ from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
 from .utils import CustomEncoder, log, flattened_to_nested
-from .event import Event, BotEvent, MetaEvent, StatusUpdateMetaEvent
+from .event import Event, BotEvent, MetaEvent, ConnectMetaEvent, StatusUpdateMetaEvent
 from .exception import (
     NetworkError,
     ApiNotAvailable,
@@ -384,15 +384,20 @@ class Adapter(BaseAdapter):
                         f"WebSocket Connection to {escape_tag(str(url))} established",
                     )
                     try:
-                        await ws.send_text(
-                            json.dumps(
-                                {
-                                    "action": "get_version",
-                                    "params": {},
-                                    "echo": "get_version",
-                                }
+                        # 等待 connect 事件
+                        while not impl:
+                            data = await ws.receive()
+                            raw_data = (
+                                json.loads(data)
+                                if isinstance(data, str)
+                                else msgpack.unpackb(data)
                             )
-                        )
+                            event = self.json_to_event(raw_data, impl)
+                            if not event:
+                                continue
+                            if isinstance(event, ConnectMetaEvent):
+                                impl = event.version.impl
+
                         while True:
                             data = await ws.receive()
                             raw_data = (
@@ -400,13 +405,6 @@ class Adapter(BaseAdapter):
                                 if isinstance(data, str)
                                 else msgpack.unpackb(data)
                             )
-                            if not impl and raw_data.get("echo") == "get_version":
-                                impl = raw_data["data"]["impl"]
-                                if not impl:
-                                    log("WARNING", "Missing Impl")
-                                    await ws.close(1008, "Missing Impl")
-                                    return
-                                continue
                             event = self.json_to_event(raw_data, impl)
                             if not event:
                                 continue
