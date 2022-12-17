@@ -385,6 +385,10 @@ class Adapter(BaseAdapter):
                     )
                     try:
                         # 等待 connect 事件
+                        log(
+                            "DEBUG",
+                            "Waiting for connect meta event",
+                        )
                         while not impl:
                             data = await ws.receive()
                             raw_data = (
@@ -397,6 +401,10 @@ class Adapter(BaseAdapter):
                                 continue
                             if isinstance(event, ConnectMetaEvent):
                                 impl = event.version.impl
+                                log(
+                                    "DEBUG",
+                                    f"Connect meta event received, impl is {impl}",
+                                )
 
                         while True:
                             data = await ws.receive()
