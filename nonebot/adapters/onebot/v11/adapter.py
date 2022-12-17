@@ -129,9 +129,7 @@ class Adapter(BaseAdapter):
             )
             await websocket.send(json_data)
             try:
-                return handle_api_result(
-                    await self._result_store.fetch(bot.self_id, seq, timeout)
-                )
+                return handle_api_result(await self._result_store.fetch(seq, timeout))
             except asyncio.TimeoutError:
                 raise NetworkError(f"WebSocket call api {api} timeout") from None
 
@@ -232,7 +230,7 @@ class Adapter(BaseAdapter):
             while True:
                 data = await websocket.receive()
                 json_data = json.loads(data)
-                if event := self.json_to_event(json_data, self_id):
+                if event := self.json_to_event(json_data):
                     asyncio.create_task(bot.handle_event(event))
         except WebSocketClosed as e:
             log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
@@ -324,7 +322,7 @@ class Adapter(BaseAdapter):
                         while True:
                             data = await ws.receive()
                             json_data = json.loads(data)
-                            event = self.json_to_event(json_data, bot and bot.self_id)
+                            event = self.json_to_event(json_data)
                             if not event:
                                 continue
                             if not bot:
@@ -388,9 +386,7 @@ class Adapter(BaseAdapter):
         yield from cls.event_models.get_model(data)
 
     @classmethod
-    def json_to_event(
-        cls, json_data: Any, self_id: Optional[str] = None
-    ) -> Optional[Event]:
+    def json_to_event(cls, json_data: Any) -> Optional[Event]:
         """将 json 数据转换为 Event 对象。
 
         如果为 API 调用返回数据且提供了 Event 对应 Bot，则将数据存入 ResultStore。
@@ -406,8 +402,7 @@ class Adapter(BaseAdapter):
             return None
 
         if "post_type" not in json_data:
-            if self_id is not None:
-                cls._result_store.add_result(self_id, json_data)
+            cls._result_store.add_result(json_data)
             return
 
         try:

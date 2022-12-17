@@ -1,9 +1,22 @@
-from typing import Any, Dict, List, Union, Literal, Optional
+from typing import Any, Dict, List, Union, Literal, Optional, TypedDict
 
 from nonebot.adapters import Bot as BaseBot
 
+from .adapter import Adapter
 from .event import Event, MessageEvent
 from .message import Message, MessageSegment
+
+class BotSelf(TypedDict):
+    platform: str
+    user_id: str
+
+class BotStatus(TypedDict):
+    self: BotSelf
+    online: bool
+
+class GetStatusResult(TypedDict):
+    good: str
+    bots: List[BotStatus]
 
 def _check_reply(bot: "Bot", event: MessageEvent): ...
 def _check_to_me(bot: "Bot", event: MessageEvent): ...
@@ -18,6 +31,8 @@ async def send(
 ) -> Any: ...
 
 class Bot(BaseBot):
+    platform: str
+    def __init__(self, adapter: Adapter, self_id: str, platform: str) -> None: ...
     async def call_api(self, api: str, **data) -> Any:
         """调用 OneBot 协议 API。
 
@@ -55,9 +70,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_status(
-        self, **kwargs: Any
-    ) -> Dict[Literal["good", "online"] | str, bool]:
+    async def get_status(self, **kwargs: Any) -> GetStatusResult:
         """获取运行状态
 
         参数:

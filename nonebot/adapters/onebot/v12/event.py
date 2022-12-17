@@ -7,7 +7,7 @@ FrontMatter:
 
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag
@@ -18,9 +18,6 @@ from nonebot.adapters import Event as BaseEvent
 from .message import Message
 from .exception import NoLogException
 
-if TYPE_CHECKING:
-    from .bot import Bot
-
 
 class Event(BaseEvent, extra=Extra.allow):
     """OneBot V12 协议事件，字段与 OneBot 一致
@@ -29,9 +26,6 @@ class Event(BaseEvent, extra=Extra.allow):
     """
 
     id: str
-    impl: str
-    platform: str
-    self_id: str
     time: datetime
     type: Literal["message", "notice", "request", "meta"]
     detail_type: str
@@ -66,9 +60,25 @@ class Event(BaseEvent, extra=Extra.allow):
         return False
 
 
-class Status(BaseModel, extra=Extra.allow):
-    good: bool
+class BotSelf(BaseModel, extra=Extra.allow):
+    """机器人自身标识"""
+
+    platform: str
+    user_id: str
+
+
+class BotStatus(BaseModel, extra=Extra.allow):
+    """机器人的状态"""
+
+    self: BotSelf
     online: bool
+
+
+class Status(BaseModel, extra=Extra.allow):
+    """运行状态"""
+
+    good: bool
+    bots: List[BotStatus]
 
 
 class Reply(BaseModel, extra=Extra.allow):
@@ -76,8 +86,14 @@ class Reply(BaseModel, extra=Extra.allow):
     user_id: str
 
 
+class BotEvent(Event):
+    """包含 self 字段的机器人事件"""
+
+    self: BotSelf
+
+
 # Message Event
-class MessageEvent(Event):
+class MessageEvent(BotEvent):
     """消息事件"""
 
     type: Literal["message"]
@@ -198,7 +214,7 @@ class ChannelMessageEvent(MessageEvent):
         return f"guild_{self.guild_id}_channel_{self.channel_id}_{self.user_id}"
 
 
-class NoticeEvent(Event):
+class NoticeEvent(BotEvent):
     """通知事件"""
 
     type: Literal["notice"]
@@ -337,7 +353,7 @@ class ChannelDeleteEvent(NoticeEvent):
 
 
 # Request Events
-class RequestEvent(Event):
+class RequestEvent(BotEvent):
     """请求事件"""
 
     type: Literal["request"]
@@ -354,9 +370,29 @@ class MetaEvent(Event):
         raise NoLogException
 
 
+class ImplVersion(BaseModel, extra=Extra.allow):
+    impl: str
+    version: str
+    onebot_version: str
+
+
+class ConnectMetaEvent(MetaEvent):
+    """连接事件"""
+
+    detail_type: Literal["connect"]
+    version: ImplVersion
+
+
 class HeartbeatMetaEvent(MetaEvent):
     """心跳事件"""
 
     detail_type: Literal["heartbeat"]
     interval: int
+    status: Status
+
+
+class StatusUpdateMetaEvent(MetaEvent):
+    """状态更新事件"""
+
+    detail_type: Literal["status_update"]
     status: Status

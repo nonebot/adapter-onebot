@@ -34,11 +34,11 @@ from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.utils import get_auth_bearer
 
 from .bot import Bot
-from .event import Event
 from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
 from .utils import CustomEncoder, log, flattened_to_nested
+from .event import Event, BotEvent, MetaEvent, ConnectMetaEvent, StatusUpdateMetaEvent
 from .exception import (
     NetworkError,
     ApiNotAvailable,
@@ -85,7 +85,7 @@ class Adapter(BaseAdapter):
         return "OneBot V12"
 
     @overrides(BaseAdapter)
-    def __init__(self, driver: Driver, **kwargs: Any):
+    def __init__(self, driver: Driver, **kwargs: Any) -> None:
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
         self.connections: Dict[str, WebSocket] = {}
@@ -145,20 +145,24 @@ class Adapter(BaseAdapter):
 
     @overrides(BaseAdapter)
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
-        websocket = self.connections.get(bot.self_id, None)
+        websocket = self.connections.get(bot.self_id)
         timeout: float = data.get("_timeout", self.config.api_timeout)
         log("DEBUG", f"Calling API <y>{api}</y>")
 
+        action_data = {
+            "action": api,
+            "params": data,
+            "self": {"platform": bot.platform, "user_id": bot.self_id},
+        }
+
         if websocket:
             seq = self._result_store.get_seq()
-            json_data = json.dumps(
-                {"action": api, "params": data, "echo": str(seq)},
-                cls=CustomEncoder,
-            )
+            action_data["echo"] = str(seq)
+            json_data = json.dumps(action_data, cls=CustomEncoder)
             await websocket.send(json_data)
             try:
                 return self._handle_api_result(
-                    await self._result_store.fetch(bot.self_id, seq, timeout)
+                    await self._result_store.fetch(seq, timeout)
                 )
             except asyncio.TimeoutError:
                 raise NetworkError(f"WebSocket call api {api} timeout") from None
@@ -179,7 +183,7 @@ class Adapter(BaseAdapter):
                 api_url,
                 headers=headers,
                 timeout=timeout,
-                content=json.dumps({"action": api, "params": data}, cls=CustomEncoder),
+                content=json.dumps(action_data, cls=CustomEncoder),
             )
 
             try:
@@ -231,12 +235,11 @@ class Adapter(BaseAdapter):
         return result["data"]
 
     async def _handle_http(self, request: Request) -> Response:
-        self_id = request.headers.get("x-self-id")
-
-        # check self_id
-        if not self_id:
-            log("WARNING", "Missing X-Self-ID Header")
-            return Response(400, content="Missing X-Self-ID Header")
+        impl = request.headers.get("X-Impl")
+        # check impl
+        if not impl:
+            log("WARNING", "Missing X-Impl Header")
+            return Response(400, content="Missing X-Impl Header")
 
         # check access_token
         response = self._check_access_token(request)
@@ -246,27 +249,34 @@ class Adapter(BaseAdapter):
         data = request.content
         if data is not None:
             json_data = json.loads(data)
-            if event := self.json_to_event(json_data):
-                bot = self.bots.get(self_id, None)
-                if not bot:
-                    bot = Bot(self, self_id)
-                    self.bot_connect(bot)
-                    log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
-                bot = cast(Bot, bot)
-                asyncio.create_task(bot.handle_event(event))
+            if event := self.json_to_event(json_data, impl):
+                if isinstance(event, StatusUpdateMetaEvent):
+                    self._handle_status_update(event)
+                if isinstance(event, MetaEvent):
+                    for bot in self.bots.values():
+                        bot = cast(Bot, bot)
+                        asyncio.create_task(bot.handle_event(event))
+                else:
+                    event = cast(BotEvent, event)
+                    self_id = event.self.user_id
+                    bot = self.bots.get(self_id, None)
+                    if not bot:
+                        bot = Bot(self, self_id, event.self.platform)
+                        self.bot_connect(bot)
+                        log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
+                    bot = cast(Bot, bot)
+                    asyncio.create_task(bot.handle_event(event))
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
-        self_id = websocket.request.headers.get("X-Self-Id")
+        onebot_version, impl = websocket.request.headers.get(
+            "Sec-WebSocket-Protocol", ""
+        ).split(".", 1)
 
-        # check self_id
-        if not self_id:
-            log("WARNING", "Missing X-Self-ID Header")
-            await websocket.close(1008, "Missing X-Self-ID Header")
-            return
-        elif self_id in self.bots:
-            log("WARNING", f"There's already a bot {self_id}, ignored")
-            await websocket.close(1008, "Duplicate X-Self-ID")
+        # check impl
+        if not impl:
+            log("WARNING", "Missing Sec-WebSocket-Protocol Header")
+            await websocket.close(1008, "Missing Sec-WebSocket-Protocol Header")
             return
 
         # check access_token
@@ -277,11 +287,8 @@ class Adapter(BaseAdapter):
             return
 
         await websocket.accept()
-        bot = Bot(self, self_id)
-        self.connections[self_id] = websocket
-        self.bot_connect(bot)
 
-        log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
+        bots: Dict[str, Bot] = {}
 
         try:
             while True:
@@ -289,11 +296,32 @@ class Adapter(BaseAdapter):
                 raw_data = (
                     json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
                 )
-                if event := self.json_to_event(raw_data, self_id):
-                    asyncio.create_task(bot.handle_event(event))
+                if event := self.json_to_event(raw_data, impl):
+                    if isinstance(event, StatusUpdateMetaEvent):
+                        self._handle_status_update(event, bots, websocket)
+                    if isinstance(event, MetaEvent):
+                        for bot in bots.values():
+                            asyncio.create_task(bot.handle_event(event))
+                    else:
+                        event = cast(BotEvent, event)
+                        self_id = event.self.user_id
+                        bot = bots.get(self_id)
+                        if not bot:
+                            bot = Bot(self, self_id, event.self.platform)
+                            bots[self_id] = bot
+                            self.connections[self_id] = websocket
+                            self.bot_connect(bot)
+                            log(
+                                "INFO",
+                                f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
+                            )
+                        asyncio.create_task(bot.handle_event(event))
+
         except WebSocketClosed as e:
+            self_id = ", ".join(bots)
             log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
         except Exception as e:
+            self_id = ", ".join(bots)
             log(
                 "ERROR",
                 "<r><bg #f8bbd0>Error while process data from websocket "
@@ -304,8 +332,9 @@ class Adapter(BaseAdapter):
         finally:
             with contextlib.suppress(Exception):
                 await websocket.close()
-            self.connections.pop(self_id, None)
-            self.bot_disconnect(bot)
+            for self_id, bot in bots.items():
+                self.connections.pop(self_id, None)
+                self.bot_disconnect(bot)
 
     def _check_access_token(self, request: Request) -> Optional[Response]:
         token = get_auth_bearer(request.headers.get("Authorization"))
@@ -345,7 +374,8 @@ class Adapter(BaseAdapter):
                 "Authorization"
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
         req = Request("GET", url, headers=headers, timeout=30.0)
-        bot: Optional[Bot] = None
+        bots: Dict[str, Bot] = {}
+        impl = ""
         while True:
             try:
                 async with self.websocket(req) as ws:
@@ -354,6 +384,28 @@ class Adapter(BaseAdapter):
                         f"WebSocket Connection to {escape_tag(str(url))} established",
                     )
                     try:
+                        # 等待 connect 事件
+                        log(
+                            "DEBUG",
+                            "Waiting for connect meta event",
+                        )
+                        while not impl:
+                            data = await ws.receive()
+                            raw_data = (
+                                json.loads(data)
+                                if isinstance(data, str)
+                                else msgpack.unpackb(data)
+                            )
+                            event = self.json_to_event(raw_data, impl)
+                            if not event:
+                                continue
+                            if isinstance(event, ConnectMetaEvent):
+                                impl = event.version.impl
+                                log(
+                                    "DEBUG",
+                                    f"Connect meta event received, impl is {impl}",
+                                )
+
                         while True:
                             data = await ws.receive()
                             raw_data = (
@@ -361,19 +413,28 @@ class Adapter(BaseAdapter):
                                 if isinstance(data, str)
                                 else msgpack.unpackb(data)
                             )
-                            event = self.json_to_event(raw_data, bot and bot.self_id)
+                            event = self.json_to_event(raw_data, impl)
                             if not event:
                                 continue
-                            if not bot:
-                                self_id = event.self_id
-                                bot = Bot(self, self_id)
-                                self.connections[self_id] = ws
-                                self.bot_connect(bot)
-                                log(
-                                    "INFO",
-                                    f"<y>Bot {escape_tag(str(self_id))}</y> connected",
-                                )
-                            asyncio.create_task(bot.handle_event(event))
+                            if isinstance(event, StatusUpdateMetaEvent):
+                                self._handle_status_update(event, bots, ws)
+                            if isinstance(event, MetaEvent):
+                                for bot in bots.values():
+                                    asyncio.create_task(bot.handle_event(event))
+                            else:
+                                event = cast(BotEvent, event)
+                                self_id = event.self.user_id
+                                bot = bots.get(self_id)
+                                if not bot:
+                                    bot = Bot(self, self_id, event.self.platform)
+                                    bots[self_id] = bot
+                                    self.connections[self_id] = ws
+                                    self.bot_connect(bot)
+                                    log(
+                                        "INFO",
+                                        f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
+                                    )
+                                asyncio.create_task(bot.handle_event(event))
                     except WebSocketClosed as e:
                         log(
                             "ERROR",
@@ -388,10 +449,10 @@ class Adapter(BaseAdapter):
                             e,
                         )
                     finally:
-                        if bot:
-                            self.connections.pop(bot.self_id, None)
+                        for self_id, bot in bots.items():
+                            self.connections.pop(self_id, None)
                             self.bot_disconnect(bot)
-                            bot = None
+                        bots.clear()
 
             except Exception as e:
                 log(
@@ -402,6 +463,41 @@ class Adapter(BaseAdapter):
                 )
 
             await asyncio.sleep(RECONNECT_INTERVAL)
+
+    def _handle_status_update(
+        self,
+        event: StatusUpdateMetaEvent,
+        bots: Optional[Dict[str, Bot]] = None,
+        websocket: Optional[WebSocket] = None,
+    ) -> None:
+        """处理状态更新事件"""
+        for bot_status in event.status.bots:
+            self_id = bot_status.self.user_id
+            platform = bot_status.self.platform
+            if not bot_status.online:
+                if bot := self.bots.get(self_id):
+                    if bots is not None and websocket is not None:
+                        bots.pop(self_id, None)
+                        self.connections.pop(self_id, None)
+                    self.bot_disconnect(bot)
+
+                    log(
+                        "INFO",
+                        f"<y>Bot {escape_tag(self_id)}</y> disconnected",
+                    )
+            elif self_id not in self.bots:
+                bot = Bot(self, self_id, platform)
+
+                # 正向与反向 WebSocket 连接需要额外保存连接信息
+                if bots is not None and websocket is not None:
+                    bots[self_id] = bot
+                    self.connections[self_id] = websocket
+                self.bot_connect(bot)
+
+                log(
+                    "INFO",
+                    f"<y>Bot {escape_tag(self_id)}</y> connected",
+                )
 
     @classmethod
     def add_custom_model(
@@ -425,16 +521,20 @@ class Adapter(BaseAdapter):
 
     @classmethod
     def get_event_model(
-        cls, data: Dict[str, Any]
+        cls, data: Dict[str, Any], impl: str
     ) -> Generator[Type[Event], None, None]:
         """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
-        key = f"/{data.get('impl')}/{data.get('platform')}"
+        platform = ""
+        # 元事件没有 self 字段
+        if "self" in data:
+            platform = data["self"]["platform"]
+        key = f"/{impl}/{platform}"
         if key in cls.event_models:
             yield from cls.event_models[key].get_model(data)
         yield from cls.event_models[""].get_model(data)
 
     @classmethod
-    def add_custom_exception(cls, exc: Type[ActionFailedWithRetcode]):
+    def add_custom_exception(cls, exc: Type[ActionFailedWithRetcode]) -> None:
         for retcode in exc.__retcode__:
             if retcode in cls.exc_classes:
                 log(
@@ -453,9 +553,7 @@ class Adapter(BaseAdapter):
         return Exc
 
     @classmethod
-    def json_to_event(
-        cls, json_data: Any, self_id: Optional[str] = None
-    ) -> Optional[Event]:
+    def json_to_event(cls, json_data: Any, impl: str) -> Optional[Event]:
         if not isinstance(json_data, dict):
             return None
 
@@ -463,12 +561,11 @@ class Adapter(BaseAdapter):
         json_data = flattened_to_nested(json_data)
 
         if "type" not in json_data:
-            if self_id is not None:
-                cls._result_store.add_result(self_id, json_data)
+            cls._result_store.add_result(json_data)
             return None
 
         try:
-            for model in cls.get_event_model(json_data):
+            for model in cls.get_event_model(json_data, impl):
                 try:
                     event = model.parse_obj(json_data)
                     break
@@ -491,6 +588,6 @@ class Adapter(BaseAdapter):
     def custom_send(
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
-    ):
+    ) -> None:
         """自定义 Bot 的回复函数。"""
         setattr(Bot, "send_handler", send_func)
