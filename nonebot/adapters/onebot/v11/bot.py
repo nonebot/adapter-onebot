@@ -186,6 +186,7 @@ class Bot(BaseBot):
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""
         if isinstance(event, MessageEvent):
+            event.message.reduce()
             await _check_reply(self, event)
             _check_at_me(self, event)
             _check_nickname(self, event)
