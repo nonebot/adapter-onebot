@@ -105,7 +105,7 @@ class Message(BaseMessage[MessageSegment]):
     def extract_plain_text(self) -> str:
         return "".join(seg.data["text"] for seg in self if seg.is_text())
 
-    def ruduce(self) -> None:
+    def reduce(self) -> None:
         index = 1
         while index < len(self):
             if self[index - 1].type == "text" and self[index].type == "text":

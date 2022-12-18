@@ -146,16 +146,20 @@ class PrivateMessageEvent(MessageEvent):
 
     @overrides(Event)
     def get_event_description(self) -> str:
+        texts: List[str] = []
+        msg_string: List[str] = []
+        for seg in self.original_message:
+            if seg.is_text():
+                texts.append(str(seg))
+            else:
+                msg_string.extend(
+                    (escape_tag("".join(texts)), f"<le>{escape_tag(str(seg))}</le>")
+                )
+                texts.clear()
+        msg_string.append(escape_tag("".join(texts)))
         return (
             f'Message {self.message_id} from {self.user_id} "'
-            + "".join(
-                map(
-                    lambda x: escape_tag(str(x))
-                    if x.is_text()
-                    else f"<le>{escape_tag(str(x))}</le>",
-                    self.message,
-                )
-            )
+            + "".join(msg_string)
             + '"'
         )
 
@@ -168,16 +172,20 @@ class GroupMessageEvent(MessageEvent):
 
     @overrides(Event)
     def get_event_description(self) -> str:
+        texts: List[str] = []
+        msg_string: List[str] = []
+        for seg in self.original_message:
+            if seg.is_text():
+                texts.append(str(seg))
+            else:
+                msg_string.extend(
+                    (escape_tag("".join(texts)), f"<le>{escape_tag(str(seg))}</le>")
+                )
+                texts.clear()
+        msg_string.append(escape_tag("".join(texts)))
         return (
             f'Message {self.message_id} from {self.user_id}@[群:{self.group_id}] "'
-            + "".join(
-                map(
-                    lambda x: escape_tag(str(x))
-                    if x.is_text()
-                    else f"<le>{escape_tag(str(x))}</le>",
-                    self.message,
-                )
-            )
+            + "".join(msg_string)
             + '"'
         )
 
