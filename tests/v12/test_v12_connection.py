@@ -70,8 +70,6 @@ async def test_ws(app: App, init_adapter, endpoints: str):
     indirect=True,
 )
 async def test_http_auth_missing(app: App, init_adapter):
-    import nonebot
-
     endpoints = "/onebot/v12/"
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
@@ -141,6 +139,28 @@ async def test_http_auth_query(app: App, init_adapter):
         bots = nonebot.get_bots()
         assert "0" in bots
         assert "2345678" not in bots
+
+
+@pytest.mark.parametrize(
+    "nonebug_init",
+    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
+    indirect=True,
+)
+async def test_ws_auth_missing(app: App, init_adapter):
+    endpoints = "/onebot/v12/"
+
+    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
+        test_events = json.load(f)
+
+    async with app.test_server() as ctx:
+        client = ctx.get_client()
+        headers = {
+            "Sec-WebSocket-Protocol": "12.test",
+        }
+        with pytest.raises(AssertionError):
+            async with client.websocket_connect(endpoints, headers=headers) as ws:
+                await ws.send_json(test_events[0])
+                await asyncio.sleep(0)
 
 
 @pytest.mark.parametrize(
