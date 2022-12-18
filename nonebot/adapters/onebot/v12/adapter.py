@@ -338,6 +338,8 @@ class Adapter(BaseAdapter):
 
     def _check_access_token(self, request: Request) -> Optional[Response]:
         token = get_auth_bearer(request.headers.get("Authorization"))
+        if token is None:
+            token = request.url.query.get("access_token")
 
         access_token = self.onebot_config.onebot_access_token
         if access_token and access_token != token:
