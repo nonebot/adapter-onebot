@@ -66,7 +66,7 @@ async def test_ws(app: App, init_adapter, endpoints: str):
 
 @pytest.mark.parametrize(
     "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"})],
+    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
     indirect=True,
 )
 async def test_http_auth_missing(app: App, init_adapter):
@@ -90,7 +90,7 @@ async def test_http_auth_missing(app: App, init_adapter):
 
 @pytest.mark.parametrize(
     "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"})],
+    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
     indirect=True,
 )
 async def test_http_auth_header(app: App, init_adapter):
@@ -118,7 +118,7 @@ async def test_http_auth_header(app: App, init_adapter):
 
 @pytest.mark.parametrize(
     "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"})],
+    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
     indirect=True,
 )
 async def test_http_auth_query(app: App, init_adapter):
@@ -145,7 +145,7 @@ async def test_http_auth_query(app: App, init_adapter):
 
 @pytest.mark.parametrize(
     "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"})],
+    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
     indirect=True,
 )
 async def test_ws_auth_header(app: App, init_adapter):
@@ -172,7 +172,7 @@ async def test_ws_auth_header(app: App, init_adapter):
 
 @pytest.mark.parametrize(
     "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"})],
+    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
     indirect=True,
 )
 async def test_ws_auth_query(app: App, init_adapter):
