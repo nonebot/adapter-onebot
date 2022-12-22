@@ -120,7 +120,7 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
     if first_msg_seg.type != "text":
         return
 
-    nicknames = set(filter(lambda n: n, bot.config.nickname))
+    nicknames = {re.escape(n) for n in bot.config.nickname}
     if not nicknames:
         return
 
