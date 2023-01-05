@@ -84,7 +84,7 @@ async def test_ws_missing_connect_meta_event(app: App, init_adapter):
             assert e.value.args[0] == {
                 "type": "websocket.close",
                 "code": 1008,
-                "reason": "",
+                "reason": "Missing connect meta event",
             }
 
 
