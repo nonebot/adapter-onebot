@@ -279,27 +279,30 @@ class Adapter(BaseAdapter):
         await websocket.accept()
 
         bots: Dict[str, Bot] = {}
-        impl = None
         try:
             # 等待 connect 事件
             log(
                 "DEBUG",
                 "Waiting for connect meta event",
             )
-            while impl is None:
-                data = await websocket.receive()
-                raw_data = (
-                    json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
+            data = await websocket.receive()
+            raw_data = (
+                json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
+            )
+            event = self.json_to_event(raw_data)
+            if not isinstance(event, ConnectMetaEvent):
+                log(
+                    "WARNING",
+                    "Missing connect meta event",
                 )
-                event = self.json_to_event(raw_data, impl)
-                if not event:
-                    continue
-                if isinstance(event, ConnectMetaEvent):
-                    impl = event.version.impl
-                    log(
-                        "DEBUG",
-                        f"Connect meta event received, impl is {impl}",
-                    )
+                await websocket.close(1008, "Missing connect meta event")
+                return
+
+            impl = event.version.impl
+            log(
+                "DEBUG",
+                f"Connect meta event received, impl is {impl}",
+            )
 
             while True:
                 data = await websocket.receive()
@@ -401,22 +404,21 @@ class Adapter(BaseAdapter):
                             "DEBUG",
                             "Waiting for connect meta event",
                         )
-                        while impl is None:
-                            data = await ws.receive()
-                            raw_data = (
-                                json.loads(data)
-                                if isinstance(data, str)
-                                else msgpack.unpackb(data)
-                            )
-                            event = self.json_to_event(raw_data, impl)
-                            if not event:
-                                continue
-                            if isinstance(event, ConnectMetaEvent):
-                                impl = event.version.impl
-                                log(
-                                    "DEBUG",
-                                    f"Connect meta event received, impl is {impl}",
-                                )
+                        data = await ws.receive()
+                        raw_data = (
+                            json.loads(data)
+                            if isinstance(data, str)
+                            else msgpack.unpackb(data)
+                        )
+                        event = self.json_to_event(raw_data)
+                        if not isinstance(event, ConnectMetaEvent):
+                            raise Exception("Missing connect meta event")
+
+                        impl = event.version.impl
+                        log(
+                            "DEBUG",
+                            f"Connect meta event received, impl is {impl}",
+                        )
 
                         while True:
                             data = await ws.receive()

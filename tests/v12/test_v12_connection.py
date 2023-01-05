@@ -66,6 +66,28 @@ async def test_ws(app: App, init_adapter, endpoints: str):
             assert "2345678" in bots
 
 
+async def test_ws_missing_connect_meta_event(app: App, init_adapter):
+    endpoints = "/onebot/v12/"
+
+    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
+        test_events = json.load(f)
+
+    async with app.test_server() as ctx:
+        client = ctx.get_client()
+        headers = {
+            "Sec-WebSocket-Protocol": "12.test",
+        }
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[0])
+            with pytest.raises(Exception) as e:
+                await ws.receive_json()
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1008,
+                "reason": "",
+            }
+
+
 @pytest.mark.parametrize(
     "nonebug_init",
     [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],

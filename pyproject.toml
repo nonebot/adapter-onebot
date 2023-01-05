@@ -38,7 +38,7 @@ nb-autodoc = { git = "https://github.com/nonebot/nb-autodoc.git" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "--cov nonebot.adapters.onebot --cov-report term-missing"
+# addopts = "--cov nonebot.adapters.onebot --cov-report term-missing"
 
 [tool.black]
 line-length = 88
