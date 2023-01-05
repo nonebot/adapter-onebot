@@ -390,7 +390,6 @@ class Adapter(BaseAdapter):
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
         req = Request("GET", url, headers=headers, timeout=30.0)
         bots: Dict[str, Bot] = {}
-        impl = None
         while True:
             try:
                 async with self.websocket(req) as ws:
