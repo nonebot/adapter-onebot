@@ -52,6 +52,8 @@ async def test_ws(app: App, init_adapter, endpoints: str):
             "Sec-WebSocket-Protocol": "12.test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+
             await ws.send_json(test_events[0])
             await asyncio.sleep(0)
             bots = nonebot.get_bots()
@@ -159,7 +161,7 @@ async def test_ws_auth_missing(app: App, init_adapter):
         }
         with pytest.raises(AssertionError):
             async with client.websocket_connect(endpoints, headers=headers) as ws:
-                await ws.send_json(test_events[0])
+                await ws.send_json(test_events[2])
                 await asyncio.sleep(0)
 
 
@@ -183,6 +185,8 @@ async def test_ws_auth_header(app: App, init_adapter):
             "Authorization": "Bearer test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+
             await ws.send_json(test_events[0])
             await asyncio.sleep(0)
             bots = nonebot.get_bots()
@@ -209,6 +213,8 @@ async def test_ws_auth_query(app: App, init_adapter):
             "Sec-WebSocket-Protocol": "12.test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+
             await ws.send_json(test_events[0])
             await asyncio.sleep(0)
             bots = nonebot.get_bots()
