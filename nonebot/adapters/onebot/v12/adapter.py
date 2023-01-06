@@ -269,16 +269,6 @@ class Adapter(BaseAdapter):
         return Response(204)
 
     async def _handle_ws(self, websocket: WebSocket) -> None:
-        onebot_version, impl = websocket.request.headers.get(
-            "Sec-WebSocket-Protocol", ""
-        ).split(".", 1)
-
-        # check impl
-        if not impl:
-            log("WARNING", "Missing Sec-WebSocket-Protocol Header")
-            await websocket.close(1008, "Missing Sec-WebSocket-Protocol Header")
-            return
-
         # check access_token
         response = self._check_access_token(websocket.request)
         if response is not None:
@@ -289,8 +279,31 @@ class Adapter(BaseAdapter):
         await websocket.accept()
 
         bots: Dict[str, Bot] = {}
-
         try:
+            # 等待 connect 事件
+            log(
+                "DEBUG",
+                "Waiting for connect meta event",
+            )
+            data = await websocket.receive()
+            raw_data = (
+                json.loads(data) if isinstance(data, str) else msgpack.unpackb(data)
+            )
+            event = self.json_to_event(raw_data)
+            if not isinstance(event, ConnectMetaEvent):
+                log(
+                    "WARNING",
+                    "Missing connect meta event",
+                )
+                await websocket.close(1008, "Missing connect meta event")
+                return
+
+            impl = event.version.impl
+            log(
+                "DEBUG",
+                f"Connect meta event received, impl is {impl}",
+            )
+
             while True:
                 data = await websocket.receive()
                 raw_data = (
@@ -377,7 +390,6 @@ class Adapter(BaseAdapter):
             ] = f"Bearer {self.onebot_config.onebot_access_token}"
         req = Request("GET", url, headers=headers, timeout=30.0)
         bots: Dict[str, Bot] = {}
-        impl = ""
         while True:
             try:
                 async with self.websocket(req) as ws:
@@ -391,22 +403,21 @@ class Adapter(BaseAdapter):
                             "DEBUG",
                             "Waiting for connect meta event",
                         )
-                        while not impl:
-                            data = await ws.receive()
-                            raw_data = (
-                                json.loads(data)
-                                if isinstance(data, str)
-                                else msgpack.unpackb(data)
-                            )
-                            event = self.json_to_event(raw_data, impl)
-                            if not event:
-                                continue
-                            if isinstance(event, ConnectMetaEvent):
-                                impl = event.version.impl
-                                log(
-                                    "DEBUG",
-                                    f"Connect meta event received, impl is {impl}",
-                                )
+                        data = await ws.receive()
+                        raw_data = (
+                            json.loads(data)
+                            if isinstance(data, str)
+                            else msgpack.unpackb(data)
+                        )
+                        event = self.json_to_event(raw_data)
+                        if not isinstance(event, ConnectMetaEvent):
+                            raise Exception("Missing connect meta event")
+
+                        impl = event.version.impl
+                        log(
+                            "DEBUG",
+                            f"Connect meta event received, impl is {impl}",
+                        )
 
                         while True:
                             data = await ws.receive()
@@ -523,14 +534,12 @@ class Adapter(BaseAdapter):
 
     @classmethod
     def get_event_model(
-        cls, data: Dict[str, Any], impl: str
+        cls, data: Dict[str, Any], impl: Optional[str] = None
     ) -> Generator[Type[Event], None, None]:
         """根据事件获取对应 `Event Model` 及 `FallBack Event Model` 列表。"""
-        platform = ""
         # 元事件没有 self 字段
-        if "self" in data:
-            platform = data["self"]["platform"]
-        key = f"/{impl}/{platform}"
+        platform = data.get("self", {}).get("platform")
+        key = f"/{impl}/{platform}" if impl and platform else ""
         if key in cls.event_models:
             yield from cls.event_models[key].get_model(data)
         yield from cls.event_models[""].get_model(data)
@@ -555,7 +564,9 @@ class Adapter(BaseAdapter):
         return Exc
 
     @classmethod
-    def json_to_event(cls, json_data: Any, impl: str) -> Optional[Event]:
+    def json_to_event(
+        cls, json_data: Any, impl: Optional[str] = None
+    ) -> Optional[Event]:
         if not isinstance(json_data, dict):
             return None
 

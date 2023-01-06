@@ -52,6 +52,8 @@ async def test_ws(app: App, init_adapter, endpoints: str):
             "Sec-WebSocket-Protocol": "12.test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+
             await ws.send_json(test_events[0])
             await asyncio.sleep(0)
             bots = nonebot.get_bots()
@@ -62,6 +64,28 @@ async def test_ws(app: App, init_adapter, endpoints: str):
             await asyncio.sleep(0)
             assert "0" not in bots
             assert "2345678" in bots
+
+
+async def test_ws_missing_connect_meta_event(app: App, init_adapter):
+    endpoints = "/onebot/v12/"
+
+    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
+        test_events = json.load(f)
+
+    async with app.test_server() as ctx:
+        client = ctx.get_client()
+        headers = {
+            "Sec-WebSocket-Protocol": "12.test",
+        }
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[0])
+            with pytest.raises(Exception) as e:
+                await ws.receive_json()
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1008,
+                "reason": "Missing connect meta event",
+            }
 
 
 @pytest.mark.parametrize(
@@ -159,7 +183,7 @@ async def test_ws_auth_missing(app: App, init_adapter):
         }
         with pytest.raises(AssertionError):
             async with client.websocket_connect(endpoints, headers=headers) as ws:
-                await ws.send_json(test_events[0])
+                await ws.send_json(test_events[2])
                 await asyncio.sleep(0)
 
 
@@ -183,6 +207,8 @@ async def test_ws_auth_header(app: App, init_adapter):
             "Authorization": "Bearer test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+
             await ws.send_json(test_events[0])
             await asyncio.sleep(0)
             bots = nonebot.get_bots()
@@ -209,6 +235,8 @@ async def test_ws_auth_query(app: App, init_adapter):
             "Sec-WebSocket-Protocol": "12.test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+
             await ws.send_json(test_events[0])
             await asyncio.sleep(0)
             bots = nonebot.get_bots()
