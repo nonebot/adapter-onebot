@@ -9,7 +9,7 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing import Type, Tuple, Union, Iterable, Optional
+from typing import Any, Type, Tuple, Union, Iterable, Optional
 
 from nonebot.typing import overrides
 
@@ -35,12 +35,36 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
         # process special types
         if type_ == "text":
-            return escape(data.get("text", ""), escape_comma=False)  # type: ignore
+            return escape(data.get("text", ""), escape_comma=False)
 
         params = ",".join(
             [f"{k}={escape(str(v))}" for k, v in data.items() if v is not None]
         )
         return f"[CQ:{type_}{',' if params else ''}{params}]"
+
+    @overrides(BaseMessageSegment)
+    def __repr__(self) -> str:
+        type_ = self.type
+        data = self.data.copy()
+
+        if type_ == "text":
+            text = escape(data.get("text", ""), escape_comma=False)
+            _, *text_repr, _ = repr(text)  # for better repr handling
+            return ''.join(text_repr)
+
+        def truncate(data: Any, length: int = 70):
+            data_repr = repr(data)
+
+            if len(data_repr) > length:
+                prefix = data_repr[: length // 2]
+                suffix = data_repr[-length // 2 :]
+                data_repr = f"{prefix}…{suffix}"
+            return data_repr
+
+        params = ", ".join(
+            [f"{k}={truncate(v)}" for k, v in data.items() if v is not None]
+        )
+        return f"[{type_}{':' if params else ''}{params}]"
 
     @overrides(BaseMessageSegment)
     def __add__(
@@ -276,6 +300,9 @@ class Message(BaseMessage[MessageSegment]):
         return super(Message, self).__add__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
+
+    def __repr__(self) -> str:
+        return ''.join([repr(seg) for seg in self])
 
     @overrides(BaseMessage)
     def __radd__(
