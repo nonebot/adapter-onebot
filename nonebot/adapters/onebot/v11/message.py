@@ -9,7 +9,7 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing import Any, Type, Tuple, Union, Iterable, Optional
+from typing import Type, Tuple, Union, Iterable, Optional
 
 from nonebot.typing import overrides
 
@@ -17,7 +17,7 @@ from nonebot.adapters.onebot.utils import b2s
 from nonebot.adapters import Message as BaseMessage
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
-from .utils import log, escape, unescape
+from .utils import log, escape, truncate, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -34,7 +34,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         data = self.data.copy()
 
         # process special types
-        if type_ == "text":
+        if self.is_text():
             return escape(data.get("text", ""), escape_comma=False)
 
         params = ",".join(
@@ -47,19 +47,10 @@ class MessageSegment(BaseMessageSegment["Message"]):
         type_ = self.type
         data = self.data.copy()
 
-        if type_ == "text":
+        if self.is_text():
             text = escape(data.get("text", ""), escape_comma=False)
-            _, *text_repr, _ = repr(text)  # for better repr handling
-            return ''.join(text_repr)
-
-        def truncate(data: Any, length: int = 70):
-            data_repr = repr(data)
-
-            if len(data_repr) > length:
-                prefix = data_repr[: length // 2]
-                suffix = data_repr[-length // 2 :]
-                data_repr = f"{prefix}…{suffix}"
-            return data_repr
+            _, *text_repr, _ = repr(text)  # remove single quotes around text
+            return "".join(text_repr)
 
         params = ", ".join(
             [f"{k}={truncate(v)}" for k, v in data.items() if v is not None]
@@ -302,7 +293,7 @@ class Message(BaseMessage[MessageSegment]):
         )
 
     def __repr__(self) -> str:
-        return ''.join([repr(seg) for seg in self])
+        return "".join(repr(seg) for seg in self)
 
     @overrides(BaseMessage)
     def __radd__(
