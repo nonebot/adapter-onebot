@@ -49,8 +49,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
         if self.is_text():
             text = escape(data.get("text", ""), escape_comma=False)
-            _, *text_repr, _ = repr(text)  # remove single quotes around text
-            return "".join(text_repr)
+            return "".join(repr(text)[1:-1])  # remove single quotes around text
 
         params = ", ".join(
             [f"{k}={truncate(v)}" for k, v in data.items() if v is not None]
