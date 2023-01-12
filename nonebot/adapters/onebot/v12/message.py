@@ -9,6 +9,7 @@ from typing import Any, Type, Iterable
 
 from nonebot.typing import overrides
 
+from nonebot.adapters.onebot.utils import truncate
 from nonebot.adapters import Message as BaseMessage
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
@@ -23,12 +24,20 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @overrides(BaseMessageSegment)
     def __str__(self) -> str:
-        if self.type == "text":
+        if self.is_text():
             return self.data.get("text", "")
-        params = ",".join(
-            [f"{k}={str(v)}" for k, v in self.data.items() if v is not None]
+
+        params = ", ".join([f"{k}={v}" for k, v in self.data.items() if v is not None])
+        return f"[{self.type}{':' if params else ''}{params}]"
+
+    def __repr__(self) -> str:
+        if self.is_text():
+            return self.data.get("text", "")
+
+        params = ", ".join(
+            [f"{k}={truncate(str(v))}" for k, v in self.data.items() if v is not None]
         )
-        return f"[{self.type}:{params}]"
+        return f"[{self.type}{':' if params else ''}{params}]"
 
     @overrides(BaseMessageSegment)
     def is_text(self) -> bool:
@@ -95,6 +104,9 @@ class Message(BaseMessage[MessageSegment]):
     @overrides(BaseMessage)
     def get_segment_class(cls) -> Type[MessageSegment]:
         return MessageSegment
+
+    def __repr__(self) -> str:
+        return "".join(repr(seg) for seg in self)
 
     @staticmethod
     @overrides(BaseMessage)

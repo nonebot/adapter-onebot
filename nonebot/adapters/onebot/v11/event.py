@@ -191,11 +191,7 @@ class PrivateMessageEvent(MessageEvent):
                 )
                 texts.clear()
         msg_string.append(escape_tag("".join(texts)))
-        return (
-            f'Message {self.message_id} from {self.user_id} "'
-            + "".join(msg_string)
-            + '"'
-        )
+        return f"Message {self.message_id} from {self.user_id} {''.join(msg_string)!r}"
 
 
 class GroupMessageEvent(MessageEvent):
@@ -218,11 +214,7 @@ class GroupMessageEvent(MessageEvent):
                 )
                 texts.clear()
         msg_string.append(escape_tag("".join(texts)))
-        return (
-            f'Message {self.message_id} from {self.user_id}@[群:{self.group_id}] "'
-            + "".join(msg_string)
-            + '"'
-        )
+        return f"Message {self.message_id} from {self.user_id}@[群:{self.group_id}] {''.join(msg_string)!r}"
 
     @overrides(MessageEvent)
     def get_session_id(self) -> str:

@@ -13,11 +13,11 @@ from typing import Type, Tuple, Union, Iterable, Optional
 
 from nonebot.typing import overrides
 
-from nonebot.adapters.onebot.utils import b2s
 from nonebot.adapters import Message as BaseMessage
+from nonebot.adapters.onebot.utils import b2s, truncate
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
-from .utils import log, escape, truncate, unescape
+from .utils import log, escape, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -30,31 +30,23 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @overrides(BaseMessageSegment)
     def __str__(self) -> str:
-        type_ = self.type
-        data = self.data.copy()
-
         # process special types
         if self.is_text():
-            return escape(data.get("text", ""), escape_comma=False)
+            return escape(self.data.get("text", ""), escape_comma=False)
 
         params = ",".join(
-            [f"{k}={escape(str(v))}" for k, v in data.items() if v is not None]
+            [f"{k}={escape(str(v))}" for k, v in self.data.items() if v is not None]
         )
-        return f"[CQ:{type_}{',' if params else ''}{params}]"
+        return f"[CQ:{self.type}{',' if params else ''}{params}]"
 
-    @overrides(BaseMessageSegment)
     def __repr__(self) -> str:
-        type_ = self.type
-        data = self.data.copy()
-
         if self.is_text():
-            text = escape(data.get("text", ""), escape_comma=False)
-            return "".join(repr(text)[1:-1])  # remove single quotes around text
+            return escape(self.data.get("text", ""), escape_comma=False)
 
         params = ", ".join(
-            [f"{k}={truncate(v)}" for k, v in data.items() if v is not None]
+            [f"{k}={truncate(str(v))}" for k, v in self.data.items() if v is not None]
         )
-        return f"[{type_}{':' if params else ''}{params}]"
+        return f"[{self.type}{':' if params else ''}{params}]"
 
     @overrides(BaseMessageSegment)
     def __add__(

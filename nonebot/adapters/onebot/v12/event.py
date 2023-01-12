@@ -150,18 +150,14 @@ class PrivateMessageEvent(MessageEvent):
         msg_string: List[str] = []
         for seg in self.original_message:
             if seg.is_text():
-                texts.append(str(seg))
+                texts.append(repr(seg))
             else:
                 msg_string.extend(
-                    (escape_tag("".join(texts)), f"<le>{escape_tag(str(seg))}</le>")
+                    (escape_tag("".join(texts)), f"<le>{escape_tag(repr(seg))}</le>")
                 )
                 texts.clear()
         msg_string.append(escape_tag("".join(texts)))
-        return (
-            f'Message {self.message_id} from {self.user_id} "'
-            + "".join(msg_string)
-            + '"'
-        )
+        return f"Message {self.message_id} from {self.user_id} {''.join(msg_string)!r}"
 
 
 class GroupMessageEvent(MessageEvent):
@@ -183,11 +179,7 @@ class GroupMessageEvent(MessageEvent):
                 )
                 texts.clear()
         msg_string.append(escape_tag("".join(texts)))
-        return (
-            f'Message {self.message_id} from {self.user_id}@[群:{self.group_id}] "'
-            + "".join(msg_string)
-            + '"'
-        )
+        return f"Message {self.message_id} from {self.user_id}@[群:{self.group_id}] {''.join(msg_string)!r}"
 
     @overrides(MessageEvent)
     def get_session_id(self) -> str:
@@ -203,18 +195,20 @@ class ChannelMessageEvent(MessageEvent):
 
     @overrides(Event)
     def get_event_description(self) -> str:
+        texts: List[str] = []
+        msg_string: List[str] = []
+        for seg in self.original_message:
+            if seg.is_text():
+                texts.append(str(seg))
+            else:
+                msg_string.extend(
+                    (escape_tag("".join(texts)), f"<le>{escape_tag(str(seg))}</le>")
+                )
+                texts.clear()
+        msg_string.append(escape_tag("".join(texts)))
         return (
             f"Message {self.message_id} from {self.user_id}@"
-            f'[群组:{self.guild_id}, 频道:{self.channel_id}] "'
-            + "".join(
-                map(
-                    lambda x: escape_tag(str(x))
-                    if x.is_text()
-                    else f"<le>{escape_tag(str(x))}</le>",
-                    self.message,
-                )
-            )
-            + '"'
+            f"[群组:{self.guild_id}, 频道:{self.channel_id}] {''.join(msg_string)!r}"
         )
 
     @overrides(MessageEvent)
