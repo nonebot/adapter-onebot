@@ -125,7 +125,7 @@ async def test_ws_duplicate_bot(app: App, init_adapter):
             await ws.send_json(test_events[0])
 
             with pytest.raises(Exception) as e:
-                await ws.receive_json()
+                await asyncio.wait_for(ws.receive_json(), 5)
             assert e.value.args[0] == {
                 "type": "websocket.close",
                 "code": 1000,
@@ -136,6 +136,32 @@ async def test_ws_duplicate_bot(app: App, init_adapter):
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(test_events[2])
             await ws.send_json(test_events[0])
+
+            # 如果第二次是 TimeoutError，说明 bot 被移除了，这个测试会报错
+            with pytest.raises(Exception) as e:
+                await asyncio.wait_for(ws.receive_json(), 5)
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1000,
+                "reason": "",
+            }
+
+        # 重复两次 StatusUpdateMetaEvent 也不应报错
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+            await ws.send_json(test_events[3])
+
+            with pytest.raises(Exception) as e:
+                await asyncio.wait_for(ws.receive_json(), 5)
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1000,
+                "reason": "",
+            }
+
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+            await ws.send_json(test_events[3])
 
             # 如果第二次是 TimeoutError，说明 bot 被移除了，这个测试会报错
             with pytest.raises(Exception) as e:
