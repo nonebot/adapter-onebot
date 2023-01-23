@@ -321,9 +321,9 @@ class Adapter(BaseAdapter):
                         bot = bots.get(self_id)
                         if not bot:
                             bot = Bot(self, self_id, event.self.platform)
+                            self.bot_connect(bot)
                             bots[self_id] = bot
                             self.connections[self_id] = websocket
-                            self.bot_connect(bot)
                             log(
                                 "INFO",
                                 f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
@@ -440,9 +440,9 @@ class Adapter(BaseAdapter):
                                 bot = bots.get(self_id)
                                 if not bot:
                                     bot = Bot(self, self_id, event.self.platform)
+                                    self.bot_connect(bot)
                                     bots[self_id] = bot
                                     self.connections[self_id] = ws
-                                    self.bot_connect(bot)
                                     log(
                                         "INFO",
                                         f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
@@ -501,11 +501,12 @@ class Adapter(BaseAdapter):
             elif self_id not in self.bots:
                 bot = Bot(self, self_id, platform)
 
+                # 先尝试连接，如果失败则不保存连接信息
+                self.bot_connect(bot)
                 # 正向与反向 WebSocket 连接需要额外保存连接信息
                 if bots is not None and websocket is not None:
                     bots[self_id] = bot
                     self.connections[self_id] = websocket
-                self.bot_connect(bot)
 
                 log(
                     "INFO",

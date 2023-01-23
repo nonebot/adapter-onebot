@@ -88,6 +88,91 @@ async def test_ws_missing_connect_meta_event(app: App, init_adapter):
             }
 
 
+async def test_ws_duplicate_bot(app: App, init_adapter):
+    """测试连接两个相同 id 但协议不同的 bot"""
+    import nonebot
+
+    # 先连接一个 v11 bot
+    endpoints = "/onebot/v11/"
+
+    with (Path(__file__).parent.parent / "v11" / "events.json").open(
+        "r", encoding="utf8"
+    ) as f:
+        test_events = json.load(f)
+
+    async with app.test_server() as ctx:
+        client = ctx.get_client()
+        event = test_events[0]
+        headers = {"X-Self-ID": "0"}
+        resp = await client.post(endpoints, json=event, headers=headers)
+        assert resp.status_code == 204
+        bots = nonebot.get_bots()
+        assert "0" in bots
+
+    # 再连接一个 v12 bot
+    endpoints = "/onebot/v12/"
+
+    with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
+        test_events = json.load(f)
+
+    async with app.test_server() as ctx:
+        client = ctx.get_client()
+        headers = {
+            "Sec-WebSocket-Protocol": "12.test",
+        }
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+            await ws.send_json(test_events[0])
+
+            with pytest.raises(Exception) as e:
+                await asyncio.wait_for(ws.receive_json(), 5)
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1000,
+                "reason": "",
+            }
+
+        # 再次尝试依旧会报错，而不会因为 bot 被错误移除而正常连接
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+            await ws.send_json(test_events[0])
+
+            # 如果第二次是 TimeoutError，说明 bot 被移除了，这个测试会报错
+            with pytest.raises(Exception) as e:
+                await asyncio.wait_for(ws.receive_json(), 5)
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1000,
+                "reason": "",
+            }
+
+        # 重复两次 StatusUpdateMetaEvent 也不应报错
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+            await ws.send_json(test_events[3])
+
+            with pytest.raises(Exception) as e:
+                await asyncio.wait_for(ws.receive_json(), 5)
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1000,
+                "reason": "",
+            }
+
+        async with client.websocket_connect(endpoints, headers=headers) as ws:
+            await ws.send_json(test_events[2])
+            await ws.send_json(test_events[3])
+
+            # 如果第二次是 TimeoutError，说明 bot 被移除了，这个测试会报错
+            with pytest.raises(Exception) as e:
+                await asyncio.wait_for(ws.receive_json(), 5)
+            assert e.value.args[0] == {
+                "type": "websocket.close",
+                "code": 1000,
+                "reason": "",
+            }
+
+
 @pytest.mark.parametrize(
     "nonebug_init",
     [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
