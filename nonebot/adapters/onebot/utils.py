@@ -5,6 +5,8 @@ FrontMatter:
     description: onebot.utils 模块
 """
 
+from base64 import b64encode
+from pathlib import Path
 from typing import Optional
 
 
@@ -42,3 +44,10 @@ def truncate(
 
     result = s[: length - len(end)].rsplit(maxsplit=1)[0]
     return result + end
+
+def f2b(file: bytes | Path | str) -> str:
+    if isinstance(file, Path):
+        return file.resolve().as_uri()
+    
+    if isinstance(file, bytes):
+        return 'base64://' + b64encode(file).decode()

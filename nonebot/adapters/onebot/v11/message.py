@@ -14,7 +14,7 @@ from typing import Type, Tuple, Union, Iterable, Optional
 from nonebot.typing import overrides
 
 from nonebot.adapters import Message as BaseMessage
-from nonebot.adapters.onebot.utils import b2s, truncate
+from nonebot.adapters.onebot.utils import b2s, truncate, f2b
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
 from .utils import log, escape, unescape
@@ -112,7 +112,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         if isinstance(file, BytesIO):
             file = file.getvalue()
         if isinstance(file, bytes):
-            file = f"base64://{b64encode(file).decode()}"
+            file = f2b(file)
         elif isinstance(file, Path):
             file = file.resolve().as_uri()
         return MessageSegment(
@@ -198,7 +198,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         if isinstance(file, BytesIO):
             file = file.getvalue()
         if isinstance(file, bytes):
-            file = f"base64://{b64encode(file).decode()}"
+            file = f2b(file)
         elif isinstance(file, Path):
             file = file.resolve().as_uri()
         return MessageSegment(
@@ -249,7 +249,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         if isinstance(file, BytesIO):
             file = file.getvalue()
         if isinstance(file, bytes):
-            file = f"base64://{b64encode(file).decode()}"
+            file = f2b(file)
         elif isinstance(file, Path):
             file = file.resolve().as_uri()
         return MessageSegment(
