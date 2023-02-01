@@ -8,13 +8,12 @@ FrontMatter:
 import re
 from io import BytesIO
 from pathlib import Path
-from base64 import b64encode
 from typing import Type, Tuple, Union, Iterable, Optional
 
 from nonebot.typing import overrides
 
 from nonebot.adapters import Message as BaseMessage
-from nonebot.adapters.onebot.utils import b2s, truncate, f2b
+from nonebot.adapters.onebot.utils import b2s, f2s, truncate
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
 from .utils import log, escape, unescape
@@ -109,16 +108,10 @@ class MessageSegment(BaseMessageSegment["Message"]):
         proxy: bool = True,
         timeout: Optional[int] = None,
     ) -> "MessageSegment":
-        if isinstance(file, BytesIO):
-            file = file.getvalue()
-        if isinstance(file, bytes):
-            file = f2b(file)
-        elif isinstance(file, Path):
-            file = file.resolve().as_uri()
         return MessageSegment(
             "image",
             {
-                "file": file,
+                "file": f2s(file),
                 "type": type_,
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
@@ -195,16 +188,10 @@ class MessageSegment(BaseMessageSegment["Message"]):
         proxy: Optional[bool] = None,
         timeout: Optional[int] = None,
     ) -> "MessageSegment":
-        if isinstance(file, BytesIO):
-            file = file.getvalue()
-        if isinstance(file, bytes):
-            file = f2b(file)
-        elif isinstance(file, Path):
-            file = file.resolve().as_uri()
         return MessageSegment(
             "record",
             {
-                "file": file,
+                "file": f2s(file),
                 "magic": b2s(magic),
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
@@ -246,16 +233,10 @@ class MessageSegment(BaseMessageSegment["Message"]):
         proxy: Optional[bool] = None,
         timeout: Optional[int] = None,
     ) -> "MessageSegment":
-        if isinstance(file, BytesIO):
-            file = file.getvalue()
-        if isinstance(file, bytes):
-            file = f2b(file)
-        elif isinstance(file, Path):
-            file = file.resolve().as_uri()
         return MessageSegment(
             "video",
             {
-                "file": file,
+                "file": f2s(file),
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
                 "timeout": timeout,
