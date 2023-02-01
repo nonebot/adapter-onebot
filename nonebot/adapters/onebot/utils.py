@@ -5,7 +5,10 @@ FrontMatter:
     description: onebot.utils 模块
 """
 
-from typing import Optional
+from io import BytesIO
+from pathlib import Path
+from base64 import b64encode
+from typing import Union, Optional
 
 
 def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
@@ -18,6 +21,16 @@ def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
 def b2s(b: Optional[bool]) -> Optional[str]:
     """转换布尔值为字符串。"""
     return b if b is None else str(b).lower()
+
+
+def f2s(file: Union[str, bytes, BytesIO, Path]) -> str:
+    if isinstance(file, BytesIO):
+        file = file.getvalue()
+    if isinstance(file, bytes):
+        file = f"base64://{b64encode(file).decode()}"
+    elif isinstance(file, Path):
+        file = file.resolve().as_uri()
+    return file
 
 
 def truncate(
