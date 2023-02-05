@@ -98,7 +98,7 @@ class Adapter(BaseAdapter):
                 HTTPServerSetup(
                     URL("/onebot/v12/"),
                     "POST",
-                    self.get_name(),
+                    f"{self.get_name()} Root HTTP",
                     self._handle_http,
                 )
             )
@@ -106,7 +106,7 @@ class Adapter(BaseAdapter):
                 HTTPServerSetup(
                     URL("/onebot/v12/http"),
                     "POST",
-                    self.get_name(),
+                    f"{self.get_name()} HTTP",
                     self._handle_http,
                 )
             )
@@ -114,23 +114,23 @@ class Adapter(BaseAdapter):
                 HTTPServerSetup(
                     URL("/onebot/v12/http/"),
                     "POST",
-                    self.get_name(),
+                    f"{self.get_name()} HTTP Slash",
                     self._handle_http,
                 )
             )
             self.setup_websocket_server(
                 WebSocketServerSetup(
-                    URL("/onebot/v12/"), self.get_name(), self._handle_ws
+                    URL("/onebot/v12/"), f"{self.get_name()} Root WS", self._handle_ws
                 )
             )
             self.setup_websocket_server(
                 WebSocketServerSetup(
-                    URL("/onebot/v12/ws"), self.get_name(), self._handle_ws
+                    URL("/onebot/v12/ws"), f"{self.get_name()} WS", self._handle_ws
                 )
             )
             self.setup_websocket_server(
                 WebSocketServerSetup(
-                    URL("/onebot/v12/ws/"), self.get_name(), self._handle_ws
+                    URL("/onebot/v12/ws/"), f"{self.get_name()} WS Slash", self._handle_ws
                 )
             )
         if self.onebot_config.onebot_ws_urls:
