@@ -183,7 +183,6 @@ async def send(
 
 
 class Bot(BaseBot):
-
     send_handler: Callable[
         ["Bot", Event, Union[str, Message, MessageSegment]], Any
     ] = send

@@ -49,7 +49,6 @@ for model_name in dir(event):
 
 
 class Adapter(BaseAdapter):
-
     event_models = Collator(
         "OneBot V11",
         DEFAULT_MODELS,
@@ -80,15 +79,24 @@ class Adapter(BaseAdapter):
     def _setup(self) -> None:
         if isinstance(self.driver, ReverseDriver):
             http_setup = HTTPServerSetup(
-                URL("/onebot/v11/"), "POST", f"{self.get_name()} Root HTTP", self._handle_http
+                URL("/onebot/v11/"),
+                "POST",
+                f"{self.get_name()} Root HTTP",
+                self._handle_http,
             )
             self.setup_http_server(http_setup)
             http_setup = HTTPServerSetup(
-                URL("/onebot/v11/http"), "POST", f"{self.get_name()} HTTP", self._handle_http
+                URL("/onebot/v11/http"),
+                "POST",
+                f"{self.get_name()} HTTP",
+                self._handle_http,
             )
             self.setup_http_server(http_setup)
             http_setup = HTTPServerSetup(
-                URL("/onebot/v11/http/"), "POST", f"{self.get_name()} HTTP Slash", self._handle_http
+                URL("/onebot/v11/http/"),
+                "POST",
+                f"{self.get_name()} HTTP Slash",
+                self._handle_http,
             )
             self.setup_http_server(http_setup)
 
