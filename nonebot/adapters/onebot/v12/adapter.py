@@ -64,7 +64,6 @@ for exc_name in dir(exception):
 
 
 class Adapter(BaseAdapter):
-
     event_models: Dict[str, Collator[Event]] = {
         "": Collator(
             "OneBot V12",
@@ -130,7 +129,9 @@ class Adapter(BaseAdapter):
             )
             self.setup_websocket_server(
                 WebSocketServerSetup(
-                    URL("/onebot/v12/ws/"), f"{self.get_name()} WS Slash", self._handle_ws
+                    URL("/onebot/v12/ws/"),
+                    f"{self.get_name()} WS Slash",
+                    self._handle_ws,
                 )
             )
         if self.onebot_config.onebot_ws_urls:
