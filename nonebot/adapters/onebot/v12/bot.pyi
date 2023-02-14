@@ -84,7 +84,7 @@ class GetFileResp(TypedDict):
     url: Optional[str]
     headers: Optional[Dict[str, str]]
     path: Optional[str]
-    data: Optional[bytes]
+    data: Optional[Union[str, bytes]]
     sha256: Optional[str]
 
 class GetFileFragmentedPrepareResp(TypedDict):
@@ -93,7 +93,7 @@ class GetFileFragmentedPrepareResp(TypedDict):
     sha256: str
 
 class GetFileFragmentedTransferResp(TypedDict):
-    data: bytes
+    data: Union[str, bytes]
 
 def _check_reply(bot: "Bot", event: MessageEventModel): ...
 def _check_to_me(bot: "Bot", event: MessageEventModel): ...
