@@ -1,10 +1,18 @@
-from typing import Any, Dict, List, Union, Literal, Optional, TypedDict
+from typing import Any, Dict, List, Union, Literal, Optional, TypedDict, overload
 
 from nonebot.adapters import Bot as BaseBot
 
 from .adapter import Adapter
-from .event import Event, MessageEvent
+from .event import Event as EventModel
 from .message import Message, MessageSegment
+from .event import MessageEvent as MessageEventModel
+
+class Event(TypedDict):
+    id: str
+    time: float
+    type: Literal["message", "notice", "request", "meta"]
+    detail_type: str
+    sub_type: str
 
 class BotSelf(TypedDict):
     platform: str
@@ -14,16 +22,85 @@ class BotStatus(TypedDict):
     self: BotSelf
     online: bool
 
-class GetStatusResult(TypedDict):
+class GetStatusResp(TypedDict):
     good: str
     bots: List[BotStatus]
 
-def _check_reply(bot: "Bot", event: MessageEvent): ...
-def _check_to_me(bot: "Bot", event: MessageEvent): ...
-def _check_nickname(bot: "Bot", event: MessageEvent): ...
+class GetVersionResp(TypedDict):
+    impl: str
+    version: str
+    onebot_version: str
+
+class SendMessageResp(TypedDict):
+    message_id: str
+    time: float
+
+class GetSelfInfoResp(TypedDict):
+    user_id: str
+    user_name: str
+    user_displayname: str
+
+class GetUserInfoResp(TypedDict):
+    user_id: str
+    user_name: str
+    user_displayname: str
+    user_remark: str
+
+class GetGroupInfoResp(TypedDict):
+    group_id: str
+    group_name: str
+
+class GetGroupMemberInfoResp(TypedDict):
+    user_id: str
+    user_name: str
+    user_displayname: str
+
+class GetGuildInfoResp(TypedDict):
+    guild_id: str
+    guild_name: str
+
+class GetGuildMemberInfoResp(TypedDict):
+    user_id: str
+    user_name: str
+    user_displayname: str
+
+class GetChannelInfoResp(TypedDict):
+    channel_id: str
+    channel_name: str
+
+class GetChannelMemberInfoResp(TypedDict):
+    user_id: str
+    user_name: str
+    user_displayname: str
+
+class UploadFileResp(TypedDict):
+    file_id: str
+
+class UploadFileFragmentedResp(TypedDict):
+    file_id: str
+
+class GetFileResp(TypedDict):
+    name: str
+    url: Optional[str]
+    headers: Optional[Dict[str, str]]
+    path: Optional[str]
+    data: Optional[bytes]
+    sha256: Optional[str]
+
+class GetFileFragmentedPrepareResp(TypedDict):
+    name: str
+    total_size: int
+    sha256: str
+
+class GetFileFragmentedTransferResp(TypedDict):
+    data: bytes
+
+def _check_reply(bot: "Bot", event: MessageEventModel): ...
+def _check_to_me(bot: "Bot", event: MessageEventModel): ...
+def _check_nickname(bot: "Bot", event: MessageEventModel): ...
 async def send(
     bot: "Bot",
-    event: Event,
+    event: EventModel,
     message: Union[str, Message, MessageSegment],
     at_sender: bool = ...,
     reply_message: bool = ...,
@@ -48,9 +125,9 @@ class Bot(BaseBot):
             nonebot.adapters.onebot.exception.ActionFailed: API 调用失败
         """
         ...
-    async def handle_event(self, event: Event) -> None: ...
+    async def handle_event(self, event: EventModel) -> None: ...
     async def send(
-        self, event: Event, message: str | Message | MessageSegment, **kwargs: Any
+        self, event: EventModel, message: str | Message | MessageSegment, **kwargs: Any
     ) -> Any: ...
     async def get_latest_events(
         self, *, limit: int = ..., timeout: int = ..., **kwargs: Any
@@ -70,17 +147,14 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_status(self, **kwargs: Any) -> GetStatusResult:
+    async def get_status(self, **kwargs: Any) -> GetStatusResp:
         """获取运行状态
 
         参数:
             kwargs: 扩展字段
         """
         ...
-    async def get_version(
-        self,
-        **kwargs: Any,
-    ) -> Dict[Literal["impl", "platform", "version", "onebot_version"] | str, str]:
+    async def get_version(self, **kwargs: Any) -> GetVersionResp:
         """获取版本信息
 
         参数:
@@ -97,7 +171,7 @@ class Bot(BaseBot):
         channel_id: str = ...,
         message: Message,
         **kwargs: Any,
-    ) -> Dict[Literal["message_id", "time"] | str, Any]:
+    ) -> SendMessageResp:
         """发送消息
 
         参数:
@@ -117,14 +191,10 @@ class Bot(BaseBot):
             message_id: 唯一的消息 ID
         """
         ...
-    async def get_self_info(
-        self, **kwargs: Any
-    ) -> Dict[Literal["user_id", "nickname"] | str, str]:
+    async def get_self_info(self, **kwargs: Any) -> GetSelfInfoResp:
         """获取机器人自身信息"""
         ...
-    async def get_user_info(
-        self, *, user_id: str, **kwargs: Any
-    ) -> Dict[Literal["user_id", "nickname"] | str, str]:
+    async def get_user_info(self, *, user_id: str, **kwargs: Any) -> GetUserInfoResp:
         """获取用户信息
 
         参数:
@@ -132,19 +202,14 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_friend_list(
-        self,
-        **kwargs: Any,
-    ) -> List[Dict[Literal["user_id", "nickname"] | str, str]]:
+    async def get_friend_list(self, **kwargs: Any) -> List[GetUserInfoResp]:
         """获取好友列表
 
         参数:
             kwargs: 扩展字段
         """
         ...
-    async def get_group_info(
-        self, *, group_id: str, **kwargs: Any
-    ) -> Dict[Literal["group_id", "group_name"] | str, str]:
+    async def get_group_info(self, *, group_id: str, **kwargs: Any) -> GetGroupInfoResp:
         """获取群信息
 
         参数:
@@ -152,10 +217,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_group_list(
-        self,
-        **kwargs: Any,
-    ) -> List[Dict[Literal["group_id", "group_name"] | str, str]]:
+    async def get_group_list(self, **kwargs: Any) -> List[GetGroupInfoResp]:
         """获取群列表
 
         参数:
@@ -164,7 +226,7 @@ class Bot(BaseBot):
         ...
     async def get_group_member_info(
         self, *, group_id: str, user_id: str, **kwargs: Any
-    ) -> Dict[Literal["user_id", "nickname"] | str, str]:
+    ) -> GetGroupMemberInfoResp:
         """获取群成员信息
 
         参数:
@@ -175,7 +237,7 @@ class Bot(BaseBot):
         ...
     async def get_group_member_list(
         self, *, group_id: str, **kwargs: Any
-    ) -> List[Dict[Literal["user_id", "nickname"] | str, str]]:
+    ) -> List[GetGroupMemberInfoResp]:
         """获取群成员列表
 
         参数:
@@ -202,64 +264,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def kick_group_member(
-        self, *, group_id: str, user_id: str, **kwargs: Any
-    ) -> None:
-        """踢出群成员
-
-        参数:
-            group_id: 群 ID
-            user_id: 用户 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def ban_group_member(
-        self, *, group_id: str, user_id: str, **kwargs: Any
-    ) -> None:
-        """禁言群成员
-
-        参数:
-            group_id: 群 ID
-            user_id: 用户 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def unban_group_member(
-        self, *, group_id: str, user_id: str, **kwargs: Any
-    ) -> None:
-        """解除禁言群成员
-
-        参数:
-            group_id: 群 ID
-            user_id: 用户 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def set_group_admin(
-        self, *, group_id: str, user_id: str, **kwargs: Any
-    ) -> None:
-        """设置管理员
-
-        参数:
-            group_id: 群 ID
-            user_id: 用户 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def unset_group_admin(
-        self, *, group_id: str, user_id: str, **kwargs: Any
-    ) -> None:
-        """解除管理员
-
-        参数:
-            group_id: 群 ID
-            user_id: 用户 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def get_guild_info(
-        self, *, guild_id: str, **kwargs: Any
-    ) -> Dict[Literal["guild_id", "guild_name"] | str, str]:
+    async def get_guild_info(self, *, guild_id: str, **kwargs: Any) -> GetGuildInfoResp:
         """获取 Guild 信息
 
         参数:
@@ -267,55 +272,10 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_guild_list(
-        self,
-        **kwargs: Any,
-    ) -> List[Dict[Literal["guild_id", "guild_name"] | str, str]]:
+    async def get_guild_list(self, **kwargs: Any) -> List[GetGuildInfoResp]:
         """获取群组列表
 
         参数:
-            kwargs: 扩展字段
-        """
-        ...
-    async def get_channel_info(
-        self, *, guild_id: str, channel_id: str, **kwargs: Any
-    ) -> Dict[Literal["channel_id", "channel_name"] | str, str]:
-        """获取频道信息
-
-        参数:
-            guild_id: 群组 ID
-            channel_id: 频道 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def get_channel_list(
-        self, *, guild_id: str, **kwargs: Any
-    ) -> List[Dict[Literal["channel_id", "channel_name"] | str, str]]:
-        """获取频道列表
-
-        参数:
-            guild_id: 群组 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def get_guild_member_info(
-        self, *, guild_id: str, user_id: str, **kwargs: Any
-    ) -> Dict[Literal["user_id", "nickname"] | str, str]:
-        """获取群组成员信息
-
-        参数:
-            guild_id: 群组 ID
-            user_id: 用户 ID
-            kwargs: 扩展字段
-        """
-        ...
-    async def get_guild_member_list(
-        self, *, guild_id: str, **kwargs: Any
-    ) -> List[Dict[Literal["user_id", "nickname"] | str, str]]:
-        """获取群组成员列表
-
-        参数:
-            guild_id: 群组 ID
             kwargs: 扩展字段
         """
         ...
@@ -330,15 +290,24 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def set_channel_name(
-        self, *, guild_id: str, channel_id: str, channel_name: str, **kwargs: Any
-    ) -> None:
-        """设置频道名称
+    async def get_guild_member_info(
+        self, *, guild_id: str, user_id: str, **kwargs: Any
+    ) -> GetGuildMemberInfoResp:
+        """获取群组成员信息
 
         参数:
             guild_id: 群组 ID
-            channel_id: 频道 ID
-            channel_name: 频道名称
+            user_id: 用户 ID
+            kwargs: 扩展字段
+        """
+        ...
+    async def get_guild_member_list(
+        self, *, guild_id: str, **kwargs: Any
+    ) -> List[GetGuildMemberInfoResp]:
+        """获取群组成员列表
+
+        参数:
+            guild_id: 群组 ID
             kwargs: 扩展字段
         """
         ...
@@ -347,6 +316,74 @@ class Bot(BaseBot):
 
         参数:
             guild_id: 群组 ID
+            kwargs: 扩展字段
+        """
+        ...
+    async def get_channel_info(
+        self, *, guild_id: str, channel_id: str, **kwargs: Any
+    ) -> GetChannelInfoResp:
+        """获取频道信息
+
+        参数:
+            guild_id: 群组 ID
+            channel_id: 频道 ID
+            kwargs: 扩展字段
+        """
+        ...
+    async def get_channel_list(
+        self, *, guild_id: str, joined_only: bool = False, **kwargs: Any
+    ) -> List[GetChannelInfoResp]:
+        """获取频道列表
+
+        参数:
+            guild_id: 群组 ID
+            joined_only: 只获取机器人账号已加入的频道列表
+            kwargs: 扩展字段
+        """
+        ...
+    async def set_channel_name(
+        self, *, guild_id: str, channel_id: str, channel_name: str, **kwargs: Any
+    ) -> None:
+        """设置频道名称
+
+        参数:
+            guild_id: 群组 ID
+            channel_id: 频道 ID
+            channel_name: 新频道名称
+            kwargs: 扩展字段
+        """
+        ...
+    async def get_channel_member_info(
+        self, *, guild_id: str, channel_id: str, user_id: str, **kwargs: Any
+    ) -> GetChannelMemberInfoResp:
+        """获取频道成员信息
+
+        参数:
+            guild_id: 群组 ID
+            channel_id: 频道 ID
+            user_id: 用户 ID
+            kwargs: 扩展字段
+        """
+        ...
+    async def get_channel_member_list(
+        self, *, guild_id: str, channel_id: str, **kwargs: Any
+    ) -> List[GetChannelMemberInfoResp]:
+        """获取频道成员列表
+
+        参数:
+            guild_id: 群组 ID
+            channel_id: 频道 ID
+            kwargs: 扩展字段
+        """
+        ...
+    async def leave_channel(
+        self, *, guild_id: str, channel_id: str, **kwargs: Any
+    ) -> None:
+        """退出频道
+
+        参数:
+            guild_id: 群组 ID
+            channel_id: 频道 ID
             kwargs: 扩展字段
         """
         ...
@@ -361,7 +398,7 @@ class Bot(BaseBot):
         data: bytes = ...,
         sha256: str = ...,
         **kwargs: Any,
-    ) -> Dict[Literal["file_id"] | str, str]:
+    ) -> UploadFileResp:
         """上传文件
 
         参数:
@@ -375,29 +412,58 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
+    @overload
     async def upload_file_fragmented(
         self,
-        stage: Literal["prepare", "transfer", "finish"],
+        stage: Literal["prepare"],
         name: str = ...,
         total_size: int = ...,
-        sha256: str = ...,
-        file_id: str = ...,
-        offset: int = ...,
-        size: int = ...,
-        data: bytes = ...,
         **kwargs: Any,
-    ) -> Optional[Dict[Literal["file_id"] | str, str]]:
-        """分片上传文件
+    ) -> UploadFileFragmentedResp:
+        """分片上传文件，准备阶段
 
         参数:
             stage: 上传阶段
             name: 文件名
             total_size: 文件完整大小
-            sha256: 整个文件的 SHA256 校验和，全小写
+            kwargs: 扩展字段
+        """
+        ...
+    @overload
+    async def upload_file_fragmented(
+        self,
+        stage: Literal["transfer"],
+        file_id: str = ...,
+        offset: int = ...,
+        size: int = ...,
+        data: bytes = ...,
+        **kwargs: Any,
+    ) -> None:
+        """分片上传阶段，传输阶段
+
+        参数:
+            stage: 上传阶段
             file_id: 准备阶段返回的文件 ID
             offset: 本次传输的文件偏移，单位：字节
             size: 本次传输的文件大小，单位：字节
             data: 本次传输的文件数据
+            kwargs: 扩展字段
+        """
+        ...
+    @overload
+    async def upload_file_fragmented(
+        self,
+        stage: Literal["finish"],
+        file_id: str = ...,
+        sha256: str = ...,
+        **kwargs: Any,
+    ) -> UploadFileResp:
+        """分片上传文件，结束阶段
+
+        参数:
+            stage: 上传阶段
+            file_id: 准备阶段返回的文件 ID
+            sha256: 整个文件的 SHA256 校验和，全小写
             kwargs: 扩展字段
         """
         ...
@@ -407,7 +473,7 @@ class Bot(BaseBot):
         type: Literal["url", "path", "data"] | str,
         file_id: str,
         **kwargs: Any,
-    ) -> Dict[Literal["name", "url", "headers", "path", "data", "sha256"] | str, str]:
+    ) -> GetFileResp:
         """获取文件
 
         参数:
@@ -416,16 +482,32 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
+    @overload
     async def get_file_fragmented(
         self,
         *,
-        stage: Literal["prepare", "transfer"],
+        stage: Literal["prepare"],
+        file_id: str,
+        **kwargs: Any,
+    ) -> GetFileFragmentedPrepareResp:
+        """分片获取文件，准备阶段
+
+        参数:
+            stage: 获取阶段
+            file_id: 文件 ID
+            kwargs: 扩展字段
+        """
+        ...
+    @overload
+    async def get_file_fragmented(
+        self,
+        *,
+        stage: Literal["transfer"],
         file_id: str,
         offset: int = ...,
         size: int = ...,
-        **kwargs: Any,
-    ) -> Dict[Literal["name", "total_size", "sha256", "data"] | str, str]:
-        """分片获取文件
+    ) -> GetFileFragmentedTransferResp:
+        """分片获取文件，传输阶段
 
         参数:
             stage: 获取阶段
