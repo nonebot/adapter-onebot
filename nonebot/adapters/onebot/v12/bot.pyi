@@ -79,12 +79,20 @@ class UploadFileResp(TypedDict):
 class UploadFileFragmentedResp(TypedDict):
     file_id: str
 
-class GetFileResp(TypedDict):
+class GetFileUrlResp(TypedDict):
     name: str
-    url: Optional[str]
+    url: str
     headers: Optional[Dict[str, str]]
-    path: Optional[str]
-    data: Optional[Union[str, bytes]]
+    sha256: Optional[str]
+
+class GetFilePathResp(TypedDict):
+    name: str
+    path: str
+    sha256: Optional[str]
+
+class GetFileDataResp(TypedDict):
+    name: str
+    data: Union[str, bytes]
     sha256: Optional[str]
 
 class GetFileFragmentedPrepareResp(TypedDict):
@@ -467,13 +475,62 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
+    @overload
     async def get_file(
         self,
         *,
-        type: Literal["url", "path", "data"] | str,
+        type: Literal["url"],
         file_id: str,
         **kwargs: Any,
-    ) -> GetFileResp:
+    ) -> GetFileUrlResp:
+        """获取文件
+
+        参数:
+            type: 获取文件的方式，可以为 url、path、data 或扩展的方式
+            file_id: 文件 ID
+            kwargs: 扩展字段
+        """
+        ...
+    @overload
+    async def get_file(
+        self,
+        *,
+        type: Literal["path"],
+        file_id: str,
+        **kwargs: Any,
+    ) -> GetFilePathResp:
+        """获取文件
+
+        参数:
+            type: 获取文件的方式，可以为 url、path、data 或扩展的方式
+            file_id: 文件 ID
+            kwargs: 扩展字段
+        """
+        ...
+    @overload
+    async def get_file(
+        self,
+        *,
+        type: Literal["data"],
+        file_id: str,
+        **kwargs: Any,
+    ) -> GetFileDataResp:
+        """获取文件
+
+        参数:
+            type: 获取文件的方式，可以为 url、path、data 或扩展的方式
+            file_id: 文件 ID
+            kwargs: 扩展字段
+        """
+        ...
+    @overload
+    async def get_file(
+        self,
+        *,
+        type: str,
+        file_id: str,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         """获取文件
 
         参数:
