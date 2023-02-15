@@ -4,12 +4,23 @@ FrontMatter:
     sidebar_position: 1
     description: onebot.v12.adapter 模块
 """
-
 import json
 import asyncio
 import inspect
+import warnings
 import contextlib
-from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Type,
+    Union,
+    Callable,
+    ClassVar,
+    Optional,
+    Generator,
+    cast,
+)
 
 import msgpack
 from pygtrie import CharTrie
@@ -64,7 +75,7 @@ for exc_name in dir(exception):
 
 
 class Adapter(BaseAdapter):
-    event_models: Dict[str, Collator[Event]] = {
+    event_models: ClassVar[Dict[str, Collator[Event]]] = {
         "": Collator(
             "OneBot V12",
             DEFAULT_MODELS,
@@ -72,15 +83,15 @@ class Adapter(BaseAdapter):
         )
     }
 
-    send_handlers: Dict[
-        str, Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]
+    send_handlers: ClassVar[
+        Dict[str, Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]]
     ] = {"": send}
 
-    exc_classes: CharTrie = CharTrie(
+    exc_classes: ClassVar[CharTrie] = CharTrie(
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
     )
 
-    _result_store = ResultStore()
+    _result_store: ClassVar = ResultStore()
 
     @classmethod
     @overrides(BaseAdapter)
@@ -624,7 +635,13 @@ class Adapter(BaseAdapter):
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
     ) -> None:
-        """自定义 Bot 的回复函数。"""
+        """【废弃】自定义 Bot 的回复函数。
+
+        请使用 {ref}`nonebot.adapters.onebot.v12.adapter.Adapter.add_custom_send` 代替。"""
+        warnings.warn(
+            "custom_send is deprecated. Please use add_custom_send instead.",
+            DeprecationWarning,
+        )
         cls.add_custom_send(send_func)
 
     @classmethod
