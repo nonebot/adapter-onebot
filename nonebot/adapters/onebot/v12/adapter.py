@@ -63,6 +63,44 @@ for exc_name in dir(exception):
     DEFAULT_EXCEPTIONS.append(Exc)
 
 
+async def default_send(
+    bot: Bot,
+    event: Event,
+    message: Union[str, Message, MessageSegment],
+    at_sender: bool = False,
+    reply_message: bool = False,
+    **params: Any,
+) -> Any:
+    """默认回复消息处理函数。"""
+    event_dict = event.dict()
+
+    params.setdefault("detail_type", event_dict["detail_type"])
+
+    if "user_id" in event_dict:  # copy the user_id to the API params if exists
+        params.setdefault("user_id", event_dict["user_id"])
+    else:
+        at_sender = False  # if no user_id, force disable at_sender
+
+    if "group_id" in event_dict:  # copy the group_id to the API params if exists
+        params.setdefault("group_id", event_dict["group_id"])
+
+    if (
+        "guild_id" in event_dict and "channel_id" in event_dict
+    ):  # copy the guild_id to the API params if exists
+        params.setdefault("guild_id", event_dict["guild_id"])
+        params.setdefault("channel_id", event_dict["channel_id"])
+
+    full_message = Message()  # create a new message with at sender segment
+    if reply_message and "message_id" in event_dict:
+        full_message += MessageSegment.reply(event_dict["message_id"])
+    if at_sender and params["detail_type"] != "private":
+        full_message += MessageSegment.mention(params["user_id"]) + " "
+    full_message += message
+    params.setdefault("message", full_message)
+
+    return await bot.send_message(**params)
+
+
 class Adapter(BaseAdapter):
     event_models: Dict[str, Collator[Event]] = {
         "": Collator(
@@ -71,6 +109,10 @@ class Adapter(BaseAdapter):
             COLLATOR_KEY,
         )
     }
+
+    send_handlers: Dict[
+        str, Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]
+    ] = {}
 
     exc_classes: CharTrie = CharTrie(
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
@@ -252,7 +294,7 @@ class Adapter(BaseAdapter):
             json_data = json.loads(data)
             if event := self.json_to_event(json_data, impl):
                 if isinstance(event, StatusUpdateMetaEvent):
-                    self._handle_status_update(event)
+                    self._handle_status_update(event, impl)
                 if isinstance(event, MetaEvent):
                     for bot in self.bots.values():
                         bot = cast(Bot, bot)
@@ -262,7 +304,12 @@ class Adapter(BaseAdapter):
                     self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
                     if not bot:
-                        bot = Bot(self, self_id, event.self.platform)
+                        bot = Bot(
+                            self,
+                            self_id,
+                            event.self.platform,
+                            self.get_send(event.self.platform, impl),
+                        )
                         self.bot_connect(bot)
                         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                     bot = cast(Bot, bot)
@@ -312,7 +359,7 @@ class Adapter(BaseAdapter):
                 )
                 if event := self.json_to_event(raw_data, impl):
                     if isinstance(event, StatusUpdateMetaEvent):
-                        self._handle_status_update(event, bots, websocket)
+                        self._handle_status_update(event, impl, bots, websocket)
                     if isinstance(event, MetaEvent):
                         for bot in bots.values():
                             asyncio.create_task(bot.handle_event(event))
@@ -321,7 +368,12 @@ class Adapter(BaseAdapter):
                         self_id = event.self.user_id
                         bot = bots.get(self_id)
                         if not bot:
-                            bot = Bot(self, self_id, event.self.platform)
+                            bot = Bot(
+                                self,
+                                self_id,
+                                event.self.platform,
+                                self.get_send(event.self.platform, impl),
+                            )
                             self.bot_connect(bot)
                             bots[self_id] = bot
                             self.connections[self_id] = websocket
@@ -431,7 +483,7 @@ class Adapter(BaseAdapter):
                             if not event:
                                 continue
                             if isinstance(event, StatusUpdateMetaEvent):
-                                self._handle_status_update(event, bots, ws)
+                                self._handle_status_update(event, impl, bots, ws)
                             if isinstance(event, MetaEvent):
                                 for bot in bots.values():
                                     asyncio.create_task(bot.handle_event(event))
@@ -440,7 +492,12 @@ class Adapter(BaseAdapter):
                                 self_id = event.self.user_id
                                 bot = bots.get(self_id)
                                 if not bot:
-                                    bot = Bot(self, self_id, event.self.platform)
+                                    bot = Bot(
+                                        self,
+                                        self_id,
+                                        event.self.platform,
+                                        self.get_send(event.self.platform, impl),
+                                    )
                                     self.bot_connect(bot)
                                     bots[self_id] = bot
                                     self.connections[self_id] = ws
@@ -481,6 +538,7 @@ class Adapter(BaseAdapter):
     def _handle_status_update(
         self,
         event: StatusUpdateMetaEvent,
+        impl: str,
         bots: Optional[Dict[str, Bot]] = None,
         websocket: Optional[WebSocket] = None,
     ) -> None:
@@ -500,7 +558,12 @@ class Adapter(BaseAdapter):
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
                     )
             elif self_id not in self.bots:
-                bot = Bot(self, self_id, platform)
+                bot = Bot(
+                    self,
+                    self_id,
+                    platform,
+                    self.get_send(platform, impl),
+                )
 
                 # 先尝试连接，如果失败则不保存连接信息
                 self.bot_connect(bot)
@@ -600,9 +663,23 @@ class Adapter(BaseAdapter):
             return None
 
     @classmethod
-    def custom_send(
+    def add_custom_send(
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
+        impl: Optional[str] = None,
+        platform: Optional[str] = None,
     ) -> None:
         """自定义 Bot 的回复函数。"""
-        setattr(Bot, "send_handler", send_func)
+        if platform is not None and impl is None:
+            raise ValueError("Impl must be specified")
+        if impl is not None and platform is None:
+            raise ValueError("platform must be specified")
+        key = f"/{impl}/{platform}" if impl and platform else ""
+        cls.send_handlers[key] = send_func
+
+    @classmethod
+    def get_send(
+        cls, platform: Optional[str] = None, impl: Optional[str] = None
+    ) -> Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]:
+        key = f"/{impl}/{platform}" if impl and platform else ""
+        return cls.send_handlers.get(key, default_send)

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, Literal, Optional, TypedDict
+from typing import Any, Dict, List, Union, Literal, Callable, Optional, TypedDict
 
 from nonebot.adapters import Bot as BaseBot
 
@@ -32,7 +32,15 @@ async def send(
 
 class Bot(BaseBot):
     platform: str
-    def __init__(self, adapter: Adapter, self_id: str, platform: str) -> None: ...
+    def __init__(
+        self,
+        adapter: Adapter,
+        self_id: str,
+        platform: str,
+        send_handler: Callable[
+            ["Bot", Event, Union[str, Message, MessageSegment]], Any
+        ],
+    ) -> None: ...
     async def call_api(self, api: str, **data) -> Any:
         """调用 OneBot 协议 API。
 
