@@ -241,6 +241,7 @@ class PrivateMessageDeleteEvent(NoticeEvent):
 
     detail_type: Literal["private_message_delete"]
     message_id: str
+    user_id: str
 
 
 class GroupMemberIncreaseEvent(NoticeEvent):
@@ -256,42 +257,6 @@ class GroupMemberDecreaseEvent(NoticeEvent):
     """群成员减少事件"""
 
     detail_type: Literal["group_member_decrease"]
-    group_id: str
-    user_id: str
-    operator_id: str
-
-
-class GroupMemberBanEvent(NoticeEvent):
-    """群成员禁言事件"""
-
-    detail_type: Literal["group_member_ban"]
-    group_id: str
-    user_id: str
-    operator_id: str
-
-
-class GroupMemberUnbanEvent(NoticeEvent):
-    """群成员解除禁言事件"""
-
-    detail_type: Literal["group_member_unban"]
-    group_id: str
-    user_id: str
-    operator_id: str
-
-
-class GroupAdminSetEvent(NoticeEvent):
-    """群管理员设置事件"""
-
-    detail_type: Literal["group_admin_set"]
-    group_id: str
-    user_id: str
-    operator_id: str
-
-
-class GroupAdminUnsetEvent(NoticeEvent):
-    """群管理员取消设置事件"""
-
-    detail_type: Literal["group_admin_unset"]
     group_id: str
     user_id: str
     operator_id: str
@@ -321,6 +286,26 @@ class GuildMemberDecreaseEvent(NoticeEvent):
 
     detail_type: Literal["guild_member_decrease"]
     guild_id: str
+    user_id: str
+    operator_id: str
+
+
+class ChannelMemberIncreaseEvent(NoticeEvent):
+    """频道成员增加事件"""
+
+    detail_type: Literal["channel_member_increase"]
+    guild_id: str
+    channel_id: str
+    user_id: str
+    operator_id: str
+
+
+class ChannelMemberDecreaseEvent(NoticeEvent):
+    """频道成员减少事件"""
+
+    detail_type: Literal["channel_member_decrease"]
+    guild_id: str
+    channel_id: str
     user_id: str
     operator_id: str
 
@@ -390,7 +375,6 @@ class HeartbeatMetaEvent(MetaEvent):
 
     detail_type: Literal["heartbeat"]
     interval: int
-    status: Status
 
 
 class StatusUpdateMetaEvent(MetaEvent):
