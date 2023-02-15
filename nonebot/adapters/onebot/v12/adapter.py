@@ -85,7 +85,7 @@ class Adapter(BaseAdapter):
 
     send_handlers: ClassVar[
         Dict[str, Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]]
-    ] = {"": send}
+    ] = {}
 
     exc_classes: ClassVar[CharTrie] = CharTrie(
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
@@ -616,7 +616,7 @@ class Adapter(BaseAdapter):
             return None
 
     @classmethod
-    def add_custom_send(
+    def custom_send(
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
         impl: Optional[str] = None,
@@ -631,24 +631,8 @@ class Adapter(BaseAdapter):
         cls.send_handlers[key] = send_func
 
     @classmethod
-    def custom_send(
-        cls,
-        send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
-    ) -> None:
-        """【废弃】自定义 Bot 的回复函数。
-
-        请使用 {ref}`nonebot.adapters.onebot.v12.adapter.Adapter.add_custom_send` 代替。"""
-        warnings.warn(
-            "custom_send is deprecated. Please use add_custom_send instead.",
-            DeprecationWarning,
-        )
-        cls.add_custom_send(send_func)
-
-    @classmethod
     def get_send(
         cls, platform: Optional[str] = None, impl: Optional[str] = None
     ) -> Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]:
         key = f"/{impl}/{platform}" if impl and platform else ""
-        if key in cls.send_handlers:
-            return cls.send_handlers[key]
-        return cls.send_handlers[""]
+        return cls.send_handlers.get(key, cls.send_handlers.get("", send))
