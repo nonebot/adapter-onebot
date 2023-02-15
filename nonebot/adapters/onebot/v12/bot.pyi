@@ -116,8 +116,11 @@ async def send(
 ) -> Any: ...
 
 class Bot(BaseBot):
+    impl: str
     platform: str
-    def __init__(self, adapter: Adapter, self_id: str, platform: str) -> None: ...
+    def __init__(
+        self, adapter: Adapter, self_id: str, impl: str, platform: str
+    ) -> None: ...
     async def call_api(self, api: str, **data) -> Any:
         """调用 OneBot 协议 API。
 

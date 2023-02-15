@@ -4,12 +4,22 @@ FrontMatter:
     sidebar_position: 1
     description: onebot.v12.adapter 模块
 """
-
 import json
 import asyncio
 import inspect
 import contextlib
-from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Type,
+    Union,
+    Callable,
+    ClassVar,
+    Optional,
+    Generator,
+    cast,
+)
 
 import msgpack
 from pygtrie import CharTrie
@@ -33,7 +43,7 @@ from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.utils import get_auth_bearer
 
-from .bot import Bot
+from .bot import Bot, send
 from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
@@ -64,7 +74,7 @@ for exc_name in dir(exception):
 
 
 class Adapter(BaseAdapter):
-    event_models: Dict[str, Collator[Event]] = {
+    event_models: ClassVar[Dict[str, Collator[Event]]] = {
         "": Collator(
             "OneBot V12",
             DEFAULT_MODELS,
@@ -72,11 +82,15 @@ class Adapter(BaseAdapter):
         )
     }
 
-    exc_classes: CharTrie = CharTrie(
+    send_handlers: ClassVar[
+        Dict[str, Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]]
+    ] = {}
+
+    exc_classes: ClassVar[CharTrie] = CharTrie(
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
     )
 
-    _result_store = ResultStore()
+    _result_store: ClassVar[ResultStore] = ResultStore()
 
     @classmethod
     @overrides(BaseAdapter)
@@ -252,7 +266,7 @@ class Adapter(BaseAdapter):
             json_data = json.loads(data)
             if event := self.json_to_event(json_data, impl):
                 if isinstance(event, StatusUpdateMetaEvent):
-                    self._handle_status_update(event)
+                    self._handle_status_update(event, impl)
                 if isinstance(event, MetaEvent):
                     for bot in self.bots.values():
                         bot = cast(Bot, bot)
@@ -262,7 +276,7 @@ class Adapter(BaseAdapter):
                     self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
                     if not bot:
-                        bot = Bot(self, self_id, event.self.platform)
+                        bot = Bot(self, self_id, impl, event.self.platform)
                         self.bot_connect(bot)
                         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                     bot = cast(Bot, bot)
@@ -312,7 +326,7 @@ class Adapter(BaseAdapter):
                 )
                 if event := self.json_to_event(raw_data, impl):
                     if isinstance(event, StatusUpdateMetaEvent):
-                        self._handle_status_update(event, bots, websocket)
+                        self._handle_status_update(event, impl, bots, websocket)
                     if isinstance(event, MetaEvent):
                         for bot in bots.values():
                             asyncio.create_task(bot.handle_event(event))
@@ -321,7 +335,7 @@ class Adapter(BaseAdapter):
                         self_id = event.self.user_id
                         bot = bots.get(self_id)
                         if not bot:
-                            bot = Bot(self, self_id, event.self.platform)
+                            bot = Bot(self, self_id, impl, event.self.platform)
                             self.bot_connect(bot)
                             bots[self_id] = bot
                             self.connections[self_id] = websocket
@@ -431,7 +445,7 @@ class Adapter(BaseAdapter):
                             if not event:
                                 continue
                             if isinstance(event, StatusUpdateMetaEvent):
-                                self._handle_status_update(event, bots, ws)
+                                self._handle_status_update(event, impl, bots, ws)
                             if isinstance(event, MetaEvent):
                                 for bot in bots.values():
                                     asyncio.create_task(bot.handle_event(event))
@@ -440,7 +454,7 @@ class Adapter(BaseAdapter):
                                 self_id = event.self.user_id
                                 bot = bots.get(self_id)
                                 if not bot:
-                                    bot = Bot(self, self_id, event.self.platform)
+                                    bot = Bot(self, self_id, impl, event.self.platform)
                                     self.bot_connect(bot)
                                     bots[self_id] = bot
                                     self.connections[self_id] = ws
@@ -481,6 +495,7 @@ class Adapter(BaseAdapter):
     def _handle_status_update(
         self,
         event: StatusUpdateMetaEvent,
+        impl: str,
         bots: Optional[Dict[str, Bot]] = None,
         websocket: Optional[WebSocket] = None,
     ) -> None:
@@ -500,7 +515,7 @@ class Adapter(BaseAdapter):
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
                     )
             elif self_id not in self.bots:
-                bot = Bot(self, self_id, platform)
+                bot = Bot(self, self_id, impl, platform)
 
                 # 先尝试连接，如果失败则不保存连接信息
                 self.bot_connect(bot)
@@ -603,6 +618,20 @@ class Adapter(BaseAdapter):
     def custom_send(
         cls,
         send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
+        impl: Optional[str] = None,
+        platform: Optional[str] = None,
     ) -> None:
         """自定义 Bot 的回复函数。"""
-        setattr(Bot, "send_handler", send_func)
+        if platform is not None and impl is None:
+            raise ValueError("Impl must be specified")
+        if impl is not None and platform is None:
+            raise ValueError("platform must be specified")
+        key = f"/{impl}/{platform}" if impl and platform else ""
+        cls.send_handlers[key] = send_func
+
+    @classmethod
+    def get_send(
+        cls, platform: Optional[str] = None, impl: Optional[str] = None
+    ) -> Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]:
+        key = f"/{impl}/{platform}" if impl and platform else ""
+        return cls.send_handlers.get(key, cls.send_handlers.get("", send))

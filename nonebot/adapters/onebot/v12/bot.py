@@ -6,7 +6,7 @@ FrontMatter:
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Union, Callable
+from typing import TYPE_CHECKING, Any, Union
 
 from nonebot.typing import overrides
 from nonebot.message import handle_event
@@ -183,12 +183,11 @@ async def send(
 
 
 class Bot(BaseBot):
-    send_handler: Callable[
-        ["Bot", Event, Union[str, Message, MessageSegment]], Any
-    ] = send
-
-    def __init__(self, adapter: "Adapter", self_id: str, platform: str) -> None:
+    def __init__(
+        self, adapter: "Adapter", self_id: str, impl: str, platform: str
+    ) -> None:
         super().__init__(adapter, self_id)
+        self.impl = impl
         self.platform = platform
 
     async def handle_event(self, event: Event) -> None:
@@ -221,4 +220,6 @@ class Bot(BaseBot):
             NetworkError: 网络错误
             ActionFailed: API 调用失败
         """
-        return await self.__class__.send_handler(self, event, message, **kwargs)
+        return await self.adapter.get_send(self.impl, self.platform)(
+            self, event, message, **kwargs
+        )
