@@ -6,7 +6,7 @@ FrontMatter:
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Union, Callable
+from typing import TYPE_CHECKING, Any, Union
 
 from nonebot.typing import overrides
 from nonebot.message import handle_event
@@ -144,19 +144,51 @@ def _check_nickname(bot: "Bot", event: MessageEvent) -> None:
         first_msg_seg.data["text"] = first_text[m.end() :]
 
 
+async def send(
+    bot: "Bot",
+    event: Event,
+    message: Union[str, Message, MessageSegment],
+    at_sender: bool = False,
+    reply_message: bool = False,
+    **params: Any,
+) -> Any:
+    """默认回复消息处理函数。"""
+    event_dict = event.dict()
+
+    params.setdefault("detail_type", event_dict["detail_type"])
+
+    if "user_id" in event_dict:  # copy the user_id to the API params if exists
+        params.setdefault("user_id", event_dict["user_id"])
+    else:
+        at_sender = False  # if no user_id, force disable at_sender
+
+    if "group_id" in event_dict:  # copy the group_id to the API params if exists
+        params.setdefault("group_id", event_dict["group_id"])
+
+    if (
+        "guild_id" in event_dict and "channel_id" in event_dict
+    ):  # copy the guild_id to the API params if exists
+        params.setdefault("guild_id", event_dict["guild_id"])
+        params.setdefault("channel_id", event_dict["channel_id"])
+
+    full_message = Message()  # create a new message with at sender segment
+    if reply_message and "message_id" in event_dict:
+        full_message += MessageSegment.reply(event_dict["message_id"])
+    if at_sender and params["detail_type"] != "private":
+        full_message += MessageSegment.mention(params["user_id"]) + " "
+    full_message += message
+    params.setdefault("message", full_message)
+
+    return await bot.send_message(**params)
+
+
 class Bot(BaseBot):
     def __init__(
-        self,
-        adapter: "Adapter",
-        self_id: str,
-        platform: str,
-        send_handler: Callable[
-            ["Bot", Event, Union[str, Message, MessageSegment]], Any
-        ],
+        self, adapter: "Adapter", self_id: str, impl: str, platform: str
     ) -> None:
         super().__init__(adapter, self_id)
+        self.impl = impl
         self.platform = platform
-        self.send_handler = send_handler
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""
@@ -188,4 +220,6 @@ class Bot(BaseBot):
             NetworkError: 网络错误
             ActionFailed: API 调用失败
         """
-        return await self.send_handler(self, event, message, **kwargs)
+        return await self.adapter.get_send(self.impl, self.platform)(
+            self, event, message, **kwargs
+        )

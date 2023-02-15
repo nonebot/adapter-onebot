@@ -33,7 +33,7 @@ from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
 from nonebot.adapters.onebot.utils import get_auth_bearer
 
-from .bot import Bot
+from .bot import Bot, send
 from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
@@ -63,44 +63,6 @@ for exc_name in dir(exception):
     DEFAULT_EXCEPTIONS.append(Exc)
 
 
-async def default_send(
-    bot: Bot,
-    event: Event,
-    message: Union[str, Message, MessageSegment],
-    at_sender: bool = False,
-    reply_message: bool = False,
-    **params: Any,
-) -> Any:
-    """默认回复消息处理函数。"""
-    event_dict = event.dict()
-
-    params.setdefault("detail_type", event_dict["detail_type"])
-
-    if "user_id" in event_dict:  # copy the user_id to the API params if exists
-        params.setdefault("user_id", event_dict["user_id"])
-    else:
-        at_sender = False  # if no user_id, force disable at_sender
-
-    if "group_id" in event_dict:  # copy the group_id to the API params if exists
-        params.setdefault("group_id", event_dict["group_id"])
-
-    if (
-        "guild_id" in event_dict and "channel_id" in event_dict
-    ):  # copy the guild_id to the API params if exists
-        params.setdefault("guild_id", event_dict["guild_id"])
-        params.setdefault("channel_id", event_dict["channel_id"])
-
-    full_message = Message()  # create a new message with at sender segment
-    if reply_message and "message_id" in event_dict:
-        full_message += MessageSegment.reply(event_dict["message_id"])
-    if at_sender and params["detail_type"] != "private":
-        full_message += MessageSegment.mention(params["user_id"]) + " "
-    full_message += message
-    params.setdefault("message", full_message)
-
-    return await bot.send_message(**params)
-
-
 class Adapter(BaseAdapter):
     event_models: Dict[str, Collator[Event]] = {
         "": Collator(
@@ -112,7 +74,7 @@ class Adapter(BaseAdapter):
 
     send_handlers: Dict[
         str, Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]
-    ] = {}
+    ] = {"": send}
 
     exc_classes: CharTrie = CharTrie(
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
@@ -304,12 +266,7 @@ class Adapter(BaseAdapter):
                     self_id = event.self.user_id
                     bot = self.bots.get(self_id, None)
                     if not bot:
-                        bot = Bot(
-                            self,
-                            self_id,
-                            event.self.platform,
-                            self.get_send(event.self.platform, impl),
-                        )
+                        bot = Bot(self, self_id, impl, event.self.platform)
                         self.bot_connect(bot)
                         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
                     bot = cast(Bot, bot)
@@ -368,12 +325,7 @@ class Adapter(BaseAdapter):
                         self_id = event.self.user_id
                         bot = bots.get(self_id)
                         if not bot:
-                            bot = Bot(
-                                self,
-                                self_id,
-                                event.self.platform,
-                                self.get_send(event.self.platform, impl),
-                            )
+                            bot = Bot(self, self_id, impl, event.self.platform)
                             self.bot_connect(bot)
                             bots[self_id] = bot
                             self.connections[self_id] = websocket
@@ -492,12 +444,7 @@ class Adapter(BaseAdapter):
                                 self_id = event.self.user_id
                                 bot = bots.get(self_id)
                                 if not bot:
-                                    bot = Bot(
-                                        self,
-                                        self_id,
-                                        event.self.platform,
-                                        self.get_send(event.self.platform, impl),
-                                    )
+                                    bot = Bot(self, self_id, impl, event.self.platform)
                                     self.bot_connect(bot)
                                     bots[self_id] = bot
                                     self.connections[self_id] = ws
@@ -558,12 +505,7 @@ class Adapter(BaseAdapter):
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
                     )
             elif self_id not in self.bots:
-                bot = Bot(
-                    self,
-                    self_id,
-                    platform,
-                    self.get_send(platform, impl),
-                )
+                bot = Bot(self, self_id, impl, platform)
 
                 # 先尝试连接，如果失败则不保存连接信息
                 self.bot_connect(bot)
@@ -678,8 +620,18 @@ class Adapter(BaseAdapter):
         cls.send_handlers[key] = send_func
 
     @classmethod
+    def custom_send(
+        cls,
+        send_func: Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any],
+    ) -> None:
+        """自定义 Bot 的回复函数。"""
+        cls.add_custom_send(send_func)
+
+    @classmethod
     def get_send(
         cls, platform: Optional[str] = None, impl: Optional[str] = None
     ) -> Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]:
         key = f"/{impl}/{platform}" if impl and platform else ""
-        return cls.send_handlers.get(key, default_send)
+        if key in cls.send_handlers:
+            return cls.send_handlers[key]
+        return cls.send_handlers[""]
