@@ -210,7 +210,7 @@ class Bot(BaseBot):
             message: 要发送的消息
             at_sender (bool): 是否 @ 事件主体
             reply_message (bool): 是否回复事件消息
-            kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v12.adapter.Adapter.add_custom_send` 配合使用
+            kwargs: 其他参数，可以与 {ref}`nonebot.adapters.onebot.v12.adapter.Adapter.custom_send` 配合使用
 
         返回:
             API 调用返回数据

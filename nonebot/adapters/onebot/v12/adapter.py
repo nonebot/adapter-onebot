@@ -7,7 +7,6 @@ FrontMatter:
 import json
 import asyncio
 import inspect
-import warnings
 import contextlib
 from typing import (
     Any,
@@ -91,7 +90,7 @@ class Adapter(BaseAdapter):
         (retcode, Exc) for Exc in DEFAULT_EXCEPTIONS for retcode in Exc.__retcode__
     )
 
-    _result_store: ClassVar = ResultStore()
+    _result_store: ClassVar[ResultStore] = ResultStore()
 
     @classmethod
     @overrides(BaseAdapter)
