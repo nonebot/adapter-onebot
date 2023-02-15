@@ -443,7 +443,6 @@ class Bot(BaseBot):
         stage: Literal["transfer"],
         file_id: str = ...,
         offset: int = ...,
-        size: int = ...,
         data: bytes = ...,
         **kwargs: Any,
     ) -> None:
@@ -453,7 +452,6 @@ class Bot(BaseBot):
             stage: 上传阶段
             file_id: 准备阶段返回的文件 ID
             offset: 本次传输的文件偏移，单位：字节
-            size: 本次传输的文件大小，单位：字节
             data: 本次传输的文件数据
             kwargs: 扩展字段
         """
