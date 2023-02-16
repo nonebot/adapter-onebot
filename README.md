@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://v2.nonebot.dev/"><img src="https://raw.githubusercontent.com/nonebot/adapter-onebot/master/website/static/logo.png" width="500" alt="nonebot-adapter-onebot"></a>
+  <a href="https://onebot.adapters.nonebot.dev/"><img src="https://onebot.adapters.nonebot.dev/logo.png" width="200" height="200" alt="nonebot-adapter-onebot"></a>
 </p>
 
 <div align="center">
@@ -20,7 +20,7 @@ _✨ OneBot 协议适配 ✨_
   <a href="https://pypi.python.org/pypi/nonebot-adapter-onebot">
     <img src="https://img.shields.io/pypi/v/nonebot-adapter-onebot" alt="pypi">
   </a>
-  <img src="https://img.shields.io/badge/python-3.7.3+-blue" alt="python">
+  <img src="https://img.shields.io/badge/python-3.8+-blue" alt="python">
   <a href="https://codecov.io/gh/nonebot/adapter-onebot">
     <img src="https://codecov.io/gh/nonebot/adapter-onebot/branch/master/graph/badge.svg?token=45OH1IVM9C"/>
   </a>
