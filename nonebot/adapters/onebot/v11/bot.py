@@ -171,6 +171,23 @@ async def send(
     full_message += message
     params.setdefault("message", full_message)
 
+    # only when all message segment types are 'node' triggers send_*_forward_msg
+    is_forward_msg = True
+    for message_segment in full_message:
+        if message_segment.type != "node":
+            is_forward_msg = False
+            break
+
+    if is_forward_msg:
+        if params.get("message_type") == "group":
+            return await bot.send_group_forward_msg(
+                group_id=params.get("group_id"), messages=full_message
+            )
+        elif params.get("message_type") == "private":
+            return await bot.send_private_forward_msg(
+                user_id=params.get("user_id"), messages=full_message
+            )
+
     return await bot.send_msg(**params)
 
 

@@ -86,6 +86,26 @@ class Bot(BaseBot):
             auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效
         """
         ...
+    async def send_group_forward_msg(
+        self, *, group_id: int, messages: Message
+    ) -> Dict[str, Any]:
+        """发送合并转发 ( 群 )
+
+        参数:
+            group_id: 群号
+            messages: MessageSegment 类型全部为 Node 的 Message
+        """
+        ...
+    async def send_private_forward_msg(
+        self, *, group_id: int, messages: Message
+    ) -> Dict[str, Any]:
+        """发送合并转发 ( 好友 )
+
+        参数:
+            user_id: 好友QQ号
+            messages: MessageSegment 类型全部为 Node 的 Message
+        """
+        ...
     async def delete_msg(
         self,
         *,
