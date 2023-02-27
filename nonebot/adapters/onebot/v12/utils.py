@@ -5,10 +5,13 @@ FrontMatter:
     description: onebot.v12.utils 模块
 """
 
+import datetime
 from typing import TypeVar
 from base64 import b64encode
+from functools import partial
 
 from nonebot.typing import overrides
+from pydantic.json import custom_pydantic_encoder
 from nonebot.utils import DataclassEncoder, logger_wrapper
 
 T = TypeVar("T")
@@ -47,3 +50,15 @@ class CustomEncoder(DataclassEncoder):
         if isinstance(o, bytes):
             return b64encode(o).decode()
         return super(CustomEncoder, self).default(o)
+
+
+def timestamp(obj: datetime.datetime):
+    return obj.timestamp()
+
+
+# https://12.onebot.dev/connect/data-protocol/basic-types/
+msgpack_type_encoders = {
+    datetime.datetime: timestamp,
+}
+
+msgpack_encoder = partial(custom_pydantic_encoder, msgpack_type_encoders)  # type: ignore
