@@ -67,18 +67,19 @@ async def test_ws(app: App, endpoints: str):
             await ws.send_json(CONNECTION_META_EVENT)
 
             await ws.send_json(PRIVATE_MESSAGE_EVENT)
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
             bots = nonebot.get_bots()
             assert "0" in bots
             assert "2345678" not in bots
 
             await ws.send_json(QQ_OFFLINE_EVENT)
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
             bots = nonebot.get_bots()
             assert "0" not in bots
             assert "2345678" in bots
             await ws.close()
 
+        await asyncio.sleep(1)
         assert "2345678" not in nonebot.get_bots()
         assert "2345678" not in adapter.bots
 
@@ -245,12 +246,13 @@ async def test_ws_auth_header(app: App):
             await ws.send_json(CONNECTION_META_EVENT)
 
             await ws.send_json(PRIVATE_MESSAGE_EVENT)
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
             bots = nonebot.get_bots()
             assert "0" in bots
             assert "2345678" not in bots
             await ws.close()
 
+        await asyncio.sleep(1)
         assert "0" not in nonebot.get_bots()
 
 
@@ -266,10 +268,11 @@ async def test_ws_auth_query(app: App):
             await ws.send_json(CONNECTION_META_EVENT)
 
             await ws.send_json(PRIVATE_MESSAGE_EVENT)
-            await asyncio.sleep(0)
+            await asyncio.sleep(1)
             bots = nonebot.get_bots()
             assert "0" in bots
             assert "2345678" not in bots
             await ws.close()
 
+        await asyncio.sleep(1)
         assert "0" not in nonebot.get_bots()

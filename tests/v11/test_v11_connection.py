@@ -1,4 +1,5 @@
 import json
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -49,5 +50,6 @@ async def test_ws(app: App, endpoints: str):
             assert "0" in adapter.bots
             await ws.close()
 
+        await asyncio.sleep(1)
         assert "0" not in nonebot.get_bots()
         assert "0" not in adapter.bots
