@@ -33,7 +33,7 @@ pytest-cov = "^4.0.0"
 pre-commit = "^2.19.0"
 pytest-asyncio = "^0.20.0"
 nonebug = { git = "https://github.com/nonebot/nonebug.git" }
-nb-autodoc = { git = "https://github.com/nonebot/nb-autodoc.git" }
+nb-autodoc = "^1.0.0a5"
 nonebot2 = { git = "https://github.com/nonebot/nonebot2.git", branch = "master", extras = ["fastapi"] }
 
 [tool.pytest.ini_options]

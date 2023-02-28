@@ -694,18 +694,14 @@ description = "Powerful API Documentation Generator."
 category = "dev"
 optional = false
 python-versions = ">=3.8"
-files = []
-develop = false
+files = [
+    {file = "nb-autodoc-1.0.0a5.tar.gz", hash = "sha256:9341a2a231f9c1e97a040ee8701ff2e800ba742a1f1e548f7c92fbaa5d618e8b"},
+    {file = "nb_autodoc-1.0.0a5-py3-none-any.whl", hash = "sha256:2158758d1d1cc959082f201719f0d343659306ef776546cd60f5b932b0f03488"},
+]
 
 [package.dependencies]
 click = ">=8.0.0,<9.0.0"
 typing-extensions = ">=4.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/nonebot/nb-autodoc.git"
-reference = "HEAD"
-resolved_reference = "f48fdbfbc7f801c4b414756e90333003bc5e0027"
 
 [[package]]
 name = "nodeenv"
@@ -1523,4 +1519,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "5602a191a290d0099796b11f0086404431130fca48392757a94dae398a40b2fe"
+content-hash = "75f88dbe62272d967c7dc38c3bb58afae559c7d0a6eb73f5de0322743e438e95"
