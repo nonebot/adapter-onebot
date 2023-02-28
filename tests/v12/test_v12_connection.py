@@ -43,6 +43,7 @@ async def test_http(app: App, endpoints: str):
 )
 async def test_ws(app: App, endpoints: str):
     import nonebot
+    from nonebot.adapters.onebot.v12 import Adapter
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
         test_events = json.load(f)
@@ -66,6 +67,10 @@ async def test_ws(app: App, endpoints: str):
             await asyncio.sleep(0)
             assert "0" not in bots
             assert "2345678" in bots
+
+    # 确认连接断开后 bots 会被清空
+    assert len(nonebot.get_bots()) == 0
+    assert len(nonebot.get_adapter(Adapter).bots) == 0
 
 
 async def test_ws_missing_connect_meta_event(app: App):
