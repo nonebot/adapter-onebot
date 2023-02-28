@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from nonebug import NONEBOT_INIT_KWARGS
+from nonebug import NONEBOT_INIT_KWARGS, App
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -21,3 +21,17 @@ def init_adapter(nonebug_init: None):
     driver = nonebot.get_driver()
     driver.register_adapter(V11Adapter)
     driver.register_adapter(V12Adapter)
+
+
+@pytest.fixture
+def app(nonebug_init: None):
+    yield App()
+
+    # 每次测试结束后清空 bots
+    import nonebot
+    from nonebot.adapters.onebot.v11 import Adapter as AdapterV11
+    from nonebot.adapters.onebot.v12 import Adapter as AdapterV12
+
+    nonebot.get_adapter(AdapterV11).bots.clear()
+    nonebot.get_adapter(AdapterV12).bots.clear()
+    nonebot.get_driver().bots.clear()

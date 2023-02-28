@@ -12,7 +12,6 @@ from nonebug import App
 )
 async def test_http(app: App, endpoints: str):
     import nonebot
-    from nonebot.adapters.onebot.v12 import Adapter
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
         test_events = json.load(f)
@@ -36,9 +35,6 @@ async def test_http(app: App, endpoints: str):
         assert resp.status_code == 204
         assert "0" not in bots
         assert "2345678" in bots
-
-    nonebot.get_adapter(Adapter).bots.clear()
-    nonebot.get_driver().bots.clear()
 
 
 @pytest.mark.asyncio
@@ -98,8 +94,6 @@ async def test_ws_missing_connect_meta_event(app: App):
 async def test_ws_duplicate_bot(app: App):
     """测试连接两个相同 id 但协议不同的 bot"""
     import nonebot
-    from nonebot.adapters.onebot.v11 import Adapter as AdapterV11
-    from nonebot.adapters.onebot.v12 import Adapter as AdapterV12
 
     # 先连接一个 v11 bot
     endpoints = "/onebot/v11/"
@@ -182,10 +176,6 @@ async def test_ws_duplicate_bot(app: App):
                 "reason": "",
             }
 
-    nonebot.get_adapter(AdapterV11).bots.clear()
-    nonebot.get_adapter(AdapterV12).bots.clear()
-    nonebot.get_driver().bots.clear()
-
 
 async def test_http_auth_missing(app: App):
     endpoints = "/onebot/v12/"
@@ -206,7 +196,6 @@ async def test_http_auth_missing(app: App):
 
 async def test_http_auth_header(app: App):
     import nonebot
-    from nonebot.adapters.onebot.v12 import Adapter
 
     endpoints = "/onebot/v12/"
 
@@ -226,9 +215,6 @@ async def test_http_auth_header(app: App):
         bots = nonebot.get_bots()
         assert "0" in bots
         assert "2345678" not in bots
-
-    nonebot.get_adapter(Adapter).bots.clear()
-    nonebot.get_driver().bots.clear()
 
 
 async def test_http_auth_query(app: App):
