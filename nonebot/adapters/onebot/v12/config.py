@@ -5,7 +5,7 @@ FrontMatter:
     description: onebot.v12.config 模块
 """
 
-from typing import Set, Dict, Optional
+from typing import Set, Dict, Union, Optional
 
 from pydantic import Field, AnyUrl, BaseModel
 
@@ -29,6 +29,10 @@ class Config(BaseModel):
         default_factory=dict, alias="onebot_v12_api_roots"
     )
     """OneBot HTTP API 请求地址字典"""
+    onebot_use_msgpack: Union[bool, Dict[str, bool]] = Field(
+        default=False, alias="onebot_v12_use_msgpack"
+    )
+    """OneBot 启用 msgpack 编码"""
 
     class Config:
         extra = "ignore"

@@ -47,7 +47,7 @@ from .bot import Bot, send
 from .config import Config
 from . import event, exception
 from .message import Message, MessageSegment
-from .utils import CustomEncoder, log, flattened_to_nested
+from .utils import CustomEncoder, log, msgpack_encoder, flattened_to_nested
 from .event import Event, BotEvent, MetaEvent, ConnectMetaEvent, StatusUpdateMetaEvent
 from .exception import (
     NetworkError,
@@ -170,11 +170,22 @@ class Adapter(BaseAdapter):
             "self": {"platform": bot.platform, "user_id": bot.self_id},
         }
 
+        # 根据实现的不同，判断是否使用 msgpack
+        # 因为不同实现对于 msgpack 的支持程度不同
+        if isinstance(self.onebot_config.onebot_use_msgpack, dict):
+            use_msgpack = self.onebot_config.onebot_use_msgpack.get(bot.impl, False)
+        else:
+            use_msgpack = self.onebot_config.onebot_use_msgpack
+
         if websocket:
             seq = self._result_store.get_seq()
             action_data["echo"] = str(seq)
-            json_data = json.dumps(action_data, cls=CustomEncoder)
-            await websocket.send(json_data)
+            encoded_data = (
+                msgpack.packb(action_data, default=msgpack_encoder)
+                if use_msgpack
+                else json.dumps(action_data, cls=CustomEncoder)
+            )
+            await websocket.send(encoded_data)  # type: ignore
             try:
                 return self._handle_api_result(
                     await self._result_store.fetch(seq, timeout)
@@ -187,18 +198,27 @@ class Adapter(BaseAdapter):
             if not api_url:
                 raise ApiNotAvailable
 
-            headers = {"Content-Type": "application/json"}
+            headers = {
+                "Content-Type": "application/msgpack"
+                if use_msgpack
+                else "application/json"
+            }
             if self.onebot_config.onebot_access_token is not None:
                 headers["Authorization"] = (
                     "Bearer " + self.onebot_config.onebot_access_token
                 )
 
+            encoded_data = (
+                msgpack.packb(action_data, default=msgpack_encoder)
+                if use_msgpack
+                else json.dumps(action_data, cls=CustomEncoder)
+            )
             request = Request(
                 "POST",
                 api_url,
                 headers=headers,
                 timeout=timeout,
-                content=json.dumps(action_data, cls=CustomEncoder),
+                content=encoded_data,
             )
 
             try:
@@ -207,7 +227,10 @@ class Adapter(BaseAdapter):
                 if 200 <= response.status_code < 300:
                     if not response.content:
                         raise ValueError("Empty response")
-                    result = json.loads(response.content)
+                    if response.headers.get("Content-Type") == "application/msgpack":
+                        result = msgpack.unpackb(response.content)
+                    else:
+                        result = json.loads(response.content)
                     return self._handle_api_result(result)
                 raise NetworkError(
                     f"HTTP request received unexpected "
