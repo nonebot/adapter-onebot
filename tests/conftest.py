@@ -1,7 +1,14 @@
 from pathlib import Path
 
 import pytest
-from nonebug import NONEBOT_INIT_KWARGS, App
+from nonebug import NONEBOT_INIT_KWARGS
+
+import nonebot
+import nonebot.adapters
+
+nonebot.adapters.__path__.append(  # type: ignore
+    str((Path(__file__).parent.parent / "nonebot" / "adapters").resolve())
+)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -10,12 +17,6 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def init_adapter(nonebug_init: None):
-    import nonebot
-    import nonebot.adapters
-
-    nonebot.adapters.__path__.append(  # type: ignore
-        str((Path(__file__).parent.parent / "nonebot" / "adapters").resolve())
-    )
     from nonebot.adapters.onebot import V11Adapter, V12Adapter
 
     driver = nonebot.get_driver()
@@ -23,15 +24,13 @@ def init_adapter(nonebug_init: None):
     driver.register_adapter(V12Adapter)
 
 
-@pytest.fixture
-def app(nonebug_init: None):
-    yield App()
+# @pytest.fixture
+# def app(nonebug_init: None):
+#     yield App()
 
-    # 每次测试结束后清空 bots
-    import nonebot
-    from nonebot.adapters.onebot.v11 import Adapter as AdapterV11
-    from nonebot.adapters.onebot.v12 import Adapter as AdapterV12
+#     from nonebot.adapters.onebot.v11 import Adapter as AdapterV11
+#     from nonebot.adapters.onebot.v12 import Adapter as AdapterV12
 
-    nonebot.get_adapter(AdapterV11).bots.clear()
-    nonebot.get_adapter(AdapterV12).bots.clear()
-    nonebot.get_driver().bots.clear()
+#     nonebot.get_adapter(AdapterV11).bots.clear()
+#     nonebot.get_adapter(AdapterV12).bots.clear()
+#     nonebot.get_driver().bots.clear()
