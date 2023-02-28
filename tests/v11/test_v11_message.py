@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_message_escape(init_adapter):
+async def test_message_escape():
     from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
     a = Message([MessageSegment.text("test"), MessageSegment.at(123)])

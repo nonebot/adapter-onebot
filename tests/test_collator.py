@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_collator_simple_build(init_adapter):
+async def test_collator_simple_build():
     from nonebot.adapters import Event
     from nonebot.adapters.onebot.collator import SEPARATOR, Collator
 
@@ -28,7 +28,7 @@ async def test_collator_simple_build(init_adapter):
 
 
 @pytest.mark.asyncio
-async def test_collator_peer_build(init_adapter):
+async def test_collator_peer_build():
     from nonebot.adapters import Event
     from nonebot.adapters.onebot.collator import SEPARATOR, Collator
 
@@ -63,7 +63,7 @@ async def test_collator_peer_build(init_adapter):
 
 
 @pytest.mark.asyncio
-async def test_collator_get_model(init_adapter):
+async def test_collator_get_model():
     from nonebot.adapters import Event
     from nonebot.adapters.onebot.collator import SEPARATOR, Collator
 

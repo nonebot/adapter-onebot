@@ -3,7 +3,7 @@ from nonebug import App
 
 
 @pytest.mark.asyncio
-async def test_api_result_handle(app: App, init_adapter):
+async def test_api_result_handle(app: App):
     from nonebot import get_driver
     from nonebot.adapters.onebot.v12 import Adapter, BadRequest, ActionFailedWithRetcode
 

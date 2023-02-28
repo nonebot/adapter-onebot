@@ -10,8 +10,9 @@ from nonebug import App
 @pytest.mark.parametrize(
     "endpoints", ["/onebot/v12/", "/onebot/v12/http", "/onebot/v12/http/"]
 )
-async def test_http(app: App, init_adapter, endpoints: str):
+async def test_http(app: App, endpoints: str):
     import nonebot
+    from nonebot.adapters.onebot.v12 import Adapter
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
         test_events = json.load(f)
@@ -22,6 +23,7 @@ async def test_http(app: App, init_adapter, endpoints: str):
         headers = {
             "X-OneBot-Version": "12",
             "X-Impl": "test",
+            "Authorization": "Bearer test",
         }
         resp = await client.post(endpoints, json=event, headers=headers)
         assert resp.status_code == 204
@@ -35,12 +37,15 @@ async def test_http(app: App, init_adapter, endpoints: str):
         assert "0" not in bots
         assert "2345678" in bots
 
+    nonebot.get_adapter(Adapter).bots.clear()
+    nonebot.get_driver().bots.clear()
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "endpoints", ["/onebot/v12/", "/onebot/v12/ws", "/onebot/v12/ws/"]
 )
-async def test_ws(app: App, init_adapter, endpoints: str):
+async def test_ws(app: App, endpoints: str):
     import nonebot
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
@@ -50,6 +55,7 @@ async def test_ws(app: App, init_adapter, endpoints: str):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
+            "Authorization": "Bearer test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(test_events[2])
@@ -66,7 +72,7 @@ async def test_ws(app: App, init_adapter, endpoints: str):
             assert "2345678" in bots
 
 
-async def test_ws_missing_connect_meta_event(app: App, init_adapter):
+async def test_ws_missing_connect_meta_event(app: App):
     endpoints = "/onebot/v12/"
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
@@ -76,6 +82,7 @@ async def test_ws_missing_connect_meta_event(app: App, init_adapter):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
+            "Authorization": "Bearer test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(test_events[0])
@@ -88,9 +95,11 @@ async def test_ws_missing_connect_meta_event(app: App, init_adapter):
             }
 
 
-async def test_ws_duplicate_bot(app: App, init_adapter):
+async def test_ws_duplicate_bot(app: App):
     """测试连接两个相同 id 但协议不同的 bot"""
     import nonebot
+    from nonebot.adapters.onebot.v11 import Adapter as AdapterV11
+    from nonebot.adapters.onebot.v12 import Adapter as AdapterV12
 
     # 先连接一个 v11 bot
     endpoints = "/onebot/v11/"
@@ -119,6 +128,7 @@ async def test_ws_duplicate_bot(app: App, init_adapter):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
+            "Authorization": "Bearer test",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(test_events[2])
@@ -172,13 +182,12 @@ async def test_ws_duplicate_bot(app: App, init_adapter):
                 "reason": "",
             }
 
+    nonebot.get_adapter(AdapterV11).bots.clear()
+    nonebot.get_adapter(AdapterV12).bots.clear()
+    nonebot.get_driver().bots.clear()
 
-@pytest.mark.parametrize(
-    "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
-    indirect=True,
-)
-async def test_http_auth_missing(app: App, init_adapter):
+
+async def test_http_auth_missing(app: App):
     endpoints = "/onebot/v12/"
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
@@ -195,13 +204,9 @@ async def test_http_auth_missing(app: App, init_adapter):
         assert resp.status_code == 403
 
 
-@pytest.mark.parametrize(
-    "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
-    indirect=True,
-)
-async def test_http_auth_header(app: App, init_adapter):
+async def test_http_auth_header(app: App):
     import nonebot
+    from nonebot.adapters.onebot.v12 import Adapter
 
     endpoints = "/onebot/v12/"
 
@@ -222,13 +227,11 @@ async def test_http_auth_header(app: App, init_adapter):
         assert "0" in bots
         assert "2345678" not in bots
 
+    nonebot.get_adapter(Adapter).bots.clear()
+    nonebot.get_driver().bots.clear()
 
-@pytest.mark.parametrize(
-    "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
-    indirect=True,
-)
-async def test_http_auth_query(app: App, init_adapter):
+
+async def test_http_auth_query(app: App):
     import nonebot
 
     endpoints = "/onebot/v12/?access_token=test"
@@ -250,12 +253,7 @@ async def test_http_auth_query(app: App, init_adapter):
         assert "2345678" not in bots
 
 
-@pytest.mark.parametrize(
-    "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
-    indirect=True,
-)
-async def test_ws_auth_missing(app: App, init_adapter):
+async def test_ws_auth_missing(app: App):
     endpoints = "/onebot/v12/"
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
@@ -272,12 +270,7 @@ async def test_ws_auth_missing(app: App, init_adapter):
                 await asyncio.sleep(0)
 
 
-@pytest.mark.parametrize(
-    "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
-    indirect=True,
-)
-async def test_ws_auth_header(app: App, init_adapter):
+async def test_ws_auth_header(app: App):
     import nonebot
 
     endpoints = "/onebot/v12/"
@@ -301,12 +294,7 @@ async def test_ws_auth_header(app: App, init_adapter):
             assert "2345678" not in bots
 
 
-@pytest.mark.parametrize(
-    "nonebug_init",
-    [pytest.param({"onebot_v12_access_token": "test"}, id="access_token")],
-    indirect=True,
-)
-async def test_ws_auth_query(app: App, init_adapter):
+async def test_ws_auth_query(app: App):
     import nonebot
 
     endpoints = "/onebot/v12/?access_token=test"

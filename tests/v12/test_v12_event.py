@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 
 @pytest.mark.asyncio
-async def test_event(app: App, init_adapter):
+async def test_event(app: App):
     from nonebot.adapters.onebot.v12 import Adapter
 
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
@@ -22,7 +22,7 @@ async def test_event(app: App, init_adapter):
 
 
 @pytest.mark.asyncio
-async def test_custom_model(app: App, init_adapter):
+async def test_custom_model(app: App):
     from nonebot.adapters.onebot.v12.event import BotSelf
     from nonebot.adapters.onebot.v12 import Event, Adapter, MessageEvent
 

@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_store(init_adapter):
+async def test_store():
     from nonebot.adapters.onebot.store import ResultStore
 
     store = ResultStore()
