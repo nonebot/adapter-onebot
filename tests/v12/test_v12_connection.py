@@ -77,6 +77,7 @@ async def test_ws(app: App, endpoints: str):
             bots = nonebot.get_bots()
             assert "0" not in bots
             assert "2345678" in bots
+            await ws.close()
 
         assert "2345678" not in nonebot.get_bots()
         assert "2345678" not in adapter.bots
@@ -248,6 +249,7 @@ async def test_ws_auth_header(app: App):
             bots = nonebot.get_bots()
             assert "0" in bots
             assert "2345678" not in bots
+            await ws.close()
 
         assert "0" not in nonebot.get_bots()
 
@@ -268,5 +270,6 @@ async def test_ws_auth_query(app: App):
             bots = nonebot.get_bots()
             assert "0" in bots
             assert "2345678" not in bots
+            await ws.close()
 
         assert "0" not in nonebot.get_bots()

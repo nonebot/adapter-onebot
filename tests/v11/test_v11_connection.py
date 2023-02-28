@@ -47,6 +47,7 @@ async def test_ws(app: App, endpoints: str):
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             assert "0" in nonebot.get_bots()
             assert "0" in adapter.bots
+            await ws.close()
 
         assert "0" not in nonebot.get_bots()
         assert "0" not in adapter.bots
