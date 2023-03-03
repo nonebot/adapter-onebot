@@ -525,22 +525,6 @@ class Bot(BaseBot):
         """
         ...
     @overload
-    async def get_file(
-        self,
-        *,
-        type: str,
-        file_id: str,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """获取文件
-
-        参数:
-            type: 获取文件的方式，可以为 url、path、data 或扩展的方式
-            file_id: 文件 ID
-            kwargs: 扩展字段
-        """
-        ...
-    @overload
     async def get_file_fragmented(
         self,
         *,
