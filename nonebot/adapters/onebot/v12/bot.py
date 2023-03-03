@@ -183,6 +183,8 @@ async def send(
 
 
 class Bot(BaseBot):
+    adapter: "Adapter"
+
     def __init__(
         self, adapter: "Adapter", self_id: str, impl: str, platform: str
     ) -> None:
@@ -220,6 +222,5 @@ class Bot(BaseBot):
             NetworkError: 网络错误
             ActionFailed: API 调用失败
         """
-        return await self.adapter.get_send(self.impl, self.platform)(
-            self, event, message, **kwargs
-        )
+        send_handler = self.adapter.get_send(self.impl, self.platform)
+        return await send_handler(self, event, message, **kwargs)
