@@ -654,7 +654,7 @@ class Adapter(BaseAdapter):
 
     @classmethod
     def get_send(
-        cls, platform: Optional[str] = None, impl: Optional[str] = None
+        cls, impl: Optional[str] = None, platform: Optional[str] = None
     ) -> Callable[[Bot, Event, Union[str, Message, MessageSegment]], Any]:
         key = f"/{impl}/{platform}" if impl and platform else ""
         return cls.send_handlers.get(key, cls.send_handlers.get("", send))
