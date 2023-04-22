@@ -40,10 +40,10 @@ def rich_escape(s: str, escape_comma: bool = True) -> str:
 
 
 def rich_unescape(s: str) -> str:
-    """对字符串进行 CQ 码去转义。
+    """对字符串进行富文本去转义。
 
     参数:
-        s: 需要转义的字符串
+        s: 需要去转义的字符串
     """
     return (
         s.replace("&#44;", ",")
