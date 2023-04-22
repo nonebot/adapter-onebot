@@ -14,6 +14,7 @@ from nonebot.utils import escape_tag
 from pydantic import Extra, BaseModel, root_validator
 
 from nonebot.adapters import Event as BaseEvent
+from nonebot.adapters.onebot.utils import highlight_rich_message
 
 from .message import Message
 from .exception import NoLogException
@@ -146,18 +147,10 @@ class PrivateMessageEvent(MessageEvent):
 
     @overrides(Event)
     def get_event_description(self) -> str:
-        texts: List[str] = []
-        msg_string: List[str] = []
-        for seg in self.original_message:
-            if seg.is_text():
-                texts.append(repr(seg))
-            else:
-                msg_string.extend(
-                    (escape_tag("".join(texts)), f"<le>{escape_tag(repr(seg))}</le>")
-                )
-                texts.clear()
-        msg_string.append(escape_tag("".join(texts)))
-        return f"Message {self.message_id} from {self.user_id} {''.join(msg_string)!r}"
+        return (
+            f"Message {self.message_id} from {self.user_id} "
+            f"{''.join(highlight_rich_message(repr(self.original_message.to_rich_text())))}"
+        )
 
 
 class GroupMessageEvent(MessageEvent):
@@ -168,18 +161,10 @@ class GroupMessageEvent(MessageEvent):
 
     @overrides(Event)
     def get_event_description(self) -> str:
-        texts: List[str] = []
-        msg_string: List[str] = []
-        for seg in self.original_message:
-            if seg.is_text():
-                texts.append(str(seg))
-            else:
-                msg_string.extend(
-                    (escape_tag("".join(texts)), f"<le>{escape_tag(str(seg))}</le>")
-                )
-                texts.clear()
-        msg_string.append(escape_tag("".join(texts)))
-        return f"Message {self.message_id} from {self.user_id}@[群:{self.group_id}] {''.join(msg_string)!r}"
+        return (
+            f"Message {self.message_id} from {self.user_id}@[群:{self.group_id}] "
+            f"{''.join(highlight_rich_message(repr(self.original_message.to_rich_text())))}"
+        )
 
     @overrides(MessageEvent)
     def get_session_id(self) -> str:

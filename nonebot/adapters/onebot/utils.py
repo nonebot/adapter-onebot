@@ -5,17 +5,81 @@ FrontMatter:
     description: onebot.utils 模块
 """
 
+import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing import Union, Optional
+from typing import Tuple, Union, Iterable, Optional
+
+from nonebot.utils import escape_tag
+
+RICH_REGEX = (
+    r"\[(?P<type>[a-zA-Z0-9-_.]+)"
+    r"(?::"
+    r"(?P<params>"
+    r"(?:"
+    r"[a-zA-Z0-9-_.]+=[^,\]]*,?"
+    r")*"
+    r")"
+    r")?"
+    r"\]"
+)
+
+
+def rich_escape(s: str, escape_comma: bool = True) -> str:
+    """对字符串进行富文本转义。
+
+    参数:
+        s: 需要转义的字符串
+        escape_comma: 是否转义逗号（`,`）。
+    """
+    s = s.replace("&", "&amp;").replace("[", "&#91;").replace("]", "&#93;")
+    if escape_comma:
+        s = s.replace(",", "&#44;")
+    return s
+
+
+def rich_unescape(s: str) -> str:
+    """对字符串进行 CQ 码去转义。
+
+    参数:
+        s: 需要转义的字符串
+    """
+    return (
+        s.replace("&#44;", ",")
+        .replace("&#91;", "[")
+        .replace("&#93;", "]")
+        .replace("&amp;", "&")
+    )
+
+
+def iter_rich_message(msg: str) -> Iterable[Tuple[str, str]]:
+    text_begin = 0
+    for segment in re.finditer(RICH_REGEX, msg):
+        if pre_text := msg[text_begin : segment.pos + segment.start()]:
+            yield "text", pre_text
+
+        text_begin = segment.pos + segment.end()
+        yield segment["type"], segment["params"].rstrip(",")
+
+    if trailing_text := msg[text_begin:]:
+        yield "text", trailing_text
+
+
+def highlight_rich_message(msg: str) -> Iterable[str]:
+    for type, params in iter_rich_message(msg):
+        if type == "text":
+            yield escape_tag(rich_unescape(params))
+        else:
+            seg_str = f"[{type}{f':{rich_unescape(params)}' if params else ''}]"
+            yield f"<le>{escape_tag(seg_str)}</le>"
 
 
 def get_auth_bearer(access_token: Optional[str] = None) -> Optional[str]:
     if not access_token:
         return None
     scheme, _, param = access_token.partition(" ")
-    return param if scheme.lower() in ["bearer", "token"] else None
+    return param if scheme.lower() in {"bearer", "token"} else None
 
 
 def b2s(b: Optional[bool]) -> Optional[str]:

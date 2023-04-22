@@ -21,3 +21,13 @@ async def test_message_escape():
     assert "[CQ:test]" + MessageSegment.text("test") == Message(
         [MessageSegment.text("[CQ:test]"), MessageSegment.text("test")]
     )
+
+
+@pytest.mark.asyncio
+async def test_message_rich_expr():
+    from nonebot.adapters.onebot.v11 import Message, MessageSegment
+
+    a = MessageSegment.text("[test],test")
+    assert a.to_rich_text() == "&#91;test&#93;,test"
+    b = MessageSegment.at(123)
+    assert b.to_rich_text() == "[at:qq=123]"
