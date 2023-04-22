@@ -5,6 +5,7 @@ from datetime import datetime
 
 import pytest
 from nonebug import App
+from nonebot.log import logger
 from pydantic import BaseModel
 
 
@@ -72,3 +73,30 @@ async def test_custom_model():
     ]
     parsed = Adapter.json_to_event(event, impl)
     assert isinstance(parsed, PlatformEvent)
+
+
+@pytest.mark.asyncio
+async def test_event_log():
+    from nonebot.adapters.onebot.v12 import BotSelf, MessageSegment, PrivateMessageEvent
+
+    msg = (
+        MessageSegment.text("[text]")
+        + MessageSegment.mention("123")
+        + MessageSegment.text("<t\nag>")
+    )
+    event = PrivateMessageEvent(
+        id="0",
+        time=datetime.now(),
+        type="message",
+        detail_type="private",
+        sub_type="friend",
+        self=BotSelf(platform="test", user_id="0"),
+        message_id="0",
+        message=msg,
+        original_message=msg,
+        alt_message=str(msg),
+        user_id="1",
+    )
+    logger.opt(colors=True).success(
+        f"{event.get_event_name()}: {event.get_event_description()}"
+    )

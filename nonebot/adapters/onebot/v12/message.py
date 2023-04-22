@@ -5,12 +5,14 @@ FrontMatter:
     description: onebot.v12.message 模块
 """
 
-from typing import Any, Type, Iterable
+from functools import partial
+from typing import Any, Type, Iterable, Optional
 
 from nonebot.typing import overrides
 
-from nonebot.adapters.onebot.utils import truncate
 from nonebot.adapters import Message as BaseMessage
+from nonebot.adapters.onebot.utils import rich_escape
+from nonebot.adapters.onebot.utils import truncate as trunc
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
 
@@ -24,18 +26,18 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @overrides(BaseMessageSegment)
     def __str__(self) -> str:
-        if self.is_text():
-            return self.data.get("text", "")
+        return self.to_rich_text(truncate=None)
 
-        params = ", ".join([f"{k}={v}" for k, v in self.data.items() if v is not None])
-        return f"[{self.type}{':' if params else ''}{params}]"
-
-    def __repr__(self) -> str:
+    def to_rich_text(self, truncate: Optional[int] = 70) -> str:
         if self.is_text():
-            return self.data.get("text", "")
+            return rich_escape(self.data.get("text", ""), escape_comma=False)
+
+        truncate_func = partial(trunc, length=truncate) if truncate else lambda x: x
 
         params = ", ".join(
-            [f"{k}={truncate(str(v))}" for k, v in self.data.items() if v is not None]
+            f"{k}={rich_escape(truncate_func(str(v)))}"
+            for k, v in self.data.items()
+            if v is not None
         )
         return f"[{self.type}{':' if params else ''}{params}]"
 
@@ -105,8 +107,8 @@ class Message(BaseMessage[MessageSegment]):
     def get_segment_class(cls) -> Type[MessageSegment]:
         return MessageSegment
 
-    def __repr__(self) -> str:
-        return "".join(repr(seg) for seg in self)
+    def to_rich_text(self, truncate: Optional[int] = 70) -> str:
+        return "".join(seg.to_rich_text(truncate=truncate) for seg in self)
 
     @staticmethod
     @overrides(BaseMessage)
