@@ -6,7 +6,7 @@ FrontMatter:
 """
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
 
 from nonebot.typing import overrides
 from nonebot.utils import escape_tag

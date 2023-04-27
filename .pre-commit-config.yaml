@@ -6,6 +6,13 @@ ci:
   autoupdate_schedule: monthly
   autoupdate_commit_msg: ":arrow_up: auto update by pre-commit hooks"
 repos:
+  - repo: https://github.com/hadialqattan/pycln
+    rev: v2.1.3
+    hooks:
+      - id: pycln
+        args: [--config, pyproject.toml]
+        stages: [commit]
+
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -19,7 +26,7 @@ repos:
         stages: [commit]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.0-alpha.6
+    rev: v3.0.0-alpha.9-for-vscode
     hooks:
       - id: prettier
         types_or: [javascript, jsx, ts, tsx, markdown, yaml]
