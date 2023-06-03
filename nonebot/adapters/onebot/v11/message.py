@@ -6,20 +6,21 @@ FrontMatter:
 """
 
 import re
-from functools import partial
 from io import BytesIO
 from pathlib import Path
-from typing import Iterable, Optional, Tuple, Type, Union
-
+from functools import partial
 from typing_extensions import Self
+from typing import Type, Tuple, Union, Iterable, Optional
 
-from nonebot.adapters import Message as BaseMessage
-from nonebot.adapters import MessageSegment as BaseMessageSegment
-from nonebot.adapters.onebot.utils import b2s, f2s, rich_escape
-from nonebot.adapters.onebot.utils import truncate as trunc
 from nonebot.typing import overrides
 
-from .utils import escape, log, unescape
+from nonebot.adapters.onebot.utils import b2s, f2s
+from nonebot.adapters import Message as BaseMessage
+from nonebot.adapters.onebot.utils import rich_escape
+from nonebot.adapters.onebot.utils import truncate as trunc
+from nonebot.adapters import MessageSegment as BaseMessageSegment
+
+from .utils import log, escape, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
