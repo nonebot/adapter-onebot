@@ -6,20 +6,20 @@ FrontMatter:
 """
 
 import re
+from functools import partial
 from io import BytesIO
 from pathlib import Path
-from functools import partial
-from typing import Type, Tuple, Union, Iterable, Optional
+from typing import Iterable, Optional, Tuple, Type, Union
 
+from typing_extensions import Self
+
+from nonebot.adapters import Message as BaseMessage
+from nonebot.adapters import MessageSegment as BaseMessageSegment
+from nonebot.adapters.onebot.utils import b2s, f2s, rich_escape
+from nonebot.adapters.onebot.utils import truncate as trunc
 from nonebot.typing import overrides
 
-from nonebot.adapters.onebot.utils import b2s, f2s
-from nonebot.adapters import Message as BaseMessage
-from nonebot.adapters.onebot.utils import rich_escape
-from nonebot.adapters.onebot.utils import truncate as trunc
-from nonebot.adapters import MessageSegment as BaseMessageSegment
-
-from .utils import log, escape, unescape
+from .utils import escape, log, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -265,7 +265,7 @@ class Message(BaseMessage[MessageSegment]):
     @overrides(BaseMessage)
     def __add__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
-    ) -> "Message":
+    ) -> Self:
         return super(Message, self).__add__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
@@ -276,7 +276,7 @@ class Message(BaseMessage[MessageSegment]):
     @overrides(BaseMessage)
     def __radd__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
-    ) -> "Message":
+    ) -> Self:
         return super(Message, self).__radd__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
@@ -284,7 +284,7 @@ class Message(BaseMessage[MessageSegment]):
     @overrides(BaseMessage)
     def __iadd__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
-    ) -> "Message":
+    ) -> Self:
         return super().__iadd__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
