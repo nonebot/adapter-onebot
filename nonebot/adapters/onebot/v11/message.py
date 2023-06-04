@@ -6,21 +6,20 @@ FrontMatter:
 """
 
 import re
+from functools import partial
 from io import BytesIO
 from pathlib import Path
-from functools import partial
-from typing_extensions import Self
-from typing import Type, Tuple, Union, Iterable, Optional
+from typing import Iterable, Optional, Tuple, Type, Union
 
+from typing_extensions import Self
+
+from nonebot.adapters import Message as BaseMessage
+from nonebot.adapters import MessageSegment as BaseMessageSegment
+from nonebot.adapters.onebot.utils import b2s, f2s, rich_escape
+from nonebot.adapters.onebot.utils import truncate as trunc
 from nonebot.typing import overrides
 
-from nonebot.adapters.onebot.utils import b2s, f2s
-from nonebot.adapters import Message as BaseMessage
-from nonebot.adapters.onebot.utils import rich_escape
-from nonebot.adapters.onebot.utils import truncate as trunc
-from nonebot.adapters import MessageSegment as BaseMessageSegment
-
-from .utils import log, escape, unescape
+from .utils import escape, log, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -74,48 +73,49 @@ class MessageSegment(BaseMessageSegment["Message"]):
     def is_text(self) -> bool:
         return self.type == "text"
 
-    @staticmethod
-    def anonymous(ignore_failure: Optional[bool] = None) -> "MessageSegment":
-        return MessageSegment("anonymous", {"ignore": b2s(ignore_failure)})
+    @classmethod
+    def anonymous(cls, ignore_failure: Optional[bool] = None) -> Self:
+        return cls("anonymous", {"ignore": b2s(ignore_failure)})
 
-    @staticmethod
-    def at(user_id: Union[int, str]) -> "MessageSegment":
-        return MessageSegment("at", {"qq": str(user_id)})
+    @classmethod
+    def at(cls, user_id: Union[int, str]) -> Self:
+        return cls("at", {"qq": str(user_id)})
 
-    @staticmethod
-    def contact(type_: str, id: int) -> "MessageSegment":
-        return MessageSegment("contact", {"type": type_, "id": str(id)})
+    @classmethod
+    def contact(cls, type_: str, id: int) -> Self:
+        return cls("contact", {"type": type_, "id": str(id)})
 
-    @staticmethod
-    def contact_group(group_id: int) -> "MessageSegment":
-        return MessageSegment("contact", {"type": "group", "id": str(group_id)})
+    @classmethod
+    def contact_group(cls, group_id: int) -> Self:
+        return cls("contact", {"type": "group", "id": str(group_id)})
 
-    @staticmethod
-    def contact_user(user_id: int) -> "MessageSegment":
-        return MessageSegment("contact", {"type": "qq", "id": str(user_id)})
+    @classmethod
+    def contact_user(cls, user_id: int) -> Self:
+        return cls("contact", {"type": "qq", "id": str(user_id)})
 
-    @staticmethod
-    def dice() -> "MessageSegment":
-        return MessageSegment("dice", {})
+    @classmethod
+    def dice(cls) -> Self:
+        return cls("dice", {})
 
-    @staticmethod
-    def face(id_: int) -> "MessageSegment":
-        return MessageSegment("face", {"id": str(id_)})
+    @classmethod
+    def face(cls, id_: int) -> Self:
+        return cls("face", {"id": str(id_)})
 
-    @staticmethod
-    def forward(id_: str) -> "MessageSegment":
+    @classmethod
+    def forward(cls, id_: str) -> Self:
         log("WARNING", "Forward Message only can be received!")
-        return MessageSegment("forward", {"id": id_})
+        return cls("forward", {"id": id_})
 
-    @staticmethod
+    @classmethod
     def image(
+        cls,
         file: Union[str, bytes, BytesIO, Path],
         type_: Optional[str] = None,
         cache: bool = True,
         proxy: bool = True,
         timeout: Optional[int] = None,
-    ) -> "MessageSegment":
-        return MessageSegment(
+    ) -> Self:
+        return cls(
             "image",
             {
                 "file": f2s(file),
@@ -126,18 +126,19 @@ class MessageSegment(BaseMessageSegment["Message"]):
             },
         )
 
-    @staticmethod
-    def json(data: str) -> "MessageSegment":
-        return MessageSegment("json", {"data": data})
+    @classmethod
+    def json(cls, data: str) -> Self:
+        return cls("json", {"data": data})
 
-    @staticmethod
+    @classmethod
     def location(
+        cls,
         latitude: float,
         longitude: float,
         title: Optional[str] = None,
         content: Optional[str] = None,
-    ) -> "MessageSegment":
-        return MessageSegment(
+    ) -> Self:
+        return cls(
             "location",
             {
                 "lat": str(latitude),
@@ -147,19 +148,20 @@ class MessageSegment(BaseMessageSegment["Message"]):
             },
         )
 
-    @staticmethod
-    def music(type_: str, id_: int) -> "MessageSegment":
-        return MessageSegment("music", {"type": type_, "id": id_})
+    @classmethod
+    def music(cls, type_: str, id_: int) -> Self:
+        return cls("music", {"type": type_, "id": id_})
 
-    @staticmethod
+    @classmethod
     def music_custom(
+        cls,
         url: str,
         audio: str,
         title: str,
         content: Optional[str] = None,
         img_url: Optional[str] = None,
-    ) -> "MessageSegment":
-        return MessageSegment(
+    ) -> Self:
+        return cls(
             "music",
             {
                 "type": "custom",
@@ -171,31 +173,32 @@ class MessageSegment(BaseMessageSegment["Message"]):
             },
         )
 
-    @staticmethod
-    def node(id_: int) -> "MessageSegment":
-        return MessageSegment("node", {"id": str(id_)})
+    @classmethod
+    def node(cls, id_: int) -> Self:
+        return cls("node", {"id": str(id_)})
 
-    @staticmethod
+    @classmethod
     def node_custom(
-        user_id: int, nickname: str, content: Union[str, "Message"]
-    ) -> "MessageSegment":
-        return MessageSegment(
+        cls, user_id: int, nickname: str, content: Union[str, "Message"]
+    ) -> Self:
+        return cls(
             "node", {"user_id": str(user_id), "nickname": nickname, "content": content}
         )
 
-    @staticmethod
-    def poke(type_: str, id_: str) -> "MessageSegment":
-        return MessageSegment("poke", {"type": type_, "id": id_})
+    @classmethod
+    def poke(cls, type_: str, id_: str) -> Self:
+        return cls("poke", {"type": type_, "id": id_})
 
-    @staticmethod
+    @classmethod
     def record(
+        cls,
         file: Union[str, bytes, BytesIO, Path],
         magic: Optional[bool] = None,
         cache: Optional[bool] = None,
         proxy: Optional[bool] = None,
         timeout: Optional[int] = None,
-    ) -> "MessageSegment":
-        return MessageSegment(
+    ) -> Self:
+        return cls(
             "record",
             {
                 "file": f2s(file),
@@ -206,41 +209,43 @@ class MessageSegment(BaseMessageSegment["Message"]):
             },
         )
 
-    @staticmethod
-    def reply(id_: int) -> "MessageSegment":
-        return MessageSegment("reply", {"id": str(id_)})
+    @classmethod
+    def reply(cls, id_: int) -> Self:
+        return cls("reply", {"id": str(id_)})
 
-    @staticmethod
-    def rps() -> "MessageSegment":
-        return MessageSegment("rps", {})
+    @classmethod
+    def rps(cls) -> Self:
+        return cls("rps", {})
 
-    @staticmethod
-    def shake() -> "MessageSegment":
-        return MessageSegment("shake", {})
+    @classmethod
+    def shake(cls) -> Self:
+        return cls("shake", {})
 
-    @staticmethod
+    @classmethod
     def share(
+        cls,
         url: str = "",
         title: str = "",
         content: Optional[str] = None,
         image: Optional[str] = None,
-    ) -> "MessageSegment":
-        return MessageSegment(
+    ) -> Self:
+        return cls(
             "share", {"url": url, "title": title, "content": content, "image": image}
         )
 
-    @staticmethod
-    def text(text: str) -> "MessageSegment":
-        return MessageSegment("text", {"text": text})
+    @classmethod
+    def text(cls, text: str) -> Self:
+        return cls("text", {"text": text})
 
-    @staticmethod
+    @classmethod
     def video(
+        cls,
         file: Union[str, bytes, BytesIO, Path],
         cache: Optional[bool] = None,
         proxy: Optional[bool] = None,
         timeout: Optional[int] = None,
-    ) -> "MessageSegment":
-        return MessageSegment(
+    ) -> Self:
+        return cls(
             "video",
             {
                 "file": f2s(file),
@@ -250,9 +255,9 @@ class MessageSegment(BaseMessageSegment["Message"]):
             },
         )
 
-    @staticmethod
-    def xml(data: str) -> "MessageSegment":
-        return MessageSegment("xml", {"data": data})
+    @classmethod
+    def xml(cls, data: str) -> Self:
+        return cls("xml", {"data": data})
 
 
 class Message(BaseMessage[MessageSegment]):
