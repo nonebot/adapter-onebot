@@ -27,7 +27,7 @@ options:
 :::warning 注意
 请确保你的 NoneBot 使用的是 `ReverseDriver`，否则无法使用此连接方式。
 
-如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/tutorial/choose-driver)
+如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
 
 ### HTTP POST
@@ -53,7 +53,7 @@ ONEBOT_API_ROOTS={"你的QQ号": "http://127.0.0.1:5700/"}
 :::warning 注意
 请确保你的 NoneBot 使用的是 `ForwardDriver` 和 `ReverseDriver`，否则无法使用此连接方式。
 
-如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/tutorial/choose-driver)
+如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
 
 ### 正向 WebSocket 连接
@@ -71,7 +71,7 @@ ONEBOT_WS_URLS=["ws://127.0.0.1:6700"]
 :::warning 注意
 请确保你的 NoneBot 使用的是 `ForwardDriver`，否则无法使用此连接方式。
 
-如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/tutorial/choose-driver)
+如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
 
 ## OneBot V12
@@ -89,7 +89,7 @@ ONEBOT_WS_URLS=["ws://127.0.0.1:6700"]
 :::warning 注意
 请确保你的 NoneBot 使用的是 `ReverseDriver`，否则无法使用此连接方式。
 
-如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/tutorial/choose-driver)
+如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
 
 ### HTTP Webhook
@@ -115,7 +115,7 @@ ONEBOT_V12_API_ROOTS={"你的QQ号": "http://127.0.0.1:5700/"}
 :::warning 注意
 请确保你的 NoneBot 使用的是 `ForwardDriver` 和 `ReverseDriver`，否则无法使用此连接方式。
 
-如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/tutorial/choose-driver)
+如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
 
 ### 正向 WebSocket 连接
@@ -133,5 +133,5 @@ ONEBOT_V12_WS_URLS=["ws://127.0.0.1:6700"]
 :::warning 注意
 请确保你的 NoneBot 使用的是 `ForwardDriver`，否则无法使用此连接方式。
 
-如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/tutorial/choose-driver)
+如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
