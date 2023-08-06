@@ -84,6 +84,7 @@ async def test_ws(app: App, endpoints: str):
         assert "2345678" not in adapter.bots
 
 
+@pytest.mark.asyncio
 async def test_ws_missing_connect_meta_event(app: App):
     endpoints = "/onebot/v12/"
 
@@ -104,6 +105,7 @@ async def test_ws_missing_connect_meta_event(app: App):
             }
 
 
+@pytest.mark.asyncio
 async def test_ws_duplicate_bot(app: App):
     """测试连接两个相同 id 但协议不同的 bot"""
     from nonebot.adapters.onebot.v11 import Adapter
@@ -161,6 +163,7 @@ async def test_ws_duplicate_bot(app: App):
     adapter.bot_disconnect(nonebot.get_bot("0"))
 
 
+@pytest.mark.asyncio
 async def test_http_auth_missing(app: App):
     endpoints = "/onebot/v12/"
 
@@ -174,6 +177,7 @@ async def test_http_auth_missing(app: App):
         assert resp.status_code == 403
 
 
+@pytest.mark.asyncio
 async def test_http_auth_header(app: App):
     from nonebot.adapters.onebot.v12 import Adapter
 
@@ -197,6 +201,7 @@ async def test_http_auth_header(app: App):
         adapter.bot_disconnect(nonebot.get_bot("0"))
 
 
+@pytest.mark.asyncio
 async def test_http_auth_query(app: App):
     from nonebot.adapters.onebot.v12 import Adapter
 
@@ -219,6 +224,7 @@ async def test_http_auth_query(app: App):
         adapter.bot_disconnect(nonebot.get_bot("0"))
 
 
+@pytest.mark.asyncio
 async def test_ws_auth_missing(app: App):
     endpoints = "/onebot/v12/"
 
@@ -232,6 +238,7 @@ async def test_ws_auth_missing(app: App):
                 pass
 
 
+@pytest.mark.asyncio
 async def test_ws_auth_header(app: App):
     endpoints = "/onebot/v12/"
 
@@ -255,6 +262,7 @@ async def test_ws_auth_header(app: App):
         assert "0" not in nonebot.get_bots()
 
 
+@pytest.mark.asyncio
 async def test_ws_auth_query(app: App):
     endpoints = "/onebot/v12/?access_token=test"
 
