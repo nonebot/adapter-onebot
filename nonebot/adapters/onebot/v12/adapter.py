@@ -8,6 +8,7 @@ import json
 import asyncio
 import inspect
 import contextlib
+from typing_extensions import override
 from typing import (
     Any,
     Dict,
@@ -23,7 +24,6 @@ from typing import (
 
 import msgpack
 from pygtrie import CharTrie
-from nonebot.typing import overrides
 from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
 from nonebot.drivers import (
@@ -93,11 +93,11 @@ class Adapter(BaseAdapter):
     _result_store: ClassVar[ResultStore] = ResultStore()
 
     @classmethod
-    @overrides(BaseAdapter)
+    @override
     def get_name(cls) -> str:
         return "OneBot V12"
 
-    @overrides(BaseAdapter)
+    @override
     def __init__(self, driver: Driver, **kwargs: Any) -> None:
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
@@ -161,7 +161,7 @@ class Adapter(BaseAdapter):
                 self.driver.on_startup(self._start_forward)
                 self.driver.on_shutdown(self._stop_forward)
 
-    @overrides(BaseAdapter)
+    @override
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
         websocket = self.connections.get(bot.self_id)
         timeout: float = data.get("_timeout", self.config.api_timeout)

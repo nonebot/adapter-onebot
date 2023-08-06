@@ -6,9 +6,9 @@ FrontMatter:
 """
 
 import re
+from typing_extensions import override
 from typing import Any, Union, Callable
 
-from nonebot.typing import overrides
 from nonebot.message import handle_event
 
 from nonebot.adapters import Bot as BaseBot
@@ -193,7 +193,7 @@ class Bot(BaseBot):
 
         await handle_event(self, event)
 
-    @overrides(BaseBot)
+    @override
     async def send(
         self,
         event: Event,

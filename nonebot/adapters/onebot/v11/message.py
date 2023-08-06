@@ -9,10 +9,8 @@ import re
 from io import BytesIO
 from pathlib import Path
 from functools import partial
-from typing_extensions import Self
+from typing_extensions import Self, override
 from typing import Type, Tuple, Union, Iterable, Optional
-
-from nonebot.typing import overrides
 
 from nonebot.adapters.onebot.utils import b2s, f2s
 from nonebot.adapters import Message as BaseMessage
@@ -27,11 +25,11 @@ class MessageSegment(BaseMessageSegment["Message"]):
     """OneBot v11 协议 MessageSegment 适配。具体方法参考协议消息段类型或源码。"""
 
     @classmethod
-    @overrides(BaseMessageSegment)
+    @override
     def get_message_class(cls) -> Type["Message"]:
         return Message
 
-    @overrides(BaseMessageSegment)
+    @override
     def __str__(self) -> str:
         if self.is_text():
             return escape(self.data.get("text", ""), escape_comma=False)
@@ -54,7 +52,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         )
         return f"[{self.type}{':' if params else ''}{params}]"
 
-    @overrides(BaseMessageSegment)
+    @override
     def __add__(
         self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
     ) -> "Message":
@@ -62,7 +60,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
-    @overrides(BaseMessageSegment)
+    @override
     def __radd__(
         self, other: Union[str, "MessageSegment", Iterable["MessageSegment"]]
     ) -> "Message":
@@ -70,7 +68,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
             MessageSegment.text(other) if isinstance(other, str) else Message(other)
         ) + self
 
-    @overrides(BaseMessageSegment)
+    @override
     def is_text(self) -> bool:
         return self.type == "text"
 
@@ -265,11 +263,11 @@ class Message(BaseMessage[MessageSegment]):
     """OneBot v11 协议 Message 适配。"""
 
     @classmethod
-    @overrides(BaseMessage)
+    @override
     def get_segment_class(cls) -> Type[MessageSegment]:
         return MessageSegment
 
-    @overrides(BaseMessage)
+    @override
     def __add__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
     ) -> Self:
@@ -280,7 +278,7 @@ class Message(BaseMessage[MessageSegment]):
     def to_rich_text(self, truncate: Optional[int] = 70) -> str:
         return "".join(seg.to_rich_text(truncate=truncate) for seg in self)
 
-    @overrides(BaseMessage)
+    @override
     def __radd__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
     ) -> Self:
@@ -288,7 +286,7 @@ class Message(BaseMessage[MessageSegment]):
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
-    @overrides(BaseMessage)
+    @override
     def __iadd__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
     ) -> Self:
@@ -297,7 +295,7 @@ class Message(BaseMessage[MessageSegment]):
         )
 
     @staticmethod
-    @overrides(BaseMessage)
+    @override
     def _construct(msg: str) -> Iterable[MessageSegment]:
         def _iter_message(msg: str) -> Iterable[Tuple[str, str]]:
             text_begin = 0
@@ -330,7 +328,7 @@ class Message(BaseMessage[MessageSegment]):
                 }
                 yield MessageSegment(type_, data)
 
-    @overrides(BaseMessage)
+    @override
     def extract_plain_text(self) -> str:
         return "".join(seg.data["text"] for seg in self if seg.is_text())
 

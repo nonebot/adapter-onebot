@@ -9,8 +9,8 @@ import datetime
 from typing import TypeVar
 from base64 import b64encode
 from functools import partial
+from typing_extensions import override
 
-from nonebot.typing import overrides
 from pydantic.json import custom_pydantic_encoder
 from nonebot.utils import DataclassEncoder, logger_wrapper
 
@@ -45,7 +45,7 @@ def flattened_to_nested(data: T) -> T:
 class CustomEncoder(DataclassEncoder):
     """OneBot V12 使用的 `JSONEncoder`"""
 
-    @overrides(DataclassEncoder)
+    @override
     def default(self, o):
         if isinstance(o, bytes):
             return b64encode(o).decode()

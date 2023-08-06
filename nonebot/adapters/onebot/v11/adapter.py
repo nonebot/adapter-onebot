@@ -9,9 +9,9 @@ import json
 import asyncio
 import inspect
 import contextlib
+from typing_extensions import override
 from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
-from nonebot.typing import overrides
 from nonebot.exception import WebSocketClosed
 from nonebot.utils import DataclassEncoder, escape_tag
 from nonebot.drivers import (
@@ -61,7 +61,7 @@ class Adapter(BaseAdapter):
 
     _result_store = ResultStore()
 
-    @overrides(BaseAdapter)
+    @override
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = Config(**self.config.dict())
@@ -71,7 +71,7 @@ class Adapter(BaseAdapter):
         self._setup()
 
     @classmethod
-    @overrides(BaseAdapter)
+    @override
     def get_name(cls) -> str:
         """适配器名称: `OneBot V11`"""
         return "OneBot V11"
@@ -126,7 +126,7 @@ class Adapter(BaseAdapter):
                 self.driver.on_startup(self._start_forward)
                 self.driver.on_shutdown(self._stop_forward)
 
-    @overrides(BaseAdapter)
+    @override
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
         websocket = self.connections.get(bot.self_id, None)
         timeout: float = data.get("_timeout", self.config.api_timeout)

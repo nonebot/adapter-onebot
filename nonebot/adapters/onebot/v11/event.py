@@ -6,9 +6,9 @@ FrontMatter:
 """
 
 from copy import deepcopy
+from typing_extensions import override
 from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
 
-from nonebot.typing import overrides
 from nonebot.utils import escape_tag
 from pydantic import BaseModel, root_validator
 
@@ -32,31 +32,31 @@ class Event(BaseEvent):
     self_id: int
     post_type: str
 
-    @overrides(BaseEvent)
+    @override
     def get_type(self) -> str:
         return self.post_type
 
-    @overrides(BaseEvent)
+    @override
     def get_event_name(self) -> str:
         return self.post_type
 
-    @overrides(BaseEvent)
+    @override
     def get_event_description(self) -> str:
         return escape_tag(str(self.dict()))
 
-    @overrides(BaseEvent)
+    @override
     def get_message(self) -> Message:
         raise ValueError("Event has no message!")
 
-    @overrides(BaseEvent)
+    @override
     def get_user_id(self) -> str:
         raise ValueError("Event has no context!")
 
-    @overrides(BaseEvent)
+    @override
     def get_session_id(self) -> str:
         raise ValueError("Event has no context!")
 
-    @overrides(BaseEvent)
+    @override
     def is_tome(self) -> bool:
         return False
 
@@ -149,26 +149,26 @@ class MessageEvent(Event):
             values["original_message"] = deepcopy(values["message"])
         return values
 
-    @overrides(Event)
+    @override
     def get_event_name(self) -> str:
         sub_type = getattr(self, "sub_type", None)
         return f"{self.post_type}.{self.message_type}" + (
             f".{sub_type}" if sub_type else ""
         )
 
-    @overrides(Event)
+    @override
     def get_message(self) -> Message:
         return self.message
 
-    @overrides(Event)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(Event)
+    @override
     def get_session_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(Event)
+    @override
     def is_tome(self) -> bool:
         return self.to_me
 
@@ -178,7 +178,7 @@ class PrivateMessageEvent(MessageEvent):
 
     message_type: Literal["private"]
 
-    @overrides(Event)
+    @override
     def get_event_description(self) -> str:
         return (
             f"Message {self.message_id} from {self.user_id} "
@@ -193,14 +193,14 @@ class GroupMessageEvent(MessageEvent):
     group_id: int
     anonymous: Optional[Anonymous] = None
 
-    @overrides(Event)
+    @override
     def get_event_description(self) -> str:
         return (
             f"Message {self.message_id} from {self.user_id}@[群:{self.group_id}] "
             f"{''.join(highlight_rich_message(repr(self.original_message.to_rich_text())))}"
         )
 
-    @overrides(MessageEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -212,7 +212,7 @@ class NoticeEvent(Event):
     post_type: Literal["notice"]
     notice_type: str
 
-    @overrides(Event)
+    @override
     def get_event_name(self) -> str:
         sub_type = getattr(self, "sub_type", None)
         return f"{self.post_type}.{self.notice_type}" + (
@@ -228,11 +228,11 @@ class GroupUploadNoticeEvent(NoticeEvent):
     group_id: int
     file: File
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -245,15 +245,15 @@ class GroupAdminNoticeEvent(NoticeEvent):
     user_id: int
     group_id: int
 
-    @overrides(NoticeEvent)
+    @override
     def is_tome(self) -> bool:
         return self.user_id == self.self_id
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -267,15 +267,15 @@ class GroupDecreaseNoticeEvent(NoticeEvent):
     group_id: int
     operator_id: int
 
-    @overrides(NoticeEvent)
+    @override
     def is_tome(self) -> bool:
         return self.user_id == self.self_id
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -289,15 +289,15 @@ class GroupIncreaseNoticeEvent(NoticeEvent):
     group_id: int
     operator_id: int
 
-    @overrides(NoticeEvent)
+    @override
     def is_tome(self) -> bool:
         return self.user_id == self.self_id
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -312,15 +312,15 @@ class GroupBanNoticeEvent(NoticeEvent):
     operator_id: int
     duration: int
 
-    @overrides(NoticeEvent)
+    @override
     def is_tome(self) -> bool:
         return self.user_id == self.self_id
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -331,11 +331,11 @@ class FriendAddNoticeEvent(NoticeEvent):
     notice_type: Literal["friend_add"]
     user_id: int
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return str(self.user_id)
 
@@ -349,15 +349,15 @@ class GroupRecallNoticeEvent(NoticeEvent):
     operator_id: int
     message_id: int
 
-    @overrides(Event)
+    @override
     def is_tome(self) -> bool:
         return self.user_id == self.self_id
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -369,11 +369,11 @@ class FriendRecallNoticeEvent(NoticeEvent):
     user_id: int
     message_id: int
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return str(self.user_id)
 
@@ -386,11 +386,11 @@ class NotifyEvent(NoticeEvent):
     user_id: int
     group_id: int
 
-    @overrides(NoticeEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(NoticeEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -402,11 +402,11 @@ class PokeNotifyEvent(NotifyEvent):
     target_id: int
     group_id: Optional[int] = None
 
-    @overrides(Event)
+    @override
     def is_tome(self) -> bool:
         return self.target_id == self.self_id
 
-    @overrides(NotifyEvent)
+    @override
     def get_session_id(self) -> str:
         if not self.group_id:
             return str(self.user_id)
@@ -419,15 +419,15 @@ class LuckyKingNotifyEvent(NotifyEvent):
     sub_type: Literal["lucky_king"]
     target_id: int
 
-    @overrides(Event)
+    @override
     def is_tome(self) -> bool:
         return self.target_id == self.self_id
 
-    @overrides(NotifyEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.target_id)
 
-    @overrides(NotifyEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.target_id}"
 
@@ -438,7 +438,7 @@ class HonorNotifyEvent(NotifyEvent):
     sub_type: Literal["honor"]
     honor_type: str
 
-    @overrides(Event)
+    @override
     def is_tome(self) -> bool:
         return self.user_id == self.self_id
 
@@ -450,7 +450,7 @@ class RequestEvent(Event):
     post_type: Literal["request"]
     request_type: str
 
-    @overrides(Event)
+    @override
     def get_event_name(self) -> str:
         sub_type = getattr(self, "sub_type", None)
         return f"{self.post_type}.{self.request_type}" + (
@@ -466,11 +466,11 @@ class FriendRequestEvent(RequestEvent):
     comment: str
     flag: str
 
-    @overrides(RequestEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(RequestEvent)
+    @override
     def get_session_id(self) -> str:
         return str(self.user_id)
 
@@ -493,11 +493,11 @@ class GroupRequestEvent(RequestEvent):
     comment: str
     flag: str
 
-    @overrides(RequestEvent)
+    @override
     def get_user_id(self) -> str:
         return str(self.user_id)
 
-    @overrides(RequestEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -519,14 +519,14 @@ class MetaEvent(Event):
     post_type: Literal["meta_event"]
     meta_event_type: str
 
-    @overrides(Event)
+    @override
     def get_event_name(self) -> str:
         sub_type = getattr(self, "sub_type", None)
         return f"{self.post_type}.{self.meta_event_type}" + (
             f".{sub_type}" if sub_type else ""
         )
 
-    @overrides(Event)
+    @override
     def get_log_string(self) -> str:
         raise NoLogException
 

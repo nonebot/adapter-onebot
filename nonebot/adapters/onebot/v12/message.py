@@ -6,9 +6,8 @@ FrontMatter:
 """
 
 from functools import partial
+from typing_extensions import override
 from typing import Any, Type, Iterable, Optional
-
-from nonebot.typing import overrides
 
 from nonebot.adapters import Message as BaseMessage
 from nonebot.adapters.onebot.utils import rich_escape
@@ -20,11 +19,11 @@ class MessageSegment(BaseMessageSegment["Message"]):
     """OneBot v12 协议 MessageSegment 适配。具体方法参考协议消息段类型或源码。"""
 
     @classmethod
-    @overrides(BaseMessageSegment)
+    @override
     def get_message_class(cls) -> Type["Message"]:
         return Message
 
-    @overrides(BaseMessageSegment)
+    @override
     def __str__(self) -> str:
         return self.to_rich_text(truncate=None)
 
@@ -41,7 +40,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         )
         return f"[{self.type}{':' if params else ''}{params}]"
 
-    @overrides(BaseMessageSegment)
+    @override
     def is_text(self) -> bool:
         return self.type == "text"
 
@@ -103,7 +102,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
 class Message(BaseMessage[MessageSegment]):
     @classmethod
-    @overrides(BaseMessage)
+    @override
     def get_segment_class(cls) -> Type[MessageSegment]:
         return MessageSegment
 
@@ -111,11 +110,11 @@ class Message(BaseMessage[MessageSegment]):
         return "".join(seg.to_rich_text(truncate=truncate) for seg in self)
 
     @staticmethod
-    @overrides(BaseMessage)
+    @override
     def _construct(msg: str) -> Iterable[MessageSegment]:
         yield MessageSegment.text(msg)
 
-    @overrides(BaseMessage)
+    @override
     def extract_plain_text(self) -> str:
         return "".join(seg.data["text"] for seg in self if seg.is_text())
 

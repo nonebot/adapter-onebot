@@ -7,9 +7,9 @@ FrontMatter:
 
 from copy import deepcopy
 from datetime import datetime
+from typing_extensions import override
 from typing import Any, Dict, List, Literal, Optional
 
-from nonebot.typing import overrides
 from nonebot.utils import escape_tag
 from pydantic import Extra, BaseModel, root_validator
 
@@ -32,31 +32,31 @@ class Event(BaseEvent, extra=Extra.allow):
     detail_type: str
     sub_type: str
 
-    @overrides(BaseEvent)
+    @override
     def get_type(self) -> str:
         return self.type
 
-    @overrides(BaseEvent)
+    @override
     def get_event_name(self) -> str:
         return ".".join(filter(None, (self.type, self.detail_type, self.sub_type)))
 
-    @overrides(BaseEvent)
+    @override
     def get_event_description(self) -> str:
         return escape_tag(str(self.dict()))
 
-    @overrides(BaseEvent)
+    @override
     def get_message(self) -> Message:
         raise ValueError("Event has no message!")
 
-    @overrides(BaseEvent)
+    @override
     def get_user_id(self) -> str:
         raise ValueError("Event has no user_id!")
 
-    @overrides(BaseEvent)
+    @override
     def get_session_id(self) -> str:
         raise ValueError("Event has no session_id!")
 
-    @overrides(BaseEvent)
+    @override
     def is_tome(self) -> bool:
         return False
 
@@ -123,19 +123,19 @@ class MessageEvent(BotEvent):
             values["original_message"] = deepcopy(values["message"])
         return values
 
-    @overrides(Event)
+    @override
     def get_message(self) -> Message:
         return self.message
 
-    @overrides(Event)
+    @override
     def get_user_id(self) -> str:
         return self.user_id
 
-    @overrides(Event)
+    @override
     def get_session_id(self) -> str:
         return self.user_id
 
-    @overrides(Event)
+    @override
     def is_tome(self) -> bool:
         return self.to_me
 
@@ -145,7 +145,7 @@ class PrivateMessageEvent(MessageEvent):
 
     detail_type: Literal["private"]
 
-    @overrides(Event)
+    @override
     def get_event_description(self) -> str:
         return (
             f"Message {self.message_id} from {self.user_id} "
@@ -159,14 +159,14 @@ class GroupMessageEvent(MessageEvent):
     detail_type: Literal["group"]
     group_id: str
 
-    @overrides(Event)
+    @override
     def get_event_description(self) -> str:
         return (
             f"Message {self.message_id} from {self.user_id}@[群:{self.group_id}] "
             f"{''.join(highlight_rich_message(repr(self.original_message.to_rich_text())))}"
         )
 
-    @overrides(MessageEvent)
+    @override
     def get_session_id(self) -> str:
         return f"group_{self.group_id}_{self.user_id}"
 
@@ -178,7 +178,7 @@ class ChannelMessageEvent(MessageEvent):
     guild_id: str
     channel_id: str
 
-    @overrides(Event)
+    @override
     def get_event_description(self) -> str:
         texts: List[str] = []
         msg_string: List[str] = []
@@ -196,7 +196,7 @@ class ChannelMessageEvent(MessageEvent):
             f"[群组:{self.guild_id}, 频道:{self.channel_id}] {''.join(msg_string)!r}"
         )
 
-    @overrides(MessageEvent)
+    @override
     def get_session_id(self) -> str:
         return f"guild_{self.guild_id}_channel_{self.channel_id}_{self.user_id}"
 
@@ -337,7 +337,7 @@ class MetaEvent(Event):
 
     type: Literal["meta"]
 
-    @overrides(Event)
+    @override
     def get_log_string(self) -> str:
         raise NoLogException
 

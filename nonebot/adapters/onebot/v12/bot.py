@@ -6,9 +6,9 @@ FrontMatter:
 """
 
 import re
+from typing_extensions import override
 from typing import TYPE_CHECKING, Any, Union
 
-from nonebot.typing import overrides
 from nonebot.message import handle_event
 
 from nonebot.adapters import Bot as BaseBot
@@ -201,7 +201,7 @@ class Bot(BaseBot):
             _check_nickname(self, event)
         await handle_event(self, event)
 
-    @overrides(BaseBot)
+    @override
     async def send(
         self, event: Event, message: Union[str, Message, MessageSegment], **kwargs: Any
     ) -> Any:
