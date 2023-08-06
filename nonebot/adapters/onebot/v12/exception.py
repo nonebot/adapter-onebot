@@ -184,7 +184,8 @@ class WhoAmI(RequestError):
 
     OneBot V12 协议错误码: 10101。
 
-    OneBot 实现在单个 OneBot Connect 连接上支持多个机器人账号，但动作请求未指定要使用的账号。
+    OneBot 实现在单个 OneBot Connect 连接上支持多个机器人账号，
+    但动作请求未指定要使用的账号。
     """
 
     __retcode__ = ("10101",)

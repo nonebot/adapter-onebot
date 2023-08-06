@@ -16,7 +16,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def init_adapter(nonebug_init: None):
+def _init_adapter(nonebug_init: None):
     from nonebot.adapters.onebot import V11Adapter, V12Adapter
 
     driver = nonebot.get_driver()

@@ -1,17 +1,17 @@
-from typing import Any, Dict, List, Union, Optional
+from typing import Any
 
 from nonebot.adapters import Bot as BaseBot
 
 from .event import Event, MessageEvent
 from .message import Message, MessageSegment
 
-async def _check_reply(bot: "Bot", event: MessageEvent): ...
-def _check_at_me(bot: "Bot", event: MessageEvent): ...
-def _check_nickname(bot: "Bot", event: MessageEvent): ...
+async def _check_reply(bot: Bot, event: MessageEvent): ...
+def _check_at_me(bot: Bot, event: MessageEvent): ...
+def _check_nickname(bot: Bot, event: MessageEvent): ...
 async def send(
-    bot: "Bot",
+    bot: Bot,
     event: Event,
-    message: Union[str, Message, MessageSegment],
+    message: str | Message | MessageSegment,
     at_sender: bool = ...,
     reply_message: bool = ...,
     **kwargs: Any,
@@ -43,13 +43,14 @@ class Bot(BaseBot):
         user_id: int,
         message: str | Message,
         auto_escape: bool = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """发送私聊消息。
 
         参数:
             user_id: 对方 QQ 号
             message: 要发送的内容
-            auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效
+            auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），
+                只在 `message` 字段是字符串时有效
         """
         ...
     async def send_group_msg(
@@ -58,32 +59,35 @@ class Bot(BaseBot):
         group_id: int,
         message: str | Message,
         auto_escape: bool = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """发送群消息。
 
         参数:
             group_id: 群号
             message: 要发送的内容
-            auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效
+            auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），
+                只在 `message` 字段是字符串时有效
         """
         ...
     async def send_msg(
         self,
         *,
-        message_type: Optional[str] = ...,
-        user_id: Optional[int] = ...,
-        group_id: Optional[int] = ...,
-        message: Union[str, Message],
+        message_type: str | None = ...,
+        user_id: int | None = ...,
+        group_id: int | None = ...,
+        message: str | Message,
         auto_escape: bool = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """发送消息。
 
         参数:
-            message_type: 消息类型，支持 `private`、`group`，分别对应私聊、群组、讨论组，如不传入，则根据传入的 `*_id` 参数判断
+            message_type: 消息类型，支持 `private`、`group`，
+                分别对应私聊、群组、讨论组，如不传入，则根据传入的 `*_id` 参数判断
             user_id: 对方 QQ 号（消息类型为 `private` 时需要）
             group_id: 群号（消息类型为 `group` 时需要）
             message: 要发送的内容
-            auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效
+            auto_escape: 消息内容是否作为纯文本发送（即不解析 CQ 码），
+                只在 `message` 字段是字符串时有效
         """
         ...
     async def delete_msg(
@@ -101,7 +105,7 @@ class Bot(BaseBot):
         self,
         *,
         message_id: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取消息。
 
         参数:
@@ -166,8 +170,8 @@ class Bot(BaseBot):
         self,
         *,
         group_id: int,
-        anonymous: Optional[Dict[str, Any]] = ...,
-        anonymous_flag: Optional[str] = ...,
+        anonymous: dict[str, Any] | None = ...,
+        anonymous_flag: str | None = ...,
         duration: int = ...,
     ) -> None:
         """群组匿名用户禁言。
@@ -305,12 +309,13 @@ class Bot(BaseBot):
 
         参数:
             flag: 加群请求的 flag（需从上报的数据中获得）
-            sub_type: `add` 或 `invite`，请求类型（需要和上报消息中的 `sub_type` 字段相符）
+            sub_type: `add` 或 `invite`，
+                请求类型（需要和上报消息中的 `sub_type` 字段相符）
             approve: 是否同意请求／邀请
             reason: 拒绝理由（仅在拒绝时有效）
         """
         ...
-    async def get_login_info(self) -> Dict[str, Any]:
+    async def get_login_info(self) -> dict[str, Any]:
         """获取登录号信息。"""
         ...
     async def get_stranger_info(
@@ -318,7 +323,7 @@ class Bot(BaseBot):
         *,
         user_id: int,
         no_cache: bool = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取陌生人信息。
 
         参数:
@@ -326,7 +331,7 @@ class Bot(BaseBot):
             no_cache: 是否不使用缓存（使用缓存可能更新不及时，但响应更快）
         """
         ...
-    async def get_friend_list(self) -> List[Dict[str, Any]]:
+    async def get_friend_list(self) -> list[dict[str, Any]]:
         """获取好友列表。"""
         ...
     async def get_group_info(
@@ -334,7 +339,7 @@ class Bot(BaseBot):
         *,
         group_id: int,
         no_cache: bool = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取群信息。
 
         参数:
@@ -342,7 +347,7 @@ class Bot(BaseBot):
             no_cache: 是否不使用缓存（使用缓存可能更新不及时，但响应更快）
         """
         ...
-    async def get_group_list(self) -> List[Dict[str, Any]]:
+    async def get_group_list(self) -> list[dict[str, Any]]:
         """获取群列表。"""
         ...
     async def get_group_member_info(
@@ -351,7 +356,7 @@ class Bot(BaseBot):
         group_id: int,
         user_id: int,
         no_cache: bool = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取群成员信息。
 
         参数:
@@ -364,7 +369,7 @@ class Bot(BaseBot):
         self,
         *,
         group_id: int,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取群成员列表。
 
         参数:
@@ -376,33 +381,35 @@ class Bot(BaseBot):
         *,
         group_id: int,
         type: str = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取群荣誉信息。
 
         参数:
             group_id: 群号
-            type: 要获取的群荣誉类型，可传入 `talkative` `performer` `legend` `strong_newbie` `emotion` 以分别获取单个类型的群荣誉数据，或传入 `all` 获取所有数据
+            type: 要获取的群荣誉类型，
+                可传入 `talkative` `performer` `legend` `strong_newbie` `emotion`
+                以分别获取单个类型的群荣誉数据，或传入 `all` 获取所有数据
         """
         ...
     async def get_cookies(
         self,
         *,
         domain: str = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取 Cookies。
 
         参数:
             domain: 需要获取 cookies 的域名
         """
         ...
-    async def get_csrf_token(self) -> Dict[str, Any]:
+    async def get_csrf_token(self) -> dict[str, Any]:
         """获取 CSRF Token。"""
         ...
     async def get_credentials(
         self,
         *,
         domain: str = ...,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取 QQ 相关接口凭证。
 
         参数:
@@ -414,35 +421,38 @@ class Bot(BaseBot):
         *,
         file: str,
         out_format: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取语音。
 
         参数:
-            file: 收到的语音文件名（CQ 码的 `file` 参数），如 `0B38145AA44505000B38145AA4450500.silk`
-            out_format: 要转换到的格式，目前支持 `mp3`、`amr`、`wma`、`m4a`、`spx`、`ogg`、`wav`、`flac`
+            file: 收到的语音文件名（CQ 码的 `file` 参数），
+                如 `0B38145AA44505000B38145AA4450500.silk`
+            out_format: 要转换到的格式，
+                目前支持 `mp3`、`amr`、`wma`、`m4a`、`spx`、`ogg`、`wav`、`flac`
         """
         ...
     async def get_image(
         self,
         *,
         file: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """获取图片。
 
         参数:
-            file: 收到的图片文件名（CQ 码的 `file` 参数），如 `6B4DE3DFD1BD271E3297859D41C530F5.jpg`
+            file: 收到的图片文件名（CQ 码的 `file` 参数），
+                如 `6B4DE3DFD1BD271E3297859D41C530F5.jpg`
         """
         ...
-    async def can_send_image(self) -> Dict[str, Any]:
+    async def can_send_image(self) -> dict[str, Any]:
         """检查是否可以发送图片。"""
         ...
-    async def can_send_record(self) -> Dict[str, Any]:
+    async def can_send_record(self) -> dict[str, Any]:
         """检查是否可以发送语音。"""
         ...
-    async def get_status(self) -> Dict[str, Any]:
+    async def get_status(self) -> dict[str, Any]:
         """获取插件运行状态。"""
         ...
-    async def get_version_info(self) -> Dict[str, Any]:
+    async def get_version_info(self) -> dict[str, Any]:
         """获取版本信息。"""
         ...
     async def set_restart(

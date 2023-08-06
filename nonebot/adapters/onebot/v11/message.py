@@ -273,7 +273,7 @@ class Message(BaseMessage[MessageSegment]):
     def __add__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
     ) -> Self:
-        return super(Message, self).__add__(
+        return super().__add__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
@@ -284,7 +284,7 @@ class Message(BaseMessage[MessageSegment]):
     def __radd__(
         self, other: Union[str, MessageSegment, Iterable[MessageSegment]]
     ) -> Self:
-        return super(Message, self).__radd__(
+        return super().__radd__(
             MessageSegment.text(other) if isinstance(other, str) else other
         )
 
@@ -321,9 +321,11 @@ class Message(BaseMessage[MessageSegment]):
             else:
                 data = {
                     k: unescape(v)
-                    for k, v in map(
-                        lambda x: x.split("=", maxsplit=1),
-                        filter(lambda x: x, (x.lstrip() for x in data.split(","))),
+                    for k, v in (
+                        x.split("=", maxsplit=1)
+                        for x in filter(
+                            lambda x: x, (x.lstrip() for x in data.split(","))
+                        )
                     )
                 }
                 yield MessageSegment(type_, data)

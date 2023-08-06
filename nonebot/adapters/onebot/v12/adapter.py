@@ -152,7 +152,10 @@ class Adapter(BaseAdapter):
             if not isinstance(self.driver, ForwardDriver):
                 log(
                     "WARNING",
-                    f"Current driver {self.config.driver} don't support forward connections! Ignored",
+                    (
+                        f"Current driver {self.config.driver} does not support "
+                        "forward connections! Ignored"
+                    ),
                 )
             else:
                 self.driver.on_startup(self._start_forward)
@@ -364,11 +367,14 @@ class Adapter(BaseAdapter):
                             self.connections[self_id] = websocket
                             log(
                                 "INFO",
-                                f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
+                                (
+                                    f"<y>Bot {escape_tag(event.self.user_id)}</y> "
+                                    "connected"
+                                ),
                             )
                         asyncio.create_task(bot.handle_event(event))
 
-        except WebSocketClosed as e:
+        except WebSocketClosed:
             self_id = ", ".join(bots)
             log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
         except Exception as e:
@@ -483,7 +489,11 @@ class Adapter(BaseAdapter):
                                     self.connections[self_id] = ws
                                     log(
                                         "INFO",
-                                        f"<y>Bot {escape_tag(event.self.user_id)}</y> connected",
+                                        (
+                                            "<y>"
+                                            f"Bot {escape_tag(event.self.user_id)}"
+                                            "</y> connected"
+                                        ),
                                     )
                                 asyncio.create_task(bot.handle_event(event))
                     except WebSocketClosed as e:
@@ -495,8 +505,12 @@ class Adapter(BaseAdapter):
                     except Exception as e:
                         log(
                             "ERROR",
-                            "<r><bg #f8bbd0>Error while process data from websocket"
-                            f"{escape_tag(str(url))}. Trying to reconnect...</bg #f8bbd0></r>",
+                            (
+                                "<r><bg #f8bbd0>"
+                                "Error while process data from websocket"
+                                f"{escape_tag(str(url))}. Trying to reconnect..."
+                                "</bg #f8bbd0></r>"
+                            ),
                             e,
                         )
                     finally:

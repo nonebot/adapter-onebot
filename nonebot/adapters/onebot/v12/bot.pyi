@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union, Literal, Optional, TypedDict, overload
+from typing import Any, Literal, TypedDict, overload
 
 from nonebot.adapters import Bot as BaseBot
 
@@ -24,7 +24,7 @@ class BotStatus(TypedDict):
 
 class GetStatusResp(TypedDict):
     good: str
-    bots: List[BotStatus]
+    bots: list[BotStatus]
 
 class GetVersionResp(TypedDict):
     impl: str
@@ -82,18 +82,18 @@ class UploadFileFragmentedResp(TypedDict):
 class GetFileUrlResp(TypedDict):
     name: str
     url: str
-    headers: Optional[Dict[str, str]]
-    sha256: Optional[str]
+    headers: dict[str, str] | None
+    sha256: str | None
 
 class GetFilePathResp(TypedDict):
     name: str
     path: str
-    sha256: Optional[str]
+    sha256: str | None
 
 class GetFileDataResp(TypedDict):
     name: str
-    data: Union[str, bytes]
-    sha256: Optional[str]
+    data: str | bytes
+    sha256: str | None
 
 class GetFileFragmentedPrepareResp(TypedDict):
     name: str
@@ -101,15 +101,15 @@ class GetFileFragmentedPrepareResp(TypedDict):
     sha256: str
 
 class GetFileFragmentedTransferResp(TypedDict):
-    data: Union[str, bytes]
+    data: str | bytes
 
-def _check_reply(bot: "Bot", event: MessageEventModel): ...
-def _check_to_me(bot: "Bot", event: MessageEventModel): ...
-def _check_nickname(bot: "Bot", event: MessageEventModel): ...
+def _check_reply(bot: Bot, event: MessageEventModel): ...
+def _check_to_me(bot: Bot, event: MessageEventModel): ...
+def _check_nickname(bot: Bot, event: MessageEventModel): ...
 async def send(
-    bot: "Bot",
+    bot: Bot,
     event: EventModel,
-    message: Union[str, Message, MessageSegment],
+    message: str | Message | MessageSegment,
     at_sender: bool = ...,
     reply_message: bool = ...,
     **kwargs: Any,
@@ -142,7 +142,7 @@ class Bot(BaseBot):
     ) -> Any: ...
     async def get_latest_events(
         self, *, limit: int = ..., timeout: int = ..., **kwargs: Any
-    ) -> List[Event]:
+    ) -> list[Event]:
         """获取最新事件列表
 
         参数:
@@ -151,7 +151,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_supported_actions(self, **kwargs: Any) -> List[str]:
+    async def get_supported_actions(self, **kwargs: Any) -> list[str]:
         """获取支持的动作列表
 
         参数:
@@ -186,7 +186,8 @@ class Bot(BaseBot):
         """发送消息
 
         参数:
-            detail_type: 发送的类型，可以为 private、group 或扩展的类型，和消息事件的 detail_type 字段对应
+            detail_type: 发送的类型，
+                可以为 private、group 或扩展的类型，和消息事件的 detail_type 字段对应
             user_id: 用户 ID，当 detail_type 为 private 时必须传入
             group_id: 群 ID，当 detail_type 为 group 时必须传入
             guild_id: Guild 群组 ID，当 detail_type 为 channel 时必须传入
@@ -213,7 +214,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_friend_list(self, **kwargs: Any) -> List[GetUserInfoResp]:
+    async def get_friend_list(self, **kwargs: Any) -> list[GetUserInfoResp]:
         """获取好友列表
 
         参数:
@@ -228,7 +229,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_group_list(self, **kwargs: Any) -> List[GetGroupInfoResp]:
+    async def get_group_list(self, **kwargs: Any) -> list[GetGroupInfoResp]:
         """获取群列表
 
         参数:
@@ -248,7 +249,7 @@ class Bot(BaseBot):
         ...
     async def get_group_member_list(
         self, *, group_id: str, **kwargs: Any
-    ) -> List[GetGroupMemberInfoResp]:
+    ) -> list[GetGroupMemberInfoResp]:
         """获取群成员列表
 
         参数:
@@ -283,7 +284,7 @@ class Bot(BaseBot):
             kwargs: 扩展字段
         """
         ...
-    async def get_guild_list(self, **kwargs: Any) -> List[GetGuildInfoResp]:
+    async def get_guild_list(self, **kwargs: Any) -> list[GetGuildInfoResp]:
         """获取群组列表
 
         参数:
@@ -314,7 +315,7 @@ class Bot(BaseBot):
         ...
     async def get_guild_member_list(
         self, *, guild_id: str, **kwargs: Any
-    ) -> List[GetGuildMemberInfoResp]:
+    ) -> list[GetGuildMemberInfoResp]:
         """获取群组成员列表
 
         参数:
@@ -343,7 +344,7 @@ class Bot(BaseBot):
         ...
     async def get_channel_list(
         self, *, guild_id: str, joined_only: bool = False, **kwargs: Any
-    ) -> List[GetChannelInfoResp]:
+    ) -> list[GetChannelInfoResp]:
         """获取频道列表
 
         参数:
@@ -378,7 +379,7 @@ class Bot(BaseBot):
         ...
     async def get_channel_member_list(
         self, *, guild_id: str, channel_id: str, **kwargs: Any
-    ) -> List[GetChannelMemberInfoResp]:
+    ) -> list[GetChannelMemberInfoResp]:
         """获取频道成员列表
 
         参数:
@@ -404,7 +405,7 @@ class Bot(BaseBot):
         type: Literal["url", "path", "data"] | str,
         name: str,
         url: str = ...,
-        headers: Dict[str, str] = ...,
+        headers: dict[str, str] = ...,
         path: str = ...,
         data: bytes = ...,
         sha256: str = ...,

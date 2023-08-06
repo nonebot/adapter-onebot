@@ -7,7 +7,7 @@ from nonebug import App
 
 import nonebot
 
-with open(Path(__file__).parent / "events.json", "r", encoding="utf8") as f:
+with open(Path(__file__).parent / "events.json", encoding="utf8") as f:
     test_events = json.load(f)
     CONNECTION_META_EVENT = test_events[0]
     QQ_ONLINE_EVENT = test_events[1]
@@ -95,7 +95,7 @@ async def test_ws_missing_connect_meta_event(app: App):
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(PRIVATE_MESSAGE_EVENT)
-            with pytest.raises(Exception) as e:
+            with pytest.raises(Exception, match="close") as e:
                 await ws.receive_json()
             assert e.value.args[0] == {
                 "type": "websocket.close",
@@ -138,7 +138,7 @@ async def test_ws_duplicate_bot(app: App):
             await ws.send_json(CONNECTION_META_EVENT)
             await ws.send_json(PRIVATE_MESSAGE_EVENT)
 
-            with pytest.raises(Exception) as e:
+            with pytest.raises(Exception, match="close") as e:
                 await ws.receive_json()
             assert e.value.args[0] == {
                 "type": "websocket.close",
@@ -150,7 +150,7 @@ async def test_ws_duplicate_bot(app: App):
             await ws.send_json(CONNECTION_META_EVENT)
             await ws.send_json(QQ_ONLINE_EVENT)
 
-            with pytest.raises(Exception) as e:
+            with pytest.raises(Exception, match="close") as e:
                 await asyncio.wait_for(ws.receive_json(), 5)
             assert e.value.args[0] == {
                 "type": "websocket.close",
@@ -228,9 +228,8 @@ async def test_ws_auth_missing(app: App):
             "Sec-WebSocket-Protocol": "12.test",
         }
         with pytest.raises(AssertionError):
-            async with client.websocket_connect(endpoints, headers=headers) as ws:
-                await ws.send_json(CONNECTION_META_EVENT)
-                await asyncio.sleep(0)
+            async with client.websocket_connect(endpoints, headers=headers):
+                pass
 
 
 async def test_ws_auth_header(app: App):

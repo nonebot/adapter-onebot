@@ -117,7 +117,10 @@ class Adapter(BaseAdapter):
             if not isinstance(self.driver, ForwardDriver):
                 log(
                     "WARNING",
-                    f"Current driver {self.config.driver} don't support forward connections! Ignored",
+                    (
+                        f"Current driver {self.config.driver} does not support "
+                        "forward connections! Ignored"
+                    ),
                 )
             else:
                 self.driver.on_startup(self._start_forward)
@@ -240,7 +243,7 @@ class Adapter(BaseAdapter):
                 json_data = json.loads(data)
                 if event := self.json_to_event(json_data):
                     asyncio.create_task(bot.handle_event(event))
-        except WebSocketClosed as e:
+        except WebSocketClosed:
             log("WARNING", f"WebSocket for Bot {escape_tag(self_id)} closed by peer")
         except Exception as e:
             log(
@@ -357,8 +360,12 @@ class Adapter(BaseAdapter):
                     except Exception as e:
                         log(
                             "ERROR",
-                            "<r><bg #f8bbd0>Error while process data from websocket"
-                            f"{escape_tag(str(url))}. Trying to reconnect...</bg #f8bbd0></r>",
+                            (
+                                "<r><bg #f8bbd0>"
+                                "Error while process data from websocket"
+                                f"{escape_tag(str(url))}. Trying to reconnect..."
+                                "</bg #f8bbd0></r>"
+                            ),
                             e,
                         )
                     finally:

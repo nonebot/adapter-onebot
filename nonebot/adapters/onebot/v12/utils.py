@@ -49,7 +49,7 @@ class CustomEncoder(DataclassEncoder):
     def default(self, o):
         if isinstance(o, bytes):
             return b64encode(o).decode()
-        return super(CustomEncoder, self).default(o)
+        return super().default(o)
 
 
 def timestamp(obj: datetime.datetime):
@@ -61,4 +61,7 @@ msgpack_type_encoders = {
     datetime.datetime: timestamp,
 }
 
-msgpack_encoder = partial(custom_pydantic_encoder, msgpack_type_encoders)  # type: ignore
+msgpack_encoder = partial(
+    custom_pydantic_encoder,
+    msgpack_type_encoders,  # type: ignore
+)

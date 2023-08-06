@@ -16,8 +16,8 @@ from nonebot.matcher import Matcher
 from nonebot.params import Depends, EventMessage
 
 from .bot import Bot
+from .event import Event
 from .message import Message, MessageSegment
-from .event import Event, MessageEvent, GroupMessageEvent
 
 
 def extract_image_urls(message: Message) -> List[str]:
@@ -307,8 +307,8 @@ async def autorevoke_send(
         revoke_interval: 撤回消息的间隔时间, 单位为秒
 
     返回:
-        asyncio.TimerHandle: [`TimerHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
-    """
+        [`TimerHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
+    """  # noqa: E501
     message_data: Dict[str, Any] = await bot.send(
         event, message, at_sender=at_sender, **kwargs
     )

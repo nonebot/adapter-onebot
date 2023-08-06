@@ -56,7 +56,7 @@ class Collator(Generic[E]):
         keys: List[Optional[str]] = []
         for key in self.keys:
             if isinstance(key, tuple):
-                fields = list(filter(None, map(lambda k: data.get(k, None), key)))
+                fields = list(filter(None, (data.get(k, None) for k in key)))
                 if len(fields) > 1:
                     raise ValueError(f"Invalid data with incorrect fields: {fields}")
                 field = fields[0] if fields else None
@@ -70,7 +70,7 @@ class Collator(Generic[E]):
         for key in self.keys:
             if isinstance(key, tuple):
                 fields = list(
-                    filter(None, map(lambda k: self._get_model_field(model, k), key))
+                    filter(None, (self._get_model_field(model, k) for k in key))
                 )
                 if len(fields) > 1:
                     raise ValueError(f"Invalid model with incorrect fields: {fields}")
