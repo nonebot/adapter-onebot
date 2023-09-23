@@ -19,10 +19,11 @@ from nonebot.drivers import (
     Driver,
     Request,
     Response,
+    ASGIMixin,
     WebSocket,
-    ForwardDriver,
-    ReverseDriver,
+    HTTPClientMixin,
     HTTPServerSetup,
+    WebSocketClientMixin,
     WebSocketServerSetup,
 )
 
@@ -77,7 +78,7 @@ class Adapter(BaseAdapter):
         return "OneBot V11"
 
     def _setup(self) -> None:
-        if isinstance(self.driver, ReverseDriver):
+        if isinstance(self.driver, ASGIMixin):
             http_setup = HTTPServerSetup(
                 URL("/onebot/v11/"),
                 "POST",
@@ -114,12 +115,12 @@ class Adapter(BaseAdapter):
             self.setup_websocket_server(ws_setup)
 
         if self.onebot_config.onebot_ws_urls:
-            if not isinstance(self.driver, ForwardDriver):
+            if not isinstance(self.driver, WebSocketClientMixin):
                 log(
                     "WARNING",
                     (
                         f"Current driver {self.config.driver} does not support "
-                        "forward connections! Ignored"
+                        "websocket client connections! Ignored"
                     ),
                 )
             else:
@@ -144,7 +145,7 @@ class Adapter(BaseAdapter):
             except asyncio.TimeoutError:
                 raise NetworkError(f"WebSocket call api {api} timeout") from None
 
-        elif isinstance(self.driver, ForwardDriver):
+        elif isinstance(self.driver, HTTPClientMixin):
             api_root = self.onebot_config.onebot_api_roots.get(bot.self_id)
             if not api_root:
                 raise ApiNotAvailable

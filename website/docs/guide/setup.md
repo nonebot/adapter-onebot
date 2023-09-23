@@ -51,7 +51,7 @@ ONEBOT_API_ROOTS={"你的QQ号": "http://127.0.0.1:5700/"}
 其中，`127.0.0.1` 和 `5700` 分别对应 OneBot 实现配置的 HTTP 服务器监听的 HOST 和 PORT。
 
 :::warning 注意
-请确保你的 NoneBot 使用的是 `ForwardDriver` 和 `ReverseDriver`，否则无法使用此连接方式。
+请确保你的 NoneBot 使用了 `HTTPClient` 和 `ASGI` 类型的驱动器，否则无法使用此连接方式。
 
 如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
@@ -69,7 +69,7 @@ ONEBOT_WS_URLS=["ws://127.0.0.1:6700"]
 其中，`127.0.0.1` 和 `6700` 分别对应 OneBot 实现配置的 WebSocket 服务器的 HOST 和 PORT。
 
 :::warning 注意
-请确保你的 NoneBot 使用的是 `ForwardDriver`，否则无法使用此连接方式。
+请确保你的 NoneBot 使用了 `WebSocketClient` 类型的驱动器，否则无法使用此连接方式。
 
 如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
@@ -87,7 +87,7 @@ ONEBOT_WS_URLS=["ws://127.0.0.1:6700"]
 其中，`127.0.0.1` 和 `8080` 分别对应 NoneBot 配置的 HOST 和 PORT。
 
 :::warning 注意
-请确保你的 NoneBot 使用的是 `ReverseDriver`，否则无法使用此连接方式。
+请确保你的 NoneBot 使用了 `ASGI` 类型的驱动器，否则无法使用此连接方式。
 
 如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
@@ -113,7 +113,7 @@ ONEBOT_V12_API_ROOTS={"你的QQ号": "http://127.0.0.1:5700/"}
 其中，`127.0.0.1` 和 `5700` 分别对应 OneBot 实现配置的 HTTP 服务器监听的 HOST 和 PORT。
 
 :::warning 注意
-请确保你的 NoneBot 使用的是 `ForwardDriver` 和 `ReverseDriver`，否则无法使用此连接方式。
+请确保你的 NoneBot 使用了 `HTTPClient` 和 `ASGI` 类型的驱动器，否则无法使用此连接方式。
 
 如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
@@ -131,7 +131,7 @@ ONEBOT_V12_WS_URLS=["ws://127.0.0.1:6700"]
 其中，`127.0.0.1` 和 `6700` 分别对应 OneBot 实现配置的 WebSocket 服务器的 HOST 和 PORT。
 
 :::warning 注意
-请确保你的 NoneBot 使用的是 `ForwardDriver`，否则无法使用此连接方式。
+请确保你的 NoneBot 使用了 `WebSocketClient` 类型的驱动器，否则无法使用此连接方式。
 
 如何选择驱动器：[选择驱动器](https://nonebot.dev/docs/advanced/driver)
 :::
