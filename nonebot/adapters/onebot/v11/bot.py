@@ -33,7 +33,7 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     try:
         event.reply = Reply.parse_obj(await bot.get_msg(message_id=msg_seg.data["id"]))
     except Exception as e:
-        log("WARNING", f"Error when getting message reply info: {repr(e)}", e)
+        log("WARNING", f"Error when getting message reply info: {repr(e)}")
         return
     # ensure string comparation
     if str(event.reply.sender.user_id) == str(event.self_id):
