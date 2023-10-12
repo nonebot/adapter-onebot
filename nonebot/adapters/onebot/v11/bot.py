@@ -155,7 +155,11 @@ async def send(
     if "group_id" in event_dict:  # copy the group_id to the API params if exists
         params.setdefault("group_id", event_dict["group_id"])
 
-    if "message_type" not in params:  # guess the message_type
+    # guess the message_type
+    if "message_type" in event_dict:
+        params.setdefault("message_type", event_dict["message_type"])
+
+    if "message_type" not in params:
         if params.get("group_id") is not None:
             params["message_type"] = "group"
         elif params.get("user_id") is not None:
