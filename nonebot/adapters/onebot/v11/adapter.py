@@ -233,8 +233,8 @@ class Adapter(BaseAdapter):
 
         await websocket.accept()
         bot = Bot(self, self_id)
-        self.connections[self_id] = websocket
         self.bot_connect(bot)
+        self.connections[self_id] = websocket
 
         log("INFO", f"<y>Bot {escape_tag(self_id)}</y> connected")
 
@@ -345,8 +345,8 @@ class Adapter(BaseAdapter):
                                     continue
                                 self_id = event.self_id
                                 bot = Bot(self, str(self_id))
-                                self.connections[str(self_id)] = ws
                                 self.bot_connect(bot)
+                                self.connections[str(self_id)] = ws
                                 log(
                                     "INFO",
                                     f"<y>Bot {escape_tag(str(self_id))}</y> connected",
