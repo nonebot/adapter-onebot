@@ -124,7 +124,7 @@ class Adapter(BaseAdapter):
                     ),
                 )
             else:
-                self.driver.on_startup(self._start_forward)
+                self.on_ready(self._start_forward)
                 self.driver.on_shutdown(self._stop_forward)
 
     @override
