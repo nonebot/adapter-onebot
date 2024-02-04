@@ -110,7 +110,7 @@ class Bot(BaseBot):
         self,
         *,
         id: str,
-    ) -> None:
+    ) -> dict[str, Any]:
         """获取合并转发消息。
 
         参数:
