@@ -4,6 +4,7 @@ FrontMatter:
     sidebar_position: 1
     description: onebot.collator 模块
 """
+
 from typing import Any, Dict, List, Type, Tuple, Union, Generic, TypeVar, Optional
 
 from pygtrie import StringTrie

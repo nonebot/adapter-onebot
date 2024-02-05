@@ -135,6 +135,7 @@ class Bot(BaseBot):
             nonebot.adapters.onebot.exception.NetworkError: 网络错误
             nonebot.adapters.onebot.exception.ActionFailed: API 调用失败
         """
+
     async def handle_event(self, event: EventModel) -> None: ...
     async def send(
         self, event: EventModel, message: str | Message | MessageSegment, **kwargs: Any
@@ -149,24 +150,28 @@ class Bot(BaseBot):
             timeout: 没有事件时要等待的秒数，0 表示使用短轮询，不等待
             kwargs: 扩展字段
         """
+
     async def get_supported_actions(self, **kwargs: Any) -> list[str]:
         """获取支持的动作列表
 
         参数:
             kwargs: 扩展字段
         """
+
     async def get_status(self, **kwargs: Any) -> GetStatusResp:
         """获取运行状态
 
         参数:
             kwargs: 扩展字段
         """
+
     async def get_version(self, **kwargs: Any) -> GetVersionResp:
         """获取版本信息
 
         参数:
             kwargs: 扩展字段
         """
+
     async def send_message(
         self,
         *,
@@ -190,14 +195,17 @@ class Bot(BaseBot):
             message: 消息内容
             kwargs: 扩展字段
         """
+
     async def delete_message(self, *, message_id: str, **kwargs: Any) -> None:
         """撤回消息
 
         参数:
             message_id: 唯一的消息 ID
         """
+
     async def get_self_info(self, **kwargs: Any) -> GetSelfInfoResp:
         """获取机器人自身信息"""
+
     async def get_user_info(self, *, user_id: str, **kwargs: Any) -> GetUserInfoResp:
         """获取用户信息
 
@@ -205,12 +213,14 @@ class Bot(BaseBot):
             user_id: 用户 ID，可以是好友，也可以是陌生人
             kwargs: 扩展字段
         """
+
     async def get_friend_list(self, **kwargs: Any) -> list[GetUserInfoResp]:
         """获取好友列表
 
         参数:
             kwargs: 扩展字段
         """
+
     async def get_group_info(self, *, group_id: str, **kwargs: Any) -> GetGroupInfoResp:
         """获取群信息
 
@@ -218,12 +228,14 @@ class Bot(BaseBot):
             group_id: 群 ID
             kwargs: 扩展字段
         """
+
     async def get_group_list(self, **kwargs: Any) -> list[GetGroupInfoResp]:
         """获取群列表
 
         参数:
             kwargs: 扩展字段
         """
+
     async def get_group_member_info(
         self, *, group_id: str, user_id: str, **kwargs: Any
     ) -> GetGroupMemberInfoResp:
@@ -234,6 +246,7 @@ class Bot(BaseBot):
             user_id: 用户 ID
             kwargs: 扩展字段
         """
+
     async def get_group_member_list(
         self, *, group_id: str, **kwargs: Any
     ) -> list[GetGroupMemberInfoResp]:
@@ -243,6 +256,7 @@ class Bot(BaseBot):
             group_id: 群 ID
             kwargs: 扩展字段
         """
+
     async def set_group_name(
         self, *, group_id: str, group_name: str, **kwargs: Any
     ) -> None:
@@ -253,6 +267,7 @@ class Bot(BaseBot):
             group_name: 群名称
             kwargs: 扩展字段
         """
+
     async def leave_group(self, *, group_id: str, **kwargs: Any) -> None:
         """退出群
 
@@ -260,6 +275,7 @@ class Bot(BaseBot):
             group_id: 群 ID
             kwargs: 扩展字段
         """
+
     async def get_guild_info(self, *, guild_id: str, **kwargs: Any) -> GetGuildInfoResp:
         """获取 Guild 信息
 
@@ -267,12 +283,14 @@ class Bot(BaseBot):
             guild_id: 群组 ID
             kwargs: 扩展字段
         """
+
     async def get_guild_list(self, **kwargs: Any) -> list[GetGuildInfoResp]:
         """获取群组列表
 
         参数:
             kwargs: 扩展字段
         """
+
     async def set_guild_name(
         self, *, guild_id: str, guild_name: str, **kwargs: Any
     ) -> None:
@@ -283,6 +301,7 @@ class Bot(BaseBot):
             guild_name: 群组名称
             kwargs: 扩展字段
         """
+
     async def get_guild_member_info(
         self, *, guild_id: str, user_id: str, **kwargs: Any
     ) -> GetGuildMemberInfoResp:
@@ -293,6 +312,7 @@ class Bot(BaseBot):
             user_id: 用户 ID
             kwargs: 扩展字段
         """
+
     async def get_guild_member_list(
         self, *, guild_id: str, **kwargs: Any
     ) -> list[GetGuildMemberInfoResp]:
@@ -302,6 +322,7 @@ class Bot(BaseBot):
             guild_id: 群组 ID
             kwargs: 扩展字段
         """
+
     async def leave_guild(self, *, guild_id: str, **kwargs: Any) -> None:
         """退出群组
 
@@ -309,6 +330,7 @@ class Bot(BaseBot):
             guild_id: 群组 ID
             kwargs: 扩展字段
         """
+
     async def get_channel_info(
         self, *, guild_id: str, channel_id: str, **kwargs: Any
     ) -> GetChannelInfoResp:
@@ -319,6 +341,7 @@ class Bot(BaseBot):
             channel_id: 频道 ID
             kwargs: 扩展字段
         """
+
     async def get_channel_list(
         self, *, guild_id: str, joined_only: bool = False, **kwargs: Any
     ) -> list[GetChannelInfoResp]:
@@ -329,6 +352,7 @@ class Bot(BaseBot):
             joined_only: 只获取机器人账号已加入的频道列表
             kwargs: 扩展字段
         """
+
     async def set_channel_name(
         self, *, guild_id: str, channel_id: str, channel_name: str, **kwargs: Any
     ) -> None:
@@ -340,6 +364,7 @@ class Bot(BaseBot):
             channel_name: 新频道名称
             kwargs: 扩展字段
         """
+
     async def get_channel_member_info(
         self, *, guild_id: str, channel_id: str, user_id: str, **kwargs: Any
     ) -> GetChannelMemberInfoResp:
@@ -351,6 +376,7 @@ class Bot(BaseBot):
             user_id: 用户 ID
             kwargs: 扩展字段
         """
+
     async def get_channel_member_list(
         self, *, guild_id: str, channel_id: str, **kwargs: Any
     ) -> list[GetChannelMemberInfoResp]:
@@ -361,6 +387,7 @@ class Bot(BaseBot):
             channel_id: 频道 ID
             kwargs: 扩展字段
         """
+
     async def leave_channel(
         self, *, guild_id: str, channel_id: str, **kwargs: Any
     ) -> None:
@@ -371,6 +398,7 @@ class Bot(BaseBot):
             channel_id: 频道 ID
             kwargs: 扩展字段
         """
+
     async def upload_file(
         self,
         *,
@@ -395,6 +423,7 @@ class Bot(BaseBot):
             sha256: 文件数据（原始二进制）的 SHA256 校验和，全小写，可选传入
             kwargs: 扩展字段
         """
+
     @overload
     async def upload_file_fragmented(
         self,
@@ -411,6 +440,7 @@ class Bot(BaseBot):
             total_size: 文件完整大小
             kwargs: 扩展字段
         """
+
     @overload
     async def upload_file_fragmented(
         self,
@@ -429,6 +459,7 @@ class Bot(BaseBot):
             data: 本次传输的文件数据
             kwargs: 扩展字段
         """
+
     @overload
     async def upload_file_fragmented(
         self,
@@ -445,6 +476,7 @@ class Bot(BaseBot):
             sha256: 整个文件的 SHA256 校验和，全小写
             kwargs: 扩展字段
         """
+
     @overload
     async def get_file(
         self,
@@ -460,6 +492,7 @@ class Bot(BaseBot):
             file_id: 文件 ID
             kwargs: 扩展字段
         """
+
     @overload
     async def get_file(
         self,
@@ -475,6 +508,7 @@ class Bot(BaseBot):
             file_id: 文件 ID
             kwargs: 扩展字段
         """
+
     @overload
     async def get_file(
         self,
@@ -490,6 +524,7 @@ class Bot(BaseBot):
             file_id: 文件 ID
             kwargs: 扩展字段
         """
+
     @overload
     async def get_file_fragmented(
         self,
@@ -505,6 +540,7 @@ class Bot(BaseBot):
             file_id: 文件 ID
             kwargs: 扩展字段
         """
+
     @overload
     async def get_file_fragmented(
         self,
