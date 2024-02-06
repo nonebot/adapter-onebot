@@ -4,6 +4,7 @@ FrontMatter:
     sidebar_position: 1
     description: onebot.v12.adapter 模块
 """
+
 import json
 import asyncio
 import inspect
@@ -203,9 +204,9 @@ class Adapter(BaseAdapter):
                 raise ApiNotAvailable
 
             headers = {
-                "Content-Type": "application/msgpack"
-                if use_msgpack
-                else "application/json"
+                "Content-Type": (
+                    "application/msgpack" if use_msgpack else "application/json"
+                )
             }
             if self.onebot_config.onebot_access_token is not None:
                 headers["Authorization"] = (
@@ -430,9 +431,9 @@ class Adapter(BaseAdapter):
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
         if self.onebot_config.onebot_access_token:
-            headers[
-                "Authorization"
-            ] = f"Bearer {self.onebot_config.onebot_access_token}"
+            headers["Authorization"] = (
+                f"Bearer {self.onebot_config.onebot_access_token}"
+            )
         req = Request("GET", url, headers=headers, timeout=30.0)
         bots: Dict[str, Bot] = {}
         while True:

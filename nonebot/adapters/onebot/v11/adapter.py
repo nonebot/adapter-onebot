@@ -4,6 +4,7 @@ FrontMatter:
     sidebar_position: 1
     description: onebot.v11.adapter 模块
 """
+
 import hmac
 import json
 import asyncio
@@ -316,9 +317,9 @@ class Adapter(BaseAdapter):
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
         if self.onebot_config.onebot_access_token:
-            headers[
-                "Authorization"
-            ] = f"Bearer {self.onebot_config.onebot_access_token}"
+            headers["Authorization"] = (
+                f"Bearer {self.onebot_config.onebot_access_token}"
+            )
         request = Request("GET", url, headers=headers, timeout=30.0)
 
         bot: Optional[Bot] = None

@@ -183,9 +183,9 @@ class Bot(BaseBot):
     OneBot v11 协议 Bot 适配。
     """
 
-    send_handler: Callable[
-        ["Bot", Event, Union[str, Message, MessageSegment]], Any
-    ] = send
+    send_handler: Callable[["Bot", Event, Union[str, Message, MessageSegment]], Any] = (
+        send
+    )
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""
