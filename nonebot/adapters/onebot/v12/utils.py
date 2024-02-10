@@ -6,12 +6,12 @@ FrontMatter:
 """
 
 import datetime
-from typing import TypeVar
 from base64 import b64encode
 from functools import partial
+from typing import Any, TypeVar
 from typing_extensions import override
 
-from pydantic.json import custom_pydantic_encoder
+from nonebot.compat import PYDANTIC_V2
 from nonebot.utils import DataclassEncoder, logger_wrapper
 
 T = TypeVar("T")
@@ -61,7 +61,19 @@ msgpack_type_encoders = {
     datetime.datetime: timestamp,
 }
 
-msgpack_encoder = partial(
-    custom_pydantic_encoder,
-    msgpack_type_encoders,  # type: ignore
-)
+if PYDANTIC_V2:
+    from pydantic_core import to_jsonable_python
+
+    def msgpack_encoder(obj: Any):
+        for type_, encoder in msgpack_type_encoders.items():
+            if isinstance(obj, type_):
+                return encoder(obj)
+        return to_jsonable_python(obj)
+
+else:
+    from pydantic.json import custom_pydantic_encoder
+
+    msgpack_encoder = partial(
+        custom_pydantic_encoder,
+        msgpack_type_encoders,  # type: ignore
+    )

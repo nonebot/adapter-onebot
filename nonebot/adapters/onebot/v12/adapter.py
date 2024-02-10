@@ -40,6 +40,7 @@ from nonebot.drivers import (
     WebSocketServerSetup,
 )
 
+from nonebot import get_plugin_config
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
@@ -102,7 +103,7 @@ class Adapter(BaseAdapter):
     @override
     def __init__(self, driver: Driver, **kwargs: Any) -> None:
         super().__init__(driver, **kwargs)
-        self.onebot_config: Config = Config(**self.config.dict())
+        self.onebot_config: Config = get_plugin_config(Config)
         self.connections: Dict[str, WebSocket] = {}
         self.tasks: List["asyncio.Task"] = []
         self._setup()

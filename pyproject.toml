@@ -21,19 +21,19 @@ packages = [{ include = "nonebot" }]
 [tool.poetry.dependencies]
 python = "^3.8"
 msgpack = "^1.0.3"
-nonebot2 = "^2.1.3"
+nonebot2 = "^2.2.0"
 typing-extensions = ">=4.0.0,<5.0.0"
 
 [tool.poetry.group.dev.dependencies]
+ruff = "^0.2.0"
 isort = "^5.10.1"
-black = "^23.1.0"
+black = "^24.0.0"
 nonebug = "^0.3.0"
 nonemoji = "^0.1.2"
 pytest-cov = "^4.0.0"
 pre-commit = "^3.2.0"
 nb-autodoc = "^1.0.0a5"
-ruff = ">=0.0.282, <0.1.0"
-pytest-asyncio = "^0.21.0"
+pytest-asyncio = "^0.23.0"
 nonebot2 = { git = "https://github.com/nonebot/nonebot2.git", branch = "master", extras = [
   "fastapi",
 ] }
@@ -43,7 +43,7 @@ addopts = "--cov nonebot.adapters.onebot --cov-report term-missing"
 
 [tool.black]
 line-length = 88
-target-version = ["py38", "py39", "py310", "py311"]
+target-version = ["py38", "py39", "py310", "py311", "py312"]
 include = '\.pyi?$'
 extend-exclude = '''
 '''
@@ -73,6 +73,15 @@ ignore = ["E402", "C901", "UP037", "PYI021"]
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
 mark-parentheses = false
+
+[tool.pyright]
+pythonVersion = "3.8"
+pythonPlatform = "All"
+defineConstant = { PYDANTIC_V2 = true }
+
+typeCheckingMode = "basic"
+reportShadowedImports = false
+disableBytesTypePromotions = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
