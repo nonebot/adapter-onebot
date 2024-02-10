@@ -27,6 +27,7 @@ import msgpack
 from pygtrie import CharTrie
 from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
+from nonebot.compat import type_validate_python
 from nonebot.drivers import (
     URL,
     Driver,
@@ -637,12 +638,12 @@ class Adapter(BaseAdapter):
         try:
             for model in cls.get_event_model(json_data, impl):
                 try:
-                    event = model.parse_obj(json_data)
+                    event = type_validate_python(model, json_data)
                     break
                 except Exception as e:
                     log("DEBUG", "Event Parse Error", e)
             else:
-                event = Event.parse_obj(json_data)
+                event = type_validate_python(Event, json_data)
             return event
 
         except Exception as e:

@@ -6,6 +6,8 @@ import pytest
 from nonebug import App
 
 import nonebot
+from nonebot.adapters.onebot.v11 import Adapter as V11Adapter
+from nonebot.adapters.onebot.v12 import Adapter as V12Adapter
 
 with open(Path(__file__).parent / "events.json", encoding="utf8") as f:
     test_events = json.load(f)
@@ -20,9 +22,7 @@ with open(Path(__file__).parent / "events.json", encoding="utf8") as f:
     "endpoints", ["/onebot/v12/", "/onebot/v12/http", "/onebot/v12/http/"]
 )
 async def test_http(app: App, endpoints: str):
-    from nonebot.adapters.onebot.v12 import Adapter
-
-    adapter = nonebot.get_adapter(Adapter)
+    adapter = nonebot.get_adapter(V12Adapter)
 
     async with app.test_server() as ctx:
         client = ctx.get_client()
@@ -53,9 +53,7 @@ async def test_http(app: App, endpoints: str):
     "endpoints", ["/onebot/v12/", "/onebot/v12/ws", "/onebot/v12/ws/"]
 )
 async def test_ws(app: App, endpoints: str):
-    from nonebot.adapters.onebot.v12 import Adapter
-
-    adapter = nonebot.get_adapter(Adapter)
+    adapter = nonebot.get_adapter(V12Adapter)
 
     async with app.test_server() as ctx:
         client = ctx.get_client()
@@ -108,9 +106,8 @@ async def test_ws_missing_connect_meta_event(app: App):
 @pytest.mark.asyncio
 async def test_ws_duplicate_bot(app: App):
     """测试连接两个相同 id 但协议不同的 bot"""
-    from nonebot.adapters.onebot.v11 import Adapter
 
-    adapter = nonebot.get_adapter(Adapter)
+    adapter = nonebot.get_adapter(V11Adapter)
 
     # 先连接一个 v11 bot
     endpoints = "/onebot/v11/"
@@ -179,9 +176,7 @@ async def test_http_auth_missing(app: App):
 
 @pytest.mark.asyncio
 async def test_http_auth_header(app: App):
-    from nonebot.adapters.onebot.v12 import Adapter
-
-    adapter = nonebot.get_adapter(Adapter)
+    adapter = nonebot.get_adapter(V12Adapter)
 
     endpoints = "/onebot/v12/"
 
@@ -203,9 +198,7 @@ async def test_http_auth_header(app: App):
 
 @pytest.mark.asyncio
 async def test_http_auth_query(app: App):
-    from nonebot.adapters.onebot.v12 import Adapter
-
-    adapter = nonebot.get_adapter(Adapter)
+    adapter = nonebot.get_adapter(V12Adapter)
 
     endpoints = "/onebot/v12/?access_token=test"
 

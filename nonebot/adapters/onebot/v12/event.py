@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 from nonebot.utils import escape_tag
 from pydantic import BaseModel, root_validator
-from nonebot.compat import PYDANTIC_V2, ConfigDict
+from nonebot.compat import PYDANTIC_V2, ConfigDict, model_dump
 
 from nonebot.adapters import Event as BaseEvent
 from nonebot.adapters.onebot.utils import highlight_rich_message
@@ -43,7 +43,7 @@ class Event(BaseEvent):
 
     @override
     def get_event_description(self) -> str:
-        return escape_tag(str(self.dict()))
+        return escape_tag(str(model_dump(self)))
 
     @override
     def get_message(self) -> Message:

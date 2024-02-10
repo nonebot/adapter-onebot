@@ -23,6 +23,3 @@ class Config(BaseModel):
     """OneBot 正向 Websocket 连接目标 URL 集合"""
     onebot_api_roots: Dict[str, AnyUrl] = Field(default_factory=dict)
     """OneBot HTTP API 请求地址字典"""
-
-    class Config:
-        extra = "ignore"

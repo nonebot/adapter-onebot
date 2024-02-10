@@ -7,11 +7,18 @@ import pytest
 from nonebot.log import logger
 from pydantic import BaseModel
 
+from nonebot.adapters.onebot.v12 import (
+    Event,
+    Adapter,
+    BotSelf,
+    MessageEvent,
+    MessageSegment,
+    PrivateMessageEvent,
+)
+
 
 @pytest.mark.asyncio
 async def test_event():
-    from nonebot.adapters.onebot.v12 import Adapter
-
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
         test_events = json.load(f)
 
@@ -23,9 +30,6 @@ async def test_event():
 
 @pytest.mark.asyncio
 async def test_custom_model():
-    from nonebot.adapters.onebot.v12.event import BotSelf
-    from nonebot.adapters.onebot.v12 import Event, Adapter, MessageEvent
-
     class QQExtended(BaseModel):
         key: str
 
@@ -76,8 +80,6 @@ async def test_custom_model():
 
 @pytest.mark.asyncio
 async def test_event_log():
-    from nonebot.adapters.onebot.v12 import BotSelf, MessageSegment, PrivateMessageEvent
-
     msg = (
         MessageSegment.text("[text]")
         + MessageSegment.mention("123")

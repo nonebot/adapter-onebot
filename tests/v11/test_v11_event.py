@@ -4,12 +4,19 @@ from typing import Literal
 
 import pytest
 from nonebot.log import logger
+from nonebot.compat import model_dump
+
+from nonebot.adapters.onebot.v11.event import Sender
+from nonebot.adapters.onebot.v11 import (
+    Event,
+    Adapter,
+    MessageSegment,
+    PrivateMessageEvent,
+)
 
 
 @pytest.mark.asyncio
 async def test_event():
-    from nonebot.adapters.onebot.v11 import Event, Adapter
-
     with (Path(__file__).parent / "events.json").open("r") as f:
         test_events = json.load(f)
 
@@ -24,15 +31,12 @@ async def test_event():
     event = MessageSelfEvent(self_id=0, time=0, post_type="message_self")
 
     Adapter.add_custom_model(MessageSelfEvent)
-    parsed = Adapter.json_to_event(event.dict())
+    parsed = Adapter.json_to_event(model_dump(event))
     assert parsed == event
 
 
 @pytest.mark.asyncio
 async def test_event_log():
-    from nonebot.adapters.onebot.v11.event import Sender
-    from nonebot.adapters.onebot.v11 import MessageSegment, PrivateMessageEvent
-
     msg = (
         MessageSegment.text("[text]")
         + MessageSegment.at(123)

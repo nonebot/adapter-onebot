@@ -6,6 +6,7 @@ import pytest
 from nonebug import App
 
 import nonebot
+from nonebot.adapters.onebot.v11 import Adapter
 
 
 @pytest.mark.asyncio
@@ -13,8 +14,6 @@ import nonebot
     "endpoints", ["/onebot/v11/", "/onebot/v11/http", "/onebot/v11/http/"]
 )
 async def test_http(app: App, endpoints: str):
-    from nonebot.adapters.onebot.v11 import Adapter
-
     with (Path(__file__).parent / "events.json").open("r") as f:
         test_events = json.load(f)
 
@@ -38,8 +37,6 @@ async def test_http(app: App, endpoints: str):
     "endpoints", ["/onebot/v11/", "/onebot/v11/ws", "/onebot/v11/ws/"]
 )
 async def test_ws(app: App, endpoints: str):
-    from nonebot.adapters.onebot.v11 import Adapter
-
     adapter = nonebot.get_adapter(Adapter)
 
     async with app.test_server() as ctx:

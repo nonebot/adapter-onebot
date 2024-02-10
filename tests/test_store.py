@@ -2,11 +2,11 @@ import asyncio
 
 import pytest
 
+from nonebot.adapters.onebot.store import ResultStore
+
 
 @pytest.mark.asyncio
 async def test_store():
-    from nonebot.adapters.onebot.store import ResultStore
-
     store = ResultStore()
 
     seq = store.get_seq()

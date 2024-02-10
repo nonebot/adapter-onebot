@@ -29,6 +29,3 @@ class Config(BaseModel):
         default=False, alias="onebot_v12_use_msgpack"
     )
     """OneBot 启用 msgpack 编码"""
-
-    class Config:
-        extra = "ignore"

@@ -10,6 +10,7 @@ from typing_extensions import override
 from typing import TYPE_CHECKING, Any, Union
 
 from nonebot.message import handle_event
+from nonebot.compat import model_dump, type_validate_python
 
 from nonebot.adapters import Bot as BaseBot
 
@@ -36,7 +37,7 @@ def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     msg_seg = event.message[index]
 
     try:
-        event.reply = Reply.parse_obj(msg_seg.data)
+        event.reply = type_validate_python(Reply, msg_seg.data)
         # event.reply = Reply.parse_obj(
         #     await bot.get_msg(message_id=msg_seg.data["id"])
         # )
@@ -153,7 +154,7 @@ async def send(
     **params: Any,
 ) -> Any:
     """默认回复消息处理函数。"""
-    event_dict = event.dict()
+    event_dict = model_dump(event)
 
     params.setdefault("detail_type", event_dict["detail_type"])
 
