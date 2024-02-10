@@ -9,11 +9,7 @@ from typing import Set, Dict, Union, Optional
 
 from pydantic import Field, AnyUrl, BaseModel
 
-
-class WSUrl(AnyUrl):
-    """ws或wss url"""
-
-    allow_schemes = {"ws", "wss"}
+from nonebot.adapters.onebot.utils import WSUrl
 
 
 class Config(BaseModel):
