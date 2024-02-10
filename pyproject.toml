@@ -39,7 +39,7 @@ nonebot2 = { git = "https://github.com/nonebot/nonebot2.git", branch = "master",
 ] }
 
 [tool.pytest.ini_options]
-addopts = "--cov nonebot.adapters.onebot --cov-report term-missing"
+addopts = "--cov=nonebot/adapters/onebot --cov-report term-missing"
 
 [tool.black]
 line-length = 88
