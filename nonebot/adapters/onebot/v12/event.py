@@ -133,7 +133,7 @@ class MessageEvent(BotEvent):
     alt_message: str
     user_id: str
 
-    to_me = False
+    to_me: bool = False
     """
     :说明: 消息是否与机器人有关
 
