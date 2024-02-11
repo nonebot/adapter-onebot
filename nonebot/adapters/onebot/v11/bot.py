@@ -31,7 +31,9 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
         return
     msg_seg = event.message[index]
     try:
-        event.reply = Reply.parse_obj(await bot.get_msg(message_id=int(msg_seg.data["id"])))
+        event.reply = Reply.parse_obj(
+            await bot.get_msg(message_id=int(msg_seg.data["id"]))
+        )
     except Exception as e:
         log("WARNING", f"Error when getting message reply info: {repr(e)}")
         return
