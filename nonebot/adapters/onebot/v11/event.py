@@ -9,10 +9,12 @@ from copy import deepcopy
 from typing_extensions import override
 from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
 
+from pydantic import BaseModel
 from nonebot.utils import escape_tag
-from pydantic import BaseModel, root_validator
+from nonebot.compat import PYDANTIC_V2, ConfigDict, model_dump
 
 from nonebot.adapters import Event as BaseEvent
+from nonebot.adapters.onebot.compat import model_validator
 from nonebot.adapters.onebot.utils import highlight_rich_message
 
 from .message import Message
@@ -42,7 +44,7 @@ class Event(BaseEvent):
 
     @override
     def get_event_description(self) -> str:
-        return escape_tag(str(self.dict()))
+        return escape_tag(str(model_dump(self)))
 
     @override
     def get_message(self) -> Message:
@@ -73,8 +75,12 @@ class Sender(BaseModel):
     role: Optional[str] = None
     title: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 class Reply(BaseModel):
@@ -85,8 +91,12 @@ class Reply(BaseModel):
     sender: Sender
     message: Message
 
-    class Config:
-        extra = "allow"
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 class Anonymous(BaseModel):
@@ -94,8 +104,12 @@ class Anonymous(BaseModel):
     name: str
     flag: str
 
-    class Config:
-        extra = "allow"
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 class File(BaseModel):
@@ -104,16 +118,24 @@ class File(BaseModel):
     size: int
     busid: int
 
-    class Config:
-        extra = "allow"
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 class Status(BaseModel):
     online: bool
     good: bool
 
-    class Config:
-        extra = "allow"
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 # Message Events
@@ -143,7 +165,7 @@ class MessageEvent(Event):
     :类型: ``Optional[Reply]``
     """
 
-    @root_validator(pre=True, allow_reuse=True)
+    @model_validator(mode="before")
     def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "message" in values:
             values["original_message"] = deepcopy(values["message"])

@@ -9,9 +9,12 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
+from typing_extensions import Annotated
 from typing import Tuple, Union, Iterable, Optional
 
+from pydantic import AnyUrl
 from nonebot.utils import escape_tag
+from nonebot.compat import PYDANTIC_V2
 
 RICH_REGEX = (
     r"\[(?P<type>[a-zA-Z0-9-_.]+)"
@@ -119,3 +122,15 @@ def truncate(
 
     result = s[: length - len(end)].rsplit(maxsplit=1)[0]
     return result + end
+
+
+if PYDANTIC_V2:
+    from pydantic.networks import UrlConstraints
+
+    WSUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=["ws", "wss"])]
+else:
+
+    class WSUrl(AnyUrl):
+        """ws或wss url"""
+
+        allow_schemes = {"ws", "wss"}

@@ -27,6 +27,7 @@ import msgpack
 from pygtrie import CharTrie
 from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
+from nonebot.compat import type_validate_python
 from nonebot.drivers import (
     URL,
     Driver,
@@ -40,6 +41,7 @@ from nonebot.drivers import (
     WebSocketServerSetup,
 )
 
+from nonebot import get_plugin_config
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
@@ -102,7 +104,7 @@ class Adapter(BaseAdapter):
     @override
     def __init__(self, driver: Driver, **kwargs: Any) -> None:
         super().__init__(driver, **kwargs)
-        self.onebot_config: Config = Config(**self.config.dict())
+        self.onebot_config: Config = get_plugin_config(Config)
         self.connections: Dict[str, WebSocket] = {}
         self.tasks: List["asyncio.Task"] = []
         self._setup()
@@ -636,12 +638,12 @@ class Adapter(BaseAdapter):
         try:
             for model in cls.get_event_model(json_data, impl):
                 try:
-                    event = model.parse_obj(json_data)
+                    event = type_validate_python(model, json_data)
                     break
                 except Exception as e:
                     log("DEBUG", "Event Parse Error", e)
             else:
-                event = Event.parse_obj(json_data)
+                event = type_validate_python(Event, json_data)
             return event
 
         except Exception as e:

@@ -10,17 +10,19 @@ from datetime import datetime
 from typing_extensions import override
 from typing import Any, Dict, List, Literal, Optional
 
+from pydantic import BaseModel
 from nonebot.utils import escape_tag
-from pydantic import Extra, BaseModel, root_validator
+from nonebot.compat import PYDANTIC_V2, ConfigDict, model_dump
 
 from nonebot.adapters import Event as BaseEvent
+from nonebot.adapters.onebot.compat import model_validator
 from nonebot.adapters.onebot.utils import highlight_rich_message
 
 from .message import Message
 from .exception import NoLogException
 
 
-class Event(BaseEvent, extra=Extra.allow):
+class Event(BaseEvent):
     """OneBot V12 协议事件，字段与 OneBot 一致
 
     参考文档：[OneBot 文档](https://12.1bot.dev)
@@ -42,7 +44,7 @@ class Event(BaseEvent, extra=Extra.allow):
 
     @override
     def get_event_description(self) -> str:
-        return escape_tag(str(self.dict()))
+        return escape_tag(str(model_dump(self)))
 
     @override
     def get_message(self) -> Message:
@@ -61,30 +63,58 @@ class Event(BaseEvent, extra=Extra.allow):
         return False
 
 
-class BotSelf(BaseModel, extra=Extra.allow):
+class BotSelf(BaseModel):
     """机器人自身标识"""
 
     platform: str
     user_id: str
 
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
 
-class BotStatus(BaseModel, extra=Extra.allow):
+        class Config(ConfigDict):
+            extra = "allow"
+
+
+class BotStatus(BaseModel):
     """机器人的状态"""
 
     self: BotSelf
     online: bool
 
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
 
-class Status(BaseModel, extra=Extra.allow):
+        class Config(ConfigDict):
+            extra = "allow"
+
+
+class Status(BaseModel):
     """运行状态"""
 
     good: bool
     bots: List[BotStatus]
 
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
 
-class Reply(BaseModel, extra=Extra.allow):
+        class Config(ConfigDict):
+            extra = "allow"
+
+
+class Reply(BaseModel):
     message_id: str
     user_id: str
+
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 class BotEvent(Event):
@@ -104,7 +134,7 @@ class MessageEvent(BotEvent):
     alt_message: str
     user_id: str
 
-    to_me = False
+    to_me: bool = False
     """
     :说明: 消息是否与机器人有关
 
@@ -117,7 +147,7 @@ class MessageEvent(BotEvent):
     :类型: ``Optional[Reply]``
     """
 
-    @root_validator(pre=True, allow_reuse=True)
+    @model_validator(mode="before")
     def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "message" in values:
             values["original_message"] = deepcopy(values["message"])
@@ -342,10 +372,17 @@ class MetaEvent(Event):
         raise NoLogException
 
 
-class ImplVersion(BaseModel, extra=Extra.allow):
+class ImplVersion(BaseModel):
     impl: str
     version: str
     onebot_version: str
+
+    if PYDANTIC_V2:
+        model_config = ConfigDict(extra="allow")
+    else:
+
+        class Config(ConfigDict):
+            extra = "allow"
 
 
 class ConnectMetaEvent(MetaEvent):

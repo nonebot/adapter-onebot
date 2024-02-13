@@ -9,11 +9,7 @@ from typing import Set, Dict, Optional
 
 from pydantic import Field, AnyUrl, BaseModel
 
-
-class WSUrl(AnyUrl):
-    """ws或wss url"""
-
-    allow_schemes = {"ws", "wss"}
+from nonebot.adapters.onebot.utils import WSUrl
 
 
 class Config(BaseModel):
@@ -27,6 +23,3 @@ class Config(BaseModel):
     """OneBot 正向 Websocket 连接目标 URL 集合"""
     onebot_api_roots: Dict[str, AnyUrl] = Field(default_factory=dict)
     """OneBot HTTP API 请求地址字典"""
-
-    class Config:
-        extra = "ignore"

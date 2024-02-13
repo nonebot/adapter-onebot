@@ -14,6 +14,7 @@ from typing_extensions import override
 from typing import Any, Dict, List, Type, Union, Callable, Optional, Generator, cast
 
 from nonebot.exception import WebSocketClosed
+from nonebot.compat import type_validate_python
 from nonebot.utils import DataclassEncoder, escape_tag
 from nonebot.drivers import (
     URL,
@@ -28,6 +29,7 @@ from nonebot.drivers import (
     WebSocketServerSetup,
 )
 
+from nonebot import get_plugin_config
 from nonebot.adapters import Adapter as BaseAdapter
 from nonebot.adapters.onebot.collator import Collator
 from nonebot.adapters.onebot.store import ResultStore
@@ -66,7 +68,7 @@ class Adapter(BaseAdapter):
     @override
     def __init__(self, driver: Driver, **kwargs: Any):
         super().__init__(driver, **kwargs)
-        self.onebot_config: Config = Config(**self.config.dict())
+        self.onebot_config: Config = get_plugin_config(Config)
         """OneBot V11 配置"""
         self.connections: Dict[str, WebSocket] = {}
         self.tasks: List["asyncio.Task"] = []
@@ -425,12 +427,12 @@ class Adapter(BaseAdapter):
         try:
             for model in cls.get_event_model(json_data):
                 try:
-                    event = model.parse_obj(json_data)
+                    event = type_validate_python(model, json_data)
                     break
                 except Exception as e:
                     log("DEBUG", "Event Parser Error", e)
             else:
-                event = Event.parse_obj(json_data)
+                event = type_validate_python(Event, json_data)
 
             return event
         except Exception as e:

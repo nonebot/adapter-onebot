@@ -10,6 +10,7 @@ from typing_extensions import override
 from typing import Any, Union, Callable
 
 from nonebot.message import handle_event
+from nonebot.compat import model_dump, type_validate_python
 
 from nonebot.adapters import Bot as BaseBot
 
@@ -31,8 +32,8 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
         return
     msg_seg = event.message[index]
     try:
-        event.reply = Reply.parse_obj(
-            await bot.get_msg(message_id=int(msg_seg.data["id"]))
+        event.reply = type_validate_python(
+            Reply, await bot.get_msg(message_id=int(msg_seg.data["id"]))
         )
     except Exception as e:
         log("WARNING", f"Error when getting message reply info: {repr(e)}")
@@ -144,7 +145,7 @@ async def send(
     **params: Any,  # extra options passed to send_msg API
 ) -> Any:
     """默认回复消息处理函数。"""
-    event_dict = event.dict()
+    event_dict = model_dump(event)
 
     if "message_id" not in event_dict:
         reply_message = False  # if no message_id, force disable reply_message
