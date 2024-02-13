@@ -33,7 +33,7 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     msg_seg = event.message[index]
     try:
         event.reply = type_validate_python(
-            Reply, await bot.get_msg(message_id=msg_seg.data["id"])
+            Reply, await bot.get_msg(message_id=int(msg_seg.data["id"]))
         )
     except Exception as e:
         log("WARNING", f"Error when getting message reply info: {repr(e)}")
