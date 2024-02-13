@@ -10,11 +10,12 @@ from datetime import datetime
 from typing_extensions import override
 from typing import Any, Dict, List, Literal, Optional
 
+from pydantic import BaseModel
 from nonebot.utils import escape_tag
-from pydantic import BaseModel, root_validator
 from nonebot.compat import PYDANTIC_V2, ConfigDict, model_dump
 
 from nonebot.adapters import Event as BaseEvent
+from nonebot.adapters.onebot.compat import model_validator
 from nonebot.adapters.onebot.utils import highlight_rich_message
 
 from .message import Message
@@ -146,7 +147,7 @@ class MessageEvent(BotEvent):
     :类型: ``Optional[Reply]``
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "message" in values:
             values["original_message"] = deepcopy(values["message"])
