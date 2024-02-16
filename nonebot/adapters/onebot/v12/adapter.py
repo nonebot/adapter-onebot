@@ -201,7 +201,7 @@ class Adapter(BaseAdapter):
                 raise NetworkError(f"WebSocket call api {api} timeout") from None
 
         elif isinstance(self.driver, HTTPClientMixin):
-            api_url = self.onebot_config.onebot_api_roots.get(bot.self_id)
+            api_url = str(self.onebot_config.onebot_api_roots.get(bot.self_id))
             if not api_url:
                 raise ApiNotAvailable
 
@@ -414,6 +414,7 @@ class Adapter(BaseAdapter):
 
     async def _start_forward(self) -> None:
         for url in self.onebot_config.onebot_ws_urls:
+            url = str(url)
             try:
                 ws_url = URL(url)
                 self.tasks.append(asyncio.create_task(self._forward_ws(ws_url)))
