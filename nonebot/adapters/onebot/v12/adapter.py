@@ -434,9 +434,9 @@ class Adapter(BaseAdapter):
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
         if self.onebot_config.onebot_access_token:
-            headers[
-                "Authorization"
-            ] = f"Bearer {self.onebot_config.onebot_access_token}"
+            headers["Authorization"] = (
+                f"Bearer {self.onebot_config.onebot_access_token}"
+            )
         req = Request("GET", url, headers=headers, timeout=30.0)
         bots: Dict[str, Bot] = {}
         while True:
