@@ -149,7 +149,7 @@ class Adapter(BaseAdapter):
                 raise NetworkError(f"WebSocket call api {api} timeout") from None
 
         elif isinstance(self.driver, HTTPClientMixin):
-            api_root = self.onebot_config.onebot_api_roots.get(bot.self_id)
+            api_root = str(self.onebot_config.onebot_api_roots.get(bot.self_id))
             if not api_root:
                 raise ApiNotAvailable
             elif not api_root.endswith("/"):
@@ -298,6 +298,7 @@ class Adapter(BaseAdapter):
 
     async def _start_forward(self) -> None:
         for url in self.onebot_config.onebot_ws_urls:
+            url = str(url)
             try:
                 ws_url = URL(url)
                 self.tasks.append(asyncio.create_task(self._forward_ws(ws_url)))
@@ -319,9 +320,9 @@ class Adapter(BaseAdapter):
     async def _forward_ws(self, url: URL) -> None:
         headers = {}
         if self.onebot_config.onebot_access_token:
-            headers["Authorization"] = (
-                f"Bearer {self.onebot_config.onebot_access_token}"
-            )
+            headers[
+                "Authorization"
+            ] = f"Bearer {self.onebot_config.onebot_access_token}"
         request = Request("GET", url, headers=headers, timeout=30.0)
 
         bot: Optional[Bot] = None
