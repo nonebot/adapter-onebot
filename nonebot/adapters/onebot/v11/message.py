@@ -18,7 +18,7 @@ from nonebot.adapters.onebot.utils import rich_escape
 from nonebot.adapters.onebot.utils import truncate as trunc
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
-from .utils import log, escape, unescape
+from .utils import escape, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -102,7 +102,6 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @classmethod
     def forward(cls, id_: str) -> Self:
-        log("WARNING", "Forward Message only can be received!")
         return cls("forward", {"id": id_})
 
     @classmethod
@@ -121,7 +120,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
                 "type": type_,
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
-                "timeout": timeout,
+                "timeout": timeout if timeout is None else str(timeout),
             },
         )
 
@@ -149,7 +148,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @classmethod
     def music(cls, type_: str, id_: int) -> Self:
-        return cls("music", {"type": type_, "id": id_})
+        return cls("music", {"type": type_, "id": str(id_)})
 
     @classmethod
     def music_custom(
@@ -204,7 +203,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
                 "magic": b2s(magic),
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
-                "timeout": timeout,
+                "timeout": timeout if timeout is None else str(timeout),
             },
         )
 
