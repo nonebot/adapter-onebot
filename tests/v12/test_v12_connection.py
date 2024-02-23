@@ -29,7 +29,7 @@ async def test_http(app: App, endpoints: str):
         headers = {
             "X-OneBot-Version": "12",
             "X-Impl": "test",
-            "Authorization": "Bearer test",
+            "Authorization": "Bearer test2",
         }
         resp = await client.post(endpoints, json=PRIVATE_MESSAGE_EVENT, headers=headers)
         assert resp.status_code == 204
@@ -59,7 +59,7 @@ async def test_ws(app: App, endpoints: str):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
-            "Authorization": "Bearer test",
+            "Authorization": "Bearer test2",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(CONNECTION_META_EVENT)
@@ -90,7 +90,7 @@ async def test_ws_missing_connect_meta_event(app: App):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
-            "Authorization": "Bearer test",
+            "Authorization": "Bearer test2",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(PRIVATE_MESSAGE_EVENT)
@@ -130,7 +130,7 @@ async def test_ws_duplicate_bot(app: App):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
-            "Authorization": "Bearer test",
+            "Authorization": "Bearer test2",
         }
 
         async with client.websocket_connect(endpoints, headers=headers) as ws:
@@ -185,7 +185,7 @@ async def test_http_auth_header(app: App):
         headers = {
             "X-OneBot-Version": "12",
             "X-Impl": "test",
-            "Authorization": "Bearer test",
+            "Authorization": "Bearer test2",
         }
         resp = await client.post(endpoints, json=PRIVATE_MESSAGE_EVENT, headers=headers)
         assert resp.status_code == 204
@@ -239,7 +239,7 @@ async def test_ws_auth_header(app: App):
         client = ctx.get_client()
         headers = {
             "Sec-WebSocket-Protocol": "12.test",
-            "Authorization": "Bearer test",
+            "Authorization": "Bearer test2",
         }
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             await ws.send_json(CONNECTION_META_EVENT)
