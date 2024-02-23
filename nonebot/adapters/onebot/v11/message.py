@@ -18,7 +18,7 @@ from nonebot.adapters.onebot.utils import rich_escape
 from nonebot.adapters.onebot.utils import truncate as trunc
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
-from .utils import log, escape, unescape
+from .utils import escape, unescape
 
 
 class MessageSegment(BaseMessageSegment["Message"]):
@@ -102,7 +102,6 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @classmethod
     def forward(cls, id_: str) -> Self:
-        log("WARNING", "Forward Message only can be received!")
         return cls("forward", {"id": id_})
 
     @classmethod
