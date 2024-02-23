@@ -20,6 +20,13 @@ ONEBOT_ACCESS_TOKEN=你的访问令牌
 
 配置 OneBot 实现的 `access_token` 相关配置，令牌应与 NoneBot 配置中的访问令牌一致。
 
+也可以为 v11 与 v12 分别配置不同的访问令牌
+
+```dotenv title=.env
+ONEBOT_V11_ACCESS_TOKEN=v11访问令牌
+ONEBOT_V12_ACCESS_TOKEN=v12访问令牌
+```
+
 ## secret (OneBot V11)
 
 ```dotenv title=.env

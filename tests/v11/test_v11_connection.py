@@ -23,7 +23,7 @@ async def test_http(app: App, endpoints: str):
         client = ctx.get_client()
         event = test_events[0]
         event.pop("_model")
-        headers = {"X-Self-ID": "0"}
+        headers = {"X-Self-ID": "0", "Authorization": "Bearer test1"}
         resp = await client.post(endpoints, json=event, headers=headers)
         assert resp.status_code == 204
         bots = nonebot.get_bots()
@@ -41,7 +41,7 @@ async def test_ws(app: App, endpoints: str):
 
     async with app.test_server() as ctx:
         client = ctx.get_client()
-        headers = {"X-Self-ID": "0"}
+        headers = {"X-Self-ID": "0", "Authorization": "Bearer test1"}
         async with client.websocket_connect(endpoints, headers=headers) as ws:
             assert "0" in nonebot.get_bots()
             assert "0" in adapter.bots

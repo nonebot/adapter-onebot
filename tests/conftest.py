@@ -14,7 +14,10 @@ from nonebot.adapters.onebot import V11Adapter, V12Adapter
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    config.stash[NONEBOT_INIT_KWARGS] = {"onebot_v12_access_token": "test"}
+    config.stash[NONEBOT_INIT_KWARGS] = {
+        "onebot_access_token": "test1",
+        "onebot_v12_access_token": "test2",
+    }
 
 
 @pytest.fixture(scope="session", autouse=True)
