@@ -257,7 +257,7 @@ async def test_ws_auth_header(app: App):
 
 @pytest.mark.asyncio
 async def test_ws_auth_query(app: App):
-    endpoints = "/onebot/v12/?access_token=test"
+    endpoints = "/onebot/v12/?access_token=test2"
 
     async with app.test_server() as ctx:
         client = ctx.get_client()
