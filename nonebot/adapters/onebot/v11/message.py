@@ -121,7 +121,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
                 "type": type_,
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
-                "timeout": timeout,
+                "timeout": timeout if timeout is None else str(timeout),
             },
         )
 
@@ -149,7 +149,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @classmethod
     def music(cls, type_: str, id_: int) -> Self:
-        return cls("music", {"type": type_, "id": id_})
+        return cls("music", {"type": type_, "id": str(id_)})
 
     @classmethod
     def music_custom(
@@ -204,7 +204,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
                 "magic": b2s(magic),
                 "cache": b2s(cache),
                 "proxy": b2s(proxy),
-                "timeout": timeout,
+                "timeout": timeout if timeout is None else str(timeout),
             },
         )
 
