@@ -8,6 +8,7 @@ FrontMatter:
 from typing import Set, Dict, Union, Optional
 
 from pydantic import Field, AnyUrl, BaseModel
+from nonebot.compat import PYDANTIC_V2, ConfigDict
 
 from nonebot.adapters.onebot.utils import WSUrl
 
@@ -29,3 +30,10 @@ class Config(BaseModel):
         default=False, alias="onebot_v12_use_msgpack"
     )
     """OneBot 启用 msgpack 编码"""
+
+    if PYDANTIC_V2:
+        model_config = ConfigDict(populate_by_name=True)
+    else:
+
+        class Config:
+            allow_population_by_field_name = True
