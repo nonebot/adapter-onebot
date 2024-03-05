@@ -485,7 +485,7 @@ class FriendRequestEvent(RequestEvent):
 
     request_type: Literal["friend"]
     user_id: int
-    comment: str
+    comment: Optional[str]
     flag: str
 
     @override
@@ -512,7 +512,7 @@ class GroupRequestEvent(RequestEvent):
     sub_type: str
     group_id: int
     user_id: int
-    comment: str
+    comment: Optional[str]
     flag: str
 
     @override
