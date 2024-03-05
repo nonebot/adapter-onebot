@@ -485,8 +485,8 @@ class FriendRequestEvent(RequestEvent):
 
     request_type: Literal["friend"]
     user_id: int
-    comment: str
     flag: str
+    comment: Optional[str] = None
 
     @override
     def get_user_id(self) -> str:
@@ -512,8 +512,8 @@ class GroupRequestEvent(RequestEvent):
     sub_type: str
     group_id: int
     user_id: int
-    comment: str
     flag: str
+    comment: Optional[str] = None
 
     @override
     def get_user_id(self) -> str:
