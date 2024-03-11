@@ -63,7 +63,7 @@ def iter_rich_message(msg: str) -> Iterable[Tuple[str, str]]:
             yield "text", pre_text
 
         text_begin = segment.pos + segment.end()
-        yield segment["type"], segment["params"].rstrip(",")
+        yield segment["type"], segment["params"] and segment["params"].rstrip(",")
 
     if trailing_text := msg[text_begin:]:
         yield "text", trailing_text
