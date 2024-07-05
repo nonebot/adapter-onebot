@@ -42,7 +42,11 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     if str(event.reply.sender.user_id) == str(event.self_id):
         event.to_me = True
     del event.message[index]
-    if len(event.message) > index and event.message[index].type == "at" and event.message[index].data.get("qq") == str(event.reply.sender.user_id):
+    if (
+        len(event.message) > index
+        and event.message[index].type == "at"
+        and event.message[index].data.get("qq") == str(event.reply.sender.user_id)
+    ):
         del event.message[index]
     if len(event.message) > index and event.message[index].type == "text":
         event.message[index].data["text"] = event.message[index].data["text"].lstrip()
