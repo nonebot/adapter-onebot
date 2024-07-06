@@ -38,20 +38,25 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     except Exception as e:
         log("WARNING", f"Error when getting message reply info: {repr(e)}")
         return
-    # ensure string comparation
-    if str(event.reply.sender.user_id) == str(event.self_id):
-        event.to_me = True
-    del event.message[index]
-    if (
-        len(event.message) > index
-        and event.message[index].type == "at"
-        and event.message[index].data.get("qq") == str(event.reply.sender.user_id)
-    ):
+
+    if event.reply.sender.user_id is not None:
+        # ensure string comparation
+        if str(event.reply.sender.user_id) == str(event.self_id):
+            event.to_me = True
         del event.message[index]
+
+        if (
+            len(event.message) > index
+            and event.message[index].type == "at"
+            and event.message[index].data.get("qq") == str(event.reply.sender.user_id)
+        ):
+            del event.message[index]
+
     if len(event.message) > index and event.message[index].type == "text":
         event.message[index].data["text"] = event.message[index].data["text"].lstrip()
         if not event.message[index].data["text"]:
             del event.message[index]
+
     if not event.message:
         event.message.append(MessageSegment.text(""))
 

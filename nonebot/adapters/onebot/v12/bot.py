@@ -38,9 +38,6 @@ def _check_reply(bot: "Bot", event: MessageEvent) -> None:
 
     try:
         event.reply = type_validate_python(Reply, msg_seg.data)
-        # event.reply = Reply.parse_obj(
-        #     await bot.get_msg(message_id=msg_seg.data["id"])
-        # )
     except Exception as e:
         log("WARNING", f"Error when getting message reply info: {repr(e)}", e)
         return
@@ -48,18 +45,20 @@ def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     # ensure string comparation
     if str(event.reply.user_id) == str(event.self.user_id):
         event.to_me = True
-
     del event.message[index]
+
     if (
         len(event.message) > index
         and event.message[index].type == "mention"
         and event.message[index].data.get("user_id") == str(event.reply.user_id)
     ):
         del event.message[index]
+
     if len(event.message) > index and event.message[index].type == "text":
         event.message[index].data["text"] = event.message[index].data["text"].lstrip()
         if not event.message[index].data["text"]:
             del event.message[index]
+
     if not event.message:
         event.message.append(MessageSegment.text(""))
 
