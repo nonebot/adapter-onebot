@@ -48,7 +48,6 @@ const config = {
       logo: {
         alt: "",
         src: "logo.png",
-        srcDark: "logo-dark.png",
         href: "/",
         target: "_self",
       },
