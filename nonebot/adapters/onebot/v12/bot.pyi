@@ -3,8 +3,9 @@ from typing import Any, Literal, TypedDict, overload
 from nonebot.adapters import Bot as BaseBot
 
 from .adapter import Adapter
-from .event import Event as EventModel, BotStatus as BotStatusModel
+from .event import Event as EventModel
 from .message import Message, MessageSegment
+from .event import BotStatus as BotStatusModel
 from .event import MessageEvent as MessageEventModel
 
 class Event(TypedDict):

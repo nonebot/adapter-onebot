@@ -27,7 +27,7 @@ import msgpack
 from pygtrie import CharTrie
 from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
-from nonebot.compat import type_validate_python, model_dump
+from nonebot.compat import type_validate_python
 from nonebot.drivers import (
     URL,
     Driver,

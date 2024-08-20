@@ -16,7 +16,7 @@ from nonebot.adapters import Bot as BaseBot
 
 from .utils import log
 from .message import Message, MessageSegment
-from .event import Event, Reply, MessageEvent, BotStatus
+from .event import Event, Reply, BotStatus, MessageEvent
 
 if TYPE_CHECKING:
     from .adapter import Adapter
