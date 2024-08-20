@@ -7,7 +7,7 @@ FrontMatter:
 
 import re
 from typing_extensions import override
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, Optional
 
 from nonebot.message import handle_event
 from nonebot.compat import model_dump, type_validate_python
@@ -16,7 +16,7 @@ from nonebot.adapters import Bot as BaseBot
 
 from .utils import log
 from .message import Message, MessageSegment
-from .event import Event, Reply, MessageEvent
+from .event import Event, Reply, MessageEvent, BotStatus
 
 if TYPE_CHECKING:
     from .adapter import Adapter
@@ -190,15 +190,17 @@ class Bot(BaseBot):
     adapter: "Adapter"
 
     def __init__(
-        self, adapter: "Adapter", self_id: str, impl: str, platform: str, **kwargs: Any
+        self,
+        adapter: "Adapter",
+        self_id: str,
+        impl: str,
+        platform: str,
+        status: Optional[BotStatus] = None,
     ) -> None:
         super().__init__(adapter, self_id)
         self.impl = impl
         self.platform = platform
-        for k, v in kwargs.items():
-            if k in self.__dict__:
-                continue
-            setattr(self, k, v)
+        self.status = status
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""

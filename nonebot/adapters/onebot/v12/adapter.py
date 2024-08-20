@@ -557,13 +557,7 @@ class Adapter(BaseAdapter):
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
                     )
             elif self_id not in self.bots:
-                bot = Bot(
-                    self,
-                    self_id,
-                    impl,
-                    platform,
-                    **model_dump(bot_status, exclude={"self", "online"}),
-                )
+                bot = Bot(self, self_id, impl, platform, bot_status)
 
                 # 先尝试连接，如果失败则不保存连接信息
                 self.bot_connect(bot)
