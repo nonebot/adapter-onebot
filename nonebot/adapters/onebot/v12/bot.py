@@ -190,11 +190,15 @@ class Bot(BaseBot):
     adapter: "Adapter"
 
     def __init__(
-        self, adapter: "Adapter", self_id: str, impl: str, platform: str
+        self, adapter: "Adapter", self_id: str, impl: str, platform: str, **kwargs: Any
     ) -> None:
         super().__init__(adapter, self_id)
         self.impl = impl
         self.platform = platform
+        for k, v in kwargs.items():
+            if k in self.__dict__:
+                continue
+            setattr(self, k, v)
 
     async def handle_event(self, event: Event) -> None:
         """处理收到的事件。"""

@@ -27,7 +27,7 @@ import msgpack
 from pygtrie import CharTrie
 from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
-from nonebot.compat import type_validate_python
+from nonebot.compat import type_validate_python, model_dump
 from nonebot.drivers import (
     URL,
     Driver,
@@ -557,7 +557,13 @@ class Adapter(BaseAdapter):
                         f"<y>Bot {escape_tag(self_id)}</y> disconnected",
                     )
             elif self_id not in self.bots:
-                bot = Bot(self, self_id, impl, platform)
+                bot = Bot(
+                    self,
+                    self_id,
+                    impl,
+                    platform,
+                    **model_dump(bot_status, exclude={"self", "online"}),
+                )
 
                 # 先尝试连接，如果失败则不保存连接信息
                 self.bot_connect(bot)
