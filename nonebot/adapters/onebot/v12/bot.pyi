@@ -5,6 +5,7 @@ from nonebot.adapters import Bot as BaseBot
 from .adapter import Adapter
 from .event import Event as EventModel
 from .message import Message, MessageSegment
+from .event import BotStatus as BotStatusModel
 from .event import MessageEvent as MessageEventModel
 
 class Event(TypedDict):
@@ -118,8 +119,14 @@ async def send(
 class Bot(BaseBot):
     impl: str
     platform: str
+    status: BotStatusModel | None
     def __init__(
-        self, adapter: Adapter, self_id: str, impl: str, platform: str
+        self,
+        adapter: Adapter,
+        self_id: str,
+        impl: str,
+        platform: str,
+        status: BotStatusModel | None = ...,
     ) -> None: ...
     async def call_api(self, api: str, **data) -> Any:
         """调用 OneBot 协议 API。
