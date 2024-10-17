@@ -9,8 +9,8 @@ import re
 from io import BytesIO
 from pathlib import Path
 from base64 import b64encode
-from typing_extensions import Annotated
-from typing import Tuple, Union, Iterable, Optional
+from collections.abc import Iterable
+from typing import Union, Optional, Annotated
 
 from pydantic import AnyUrl
 from nonebot.utils import escape_tag
@@ -56,7 +56,7 @@ def rich_unescape(s: str) -> str:
     )
 
 
-def iter_rich_message(msg: str) -> Iterable[Tuple[str, str]]:
+def iter_rich_message(msg: str) -> Iterable[tuple[str, str]]:
     text_begin = 0
     for segment in re.finditer(RICH_REGEX, msg):
         if pre_text := msg[text_begin : segment.pos + segment.start()]:
@@ -133,4 +133,4 @@ else:
     class WSUrl(AnyUrl):
         """ws或wss url"""
 
-        allow_schemes = {"ws", "wss"}
+        allow_schemes = {"ws", "wss"}  # noqa: RUF012

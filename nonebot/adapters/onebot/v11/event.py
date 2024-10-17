@@ -7,7 +7,7 @@ FrontMatter:
 
 from copy import deepcopy
 from typing_extensions import override
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import BaseModel
 from nonebot.utils import escape_tag
@@ -166,7 +166,7 @@ class MessageEvent(Event):
     """
 
     @model_validator(mode="before")
-    def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_message(cls, values: dict[str, Any]) -> dict[str, Any]:
         if "message" in values:
             values["original_message"] = deepcopy(values["message"])
         return values

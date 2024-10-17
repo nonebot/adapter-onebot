@@ -3,7 +3,7 @@ import pytest
 from nonebot.adapters.onebot.v12 import MessageSegment
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_message_rich_expr():
     a = MessageSegment.text("[test],test")
     assert a.to_rich_text() == "&#91;test&#93;,test"

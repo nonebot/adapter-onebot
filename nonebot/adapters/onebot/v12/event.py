@@ -8,7 +8,7 @@ FrontMatter:
 from copy import deepcopy
 from datetime import datetime
 from typing_extensions import override
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel
 from nonebot.utils import escape_tag
@@ -95,7 +95,7 @@ class Status(BaseModel):
     """运行状态"""
 
     good: bool
-    bots: List[BotStatus]
+    bots: list[BotStatus]
 
     if PYDANTIC_V2:
         model_config = ConfigDict(extra="allow")
@@ -148,7 +148,7 @@ class MessageEvent(BotEvent):
     """
 
     @model_validator(mode="before")
-    def check_message(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_message(cls, values: dict[str, Any]) -> dict[str, Any]:
         if "message" in values:
             values["original_message"] = deepcopy(values["message"])
         return values
@@ -210,8 +210,8 @@ class ChannelMessageEvent(MessageEvent):
 
     @override
     def get_event_description(self) -> str:
-        texts: List[str] = []
-        msg_string: List[str] = []
+        texts: list[str] = []
+        msg_string: list[str] = []
         for seg in self.original_message:
             if seg.is_text():
                 texts.append(str(seg))

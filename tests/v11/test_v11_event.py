@@ -15,7 +15,7 @@ from nonebot.adapters.onebot.v11 import (
 )
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_event():
     with (Path(__file__).parent / "events.json").open("r") as f:
         test_events = json.load(f)
@@ -35,7 +35,7 @@ async def test_event():
     assert parsed == event
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_event_log():
     msg = (
         MessageSegment.text("[text]")

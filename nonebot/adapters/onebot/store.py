@@ -6,14 +6,16 @@ FrontMatter:
 """
 
 import sys
-import asyncio
-from typing import Any, Dict, Optional
+from typing import Any
+
+import anyio
+from anyio.abc import TaskStatus
 
 
 class ResultStore:
     def __init__(self) -> None:
         self._seq: int = 1
-        self._futures: Dict[int, asyncio.Future] = {}
+        self._events: dict[int, tuple[TaskStatus[dict[str, Any]], anyio.Event]] = {}
 
     @property
     def current_seq(self) -> int:
@@ -24,16 +26,25 @@ class ResultStore:
         self._seq = (self._seq + 1) % sys.maxsize
         return s
 
-    def add_result(self, result: Dict[str, Any]):
+    def add_result(self, result: dict[str, Any]):
         echo = result.get("echo")
-        if isinstance(echo, str) and echo.isdecimal():
-            if future := self._futures.get(int(echo)):
-                future.set_result(result)
+        if (
+            isinstance(echo, str)
+            and echo.isdecimal()
+            and (echo := int(echo)) in self._events
+        ):
+            task_status, event = self._events[echo]
+            task_status.started(result)
+            event.set()
 
-    async def fetch(self, seq: int, timeout: Optional[float]) -> Dict[str, Any]:
-        future = asyncio.get_event_loop().create_future()
-        self._futures[seq] = future
+    async def fetch(
+        self,
+        seq: int,
+        task_status: TaskStatus[dict[str, Any]] = anyio.TASK_STATUS_IGNORED,
+    ) -> None:
+        event = anyio.Event()
+        self._events[seq] = (task_status, event)
         try:
-            return await asyncio.wait_for(future, timeout)
+            await event.wait()
         finally:
-            del self._futures[seq]
+            self._events.pop(seq, None)

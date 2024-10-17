@@ -2,6 +2,7 @@ from typing import Any
 
 from nonebot.adapters import Bot as BaseBot
 
+from .adapter import Adapter
 from .event import Event, MessageEvent
 from .message import Message, MessageSegment
 
@@ -18,6 +19,7 @@ async def send(
 ) -> Any: ...
 
 class Bot(BaseBot):
+    adapter: Adapter
     async def call_api(self, api: str, **data) -> Any:
         """调用 OneBot 协议 API。
 

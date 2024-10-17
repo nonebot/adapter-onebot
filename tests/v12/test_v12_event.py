@@ -17,7 +17,7 @@ from nonebot.adapters.onebot.v12 import (
 )
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_event():
     with (Path(__file__).parent / "events.json").open("r", encoding="utf8") as f:
         test_events = json.load(f)
@@ -28,7 +28,7 @@ async def test_event():
         assert model_name == event.__class__.__name__
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_custom_model():
     class QQExtended(BaseModel):
         key: str
@@ -78,7 +78,7 @@ async def test_custom_model():
     assert isinstance(parsed, PlatformEvent)
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_event_log():
     msg = (
         MessageSegment.text("[text]")

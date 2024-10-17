@@ -1,11 +1,10 @@
-import asyncio
-
+import anyio
 import pytest
 
 from nonebot.adapters.onebot.store import ResultStore
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_store():
     store = ResultStore()
 
@@ -21,6 +20,9 @@ async def test_store():
     async def feed_result():
         store.add_result(response_data)
 
-    asyncio.create_task(feed_result())
-    resp = await store.fetch(seq, 10.0)
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(feed_result)
+        with anyio.fail_after(10):
+            resp = await tg.start(store.fetch, seq)
+
     assert resp == response_data

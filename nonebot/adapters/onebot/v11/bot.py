@@ -36,7 +36,7 @@ async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
             Reply, await bot.get_msg(message_id=int(msg_seg.data["id"]))
         )
     except Exception as e:
-        log("WARNING", f"Error when getting message reply info: {repr(e)}")
+        log("WARNING", f"Error when getting message reply info: {e!r}")
         return
 
     if event.reply.sender.user_id is not None:

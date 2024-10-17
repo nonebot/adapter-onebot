@@ -7,11 +7,13 @@ FrontMatter:
 
 import re
 import asyncio
+from functools import partial
 from enum import IntEnum, auto
 from collections import defaultdict
 from asyncio import get_running_loop
-from typing import Any, Dict, List, Union, Optional, DefaultDict
+from typing import Any, Union, Optional
 
+import sniffio
 from nonebot.matcher import Matcher
 from nonebot.params import Depends, EventMessage
 
@@ -20,7 +22,7 @@ from .event import Event
 from .message import Message, MessageSegment
 
 
-def extract_image_urls(message: Message) -> List[str]:
+def extract_image_urls(message: Message) -> list[str]:
     """提取消息中的图片链接
 
     参数:
@@ -45,7 +47,7 @@ def ImageURLs(prompt: Optional[str] = None):
 
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
-    ) -> List[str]:
+    ) -> list[str]:
         urls = extract_image_urls(message)
         if not urls and prompt:
             await matcher.finish(prompt)
@@ -57,7 +59,7 @@ def ImageURLs(prompt: Optional[str] = None):
 NUMBERS_REGEXP = re.compile(r"[+-]?(\d*\.?\d+|\d+\.?\d*)")
 
 
-def extract_numbers(message: Message) -> List[float]:
+def extract_numbers(message: Message) -> list[float]:
     """提取消息中的数字
 
     参数:
@@ -72,7 +74,7 @@ def extract_numbers(message: Message) -> List[float]:
     ]
 
 
-def Numbers(prompt: Optional[str] = None) -> List[float]:
+def Numbers(prompt: Optional[str] = None) -> list[float]:
     """提取消息中的数字`extract_numbers`的依赖注入版本
 
     参数:
@@ -81,7 +83,7 @@ def Numbers(prompt: Optional[str] = None) -> List[float]:
 
     async def dependency(
         matcher: Matcher, message: Message = EventMessage()
-    ) -> List[float]:
+    ) -> list[float]:
         numbers = extract_numbers(message)
         if not numbers and prompt:
             await matcher.finish(prompt)
@@ -248,7 +250,7 @@ def Cooldown(
             f"invalid isolate level: {isolate_level!r}, "
             "isolate level must use provided enumerate value."
         )
-    running: DefaultDict[str, int] = defaultdict(lambda: parallel)
+    running: defaultdict[str, int] = defaultdict(lambda: parallel)
 
     def increase(key: str, value: int = 1):
         running[key] += value
@@ -309,7 +311,10 @@ async def autorevoke_send(
     返回:
         [`TimerHandle`](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#asyncio.TimerHandle) 对象, 可以用来取消定时撤回任务
     """  # noqa: E501
-    message_data: Dict[str, Any] = await bot.send(
+    if sniffio.current_async_library() != "asyncio":
+        raise RuntimeError("This function only works with asyncio")
+
+    message_data: dict[str, Any] = await bot.send(
         event, message, at_sender=at_sender, **kwargs
     )
     message_id: int = message_data["message_id"]
@@ -317,5 +322,7 @@ async def autorevoke_send(
     loop = get_running_loop()
     return loop.call_later(
         revoke_interval,
-        lambda: loop.create_task(bot.delete_msg(message_id=message_id)),
+        lambda: bot.adapter.task_group.start_soon(
+            partial(bot.delete_msg, message_id=message_id)
+        ),
     )

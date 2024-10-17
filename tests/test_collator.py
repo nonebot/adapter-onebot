@@ -6,7 +6,7 @@ from nonebot.adapters import Event
 from nonebot.adapters.onebot.collator import SEPARATOR, Collator
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_collator_simple_build():
     class TestModel(Event):
         type: str
@@ -27,7 +27,7 @@ async def test_collator_simple_build():
     assert tree[f"{SEPARATOR}message{SEPARATOR}private"] == PrivateModel
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_collator_peer_build():
     class TestModel(Event):
         type: str
@@ -59,7 +59,7 @@ async def test_collator_peer_build():
     assert tree[f"{SEPARATOR}notice{SEPARATOR}increase"] == IncreaseModel
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_collator_get_model():
     class TestModel(Event):
         type: str

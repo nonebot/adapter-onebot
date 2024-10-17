@@ -4,7 +4,7 @@ import nonebot
 from nonebot.adapters.onebot.v12 import Adapter, BadRequest, ActionFailedWithRetcode
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_api_result_handle():
     adapter = nonebot.get_adapter(Adapter)
 

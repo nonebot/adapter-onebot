@@ -5,7 +5,7 @@ FrontMatter:
     description: onebot.v11.utils 模块
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from nonebot.utils import logger_wrapper
 
@@ -41,7 +41,7 @@ def unescape(s: str) -> str:
     )
 
 
-def handle_api_result(result: Optional[Dict[str, Any]]) -> Any:
+def handle_api_result(result: Optional[dict[str, Any]]) -> Any:
     """处理 API 请求返回值。
 
     参数:
