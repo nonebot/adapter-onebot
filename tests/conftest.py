@@ -20,6 +20,11 @@ def pytest_configure(config: pytest.Config) -> None:
     }
 
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _init_adapter(nonebug_init: None):
     driver = nonebot.get_driver()
