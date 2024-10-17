@@ -15,6 +15,7 @@ from typing import Any, Union, Callable, ClassVar, Optional, cast
 import anyio
 import msgpack
 from pygtrie import CharTrie
+from anyio.abc import TaskGroup
 from nonebot.utils import escape_tag
 from nonebot.exception import WebSocketClosed
 from nonebot.compat import type_validate_python
@@ -96,8 +97,14 @@ class Adapter(BaseAdapter):
         super().__init__(driver, **kwargs)
         self.onebot_config: Config = get_plugin_config(Config)
         self.connections: dict[str, WebSocket] = {}
-        self.task_group = anyio.create_task_group()
+        self._task_group: Optional[TaskGroup] = None
         self._setup()
+
+    @property
+    def task_group(self) -> TaskGroup:
+        if self._task_group is None:
+            raise RuntimeError("Adapter not initialized")
+        return self._task_group
 
     def _setup(self) -> None:
         if isinstance(self.driver, ASGIMixin):
@@ -157,7 +164,8 @@ class Adapter(BaseAdapter):
         self.driver.on_shutdown(self._stop)
 
     async def _start(self) -> None:
-        await self.task_group.__aenter__()
+        self._task_group = anyio.create_task_group()
+        await self._task_group.__aenter__()
 
         if self.onebot_config.onebot_ws_urls and isinstance(
             self.driver, WebSocketClientMixin
@@ -166,7 +174,7 @@ class Adapter(BaseAdapter):
                 url = str(url)
                 try:
                     ws_url = URL(url)
-                    self.task_group.start_soon(self._forward_ws, ws_url)
+                    self._task_group.start_soon(self._forward_ws, ws_url)
                 except Exception as e:
                     log(
                         "ERROR",
@@ -176,9 +184,9 @@ class Adapter(BaseAdapter):
                     )
 
     async def _stop(self) -> None:
-        self.task_group.cancel_scope.cancel()
-
-        await self.task_group.__aexit__(None, None, None)
+        if self._task_group is not None:
+            self._task_group.cancel_scope.cancel()
+            await self._task_group.__aexit__(None, None, None)
 
     @override
     async def _call_api(self, bot: Bot, api: str, **data: Any) -> Any:
