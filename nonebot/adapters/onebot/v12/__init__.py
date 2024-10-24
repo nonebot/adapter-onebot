@@ -7,11 +7,11 @@ FrontMatter:
     description: onebot.v12 模块
 """
 
-from .event import *
-from .exception import *
-from .permission import *
 from .bot import Bot as Bot
 from .utils import log as log
+from .event import *  # noqa: F403
+from .exception import *  # noqa: F403
 from .adapter import Adapter as Adapter
 from .message import Message as Message
+from .permission import *  # noqa: F403
 from .message import MessageSegment as MessageSegment

@@ -21,6 +21,7 @@ async def test_store():
     async def feed_result():
         store.add_result(response_data)
 
-    asyncio.create_task(feed_result())
+    task = asyncio.create_task(feed_result())
     resp = await store.fetch(seq, 10.0)
+    await task
     assert resp == response_data

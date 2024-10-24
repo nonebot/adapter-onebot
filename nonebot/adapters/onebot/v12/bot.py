@@ -39,7 +39,7 @@ def _check_reply(bot: "Bot", event: MessageEvent) -> None:
     try:
         event.reply = type_validate_python(Reply, msg_seg.data)
     except Exception as e:
-        log("WARNING", f"Error when getting message reply info: {repr(e)}", e)
+        log("WARNING", f"Error when getting message reply info: {e!r}", e)
         return
 
     # ensure string comparation

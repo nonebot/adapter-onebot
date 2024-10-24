@@ -9,8 +9,9 @@ import re
 from io import BytesIO
 from pathlib import Path
 from functools import partial
+from typing import Union, Optional
+from collections.abc import Iterable
 from typing_extensions import Self, override
-from typing import Type, Tuple, Union, Iterable, Optional
 
 from nonebot.adapters.onebot.utils import b2s, f2s
 from nonebot.adapters import Message as BaseMessage
@@ -26,7 +27,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
 
     @classmethod
     @override
-    def get_message_class(cls) -> Type["Message"]:
+    def get_message_class(cls) -> type["Message"]:
         return Message
 
     @override
@@ -263,7 +264,7 @@ class Message(BaseMessage[MessageSegment]):
 
     @classmethod
     @override
-    def get_segment_class(cls) -> Type[MessageSegment]:
+    def get_segment_class(cls) -> type[MessageSegment]:
         return MessageSegment
 
     @override
@@ -296,7 +297,7 @@ class Message(BaseMessage[MessageSegment]):
     @staticmethod
     @override
     def _construct(msg: str) -> Iterable[MessageSegment]:
-        def _iter_message(msg: str) -> Iterable[Tuple[str, str]]:
+        def _iter_message(msg: str) -> Iterable[tuple[str, str]]:
             text_begin = 0
             for cqcode in re.finditer(
                 r"\[CQ:(?P<type>[a-zA-Z0-9-_.]+)"

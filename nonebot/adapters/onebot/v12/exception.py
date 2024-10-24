@@ -5,7 +5,7 @@ FrontMatter:
     description: onebot.v12.exception 模块
 """
 
-from typing import Any, Tuple, Optional
+from typing import Any, Optional
 
 from nonebot.exception import AdapterException
 from nonebot.exception import ActionFailed as BaseActionFailed
@@ -66,7 +66,7 @@ class ActionFailedWithRetcode(ActionFailed):
         kwargs: 其他实现端提供信息
     """
 
-    __retcode__: Tuple[str, ...] = ("",)
+    __retcode__: tuple[str, ...] = ("",)
 
     def __init__(
         self, status: str, retcode: int, message: str, data: Any, **kwargs: Any

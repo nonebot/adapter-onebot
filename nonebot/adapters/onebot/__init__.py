@@ -9,13 +9,13 @@ FrontMatter:
     description: onebot 模块
 """
 
-from .v11 import Bot as V11Bot
-from .v12 import Bot as V12Bot
-from .v11 import event as V11Event
-from .v12 import event as V12Event
-from .v11 import Adapter as V11Adapter
-from .v11 import Message as V11Message
-from .v12 import Adapter as V12Adapter
-from .v12 import Message as V12Message
-from .v11 import MessageSegment as V11MessageSegment
-from .v12 import MessageSegment as V12MessageSegment
+from .v11 import Bot as V11Bot  # noqa: F401
+from .v12 import Bot as V12Bot  # noqa: F401
+from .v11 import event as V11Event  # noqa: F401
+from .v12 import event as V12Event  # noqa: F401
+from .v11 import Adapter as V11Adapter  # noqa: F401
+from .v11 import Message as V11Message  # noqa: F401
+from .v12 import Adapter as V12Adapter  # noqa: F401
+from .v12 import Message as V12Message  # noqa: F401
+from .v11 import MessageSegment as V11MessageSegment  # noqa: F401
+from .v12 import MessageSegment as V12MessageSegment  # noqa: F401
