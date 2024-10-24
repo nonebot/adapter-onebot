@@ -40,6 +40,7 @@ nonebot2 = { git = "https://github.com/nonebot/nonebot2.git", branch = "master",
 ] }
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 addopts = "--cov=nonebot/adapters/onebot --cov-report term-missing"
 
 [tool.black]
