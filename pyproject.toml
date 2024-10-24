@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-adapter-onebot"
-version = "2.4.5"
+version = "2.4.6"
 description = "OneBot(CQHTTP) adapter for nonebot2"
 authors = ["yanyongyu <yyy@nonebot.dev>"]
 license = "MIT"
