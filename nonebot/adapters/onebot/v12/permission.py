@@ -25,4 +25,4 @@ async def _group(event: GroupMessageEvent) -> bool:
 GROUP: Permission = Permission(_group)
 """匹配任意群聊消息类型事件"""
 
-__all__ = ["PRIVATE", "GROUP"]
+__all__ = ["GROUP", "PRIVATE"]

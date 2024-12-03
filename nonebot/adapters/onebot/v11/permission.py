@@ -67,12 +67,12 @@ GROUP_OWNER: Permission = Permission(_group_owner)
 """匹配任意群主群聊消息类型事件"""
 
 __all__ = [
+    "GROUP",
+    "GROUP_ADMIN",
+    "GROUP_MEMBER",
+    "GROUP_OWNER",
     "PRIVATE",
     "PRIVATE_FRIEND",
     "PRIVATE_GROUP",
     "PRIVATE_OTHER",
-    "GROUP",
-    "GROUP_MEMBER",
-    "GROUP_ADMIN",
-    "GROUP_OWNER",
 ]
