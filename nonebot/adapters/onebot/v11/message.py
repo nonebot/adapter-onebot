@@ -5,7 +5,6 @@ FrontMatter:
     description: onebot.v11.message 模块
 """
 
-import re
 from io import BytesIO
 from pathlib import Path
 from functools import partial
