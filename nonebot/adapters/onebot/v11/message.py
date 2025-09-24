@@ -38,7 +38,7 @@ class MessageSegment(BaseMessageSegment["Message"]):
         params = ",".join(
             f"{k}={escape(str(v))}" for k, v in self.data.items() if v is not None
         )
-        return f"[CQ:{self.type}{',' if params else ''}{params}]"
+        return f"[{self.type}{':' if params else ''}{params}]"
 
     def to_rich_text(self, truncate: Optional[int] = 70) -> str:
         if self.is_text():
@@ -297,36 +297,7 @@ class Message(BaseMessage[MessageSegment]):
     @staticmethod
     @override
     def _construct(msg: str) -> Iterable[MessageSegment]:
-        def _iter_message(msg: str) -> Iterable[tuple[str, str]]:
-            text_begin = 0
-            for cqcode in re.finditer(
-                r"\[CQ:(?P<type>[a-zA-Z0-9-_.]+)"
-                r"(?P<params>"
-                r"(?:,[a-zA-Z0-9-_.]+=[^,\]]*)*"
-                r"),?\]",
-                msg,
-            ):
-                yield "text", msg[text_begin : cqcode.pos + cqcode.start()]
-                text_begin = cqcode.pos + cqcode.end()
-                yield cqcode.group("type"), cqcode.group("params").lstrip(",")
-            yield "text", msg[text_begin:]
-
-        for type_, data in _iter_message(msg):
-            if type_ == "text":
-                if data:
-                    # only yield non-empty text segment
-                    yield MessageSegment(type_, {"text": unescape(data)})
-            else:
-                data = {
-                    k: unescape(v)
-                    for k, v in (
-                        x.split("=", maxsplit=1)
-                        for x in filter(
-                            lambda x: x, (x.lstrip() for x in data.split(","))
-                        )
-                    )
-                }
-                yield MessageSegment(type_, data)
+        yield MessageSegment("text", {"text": unescape(msg)})
 
     @override
     def extract_plain_text(self) -> str:
