@@ -437,7 +437,9 @@ class Adapter(BaseAdapter):
         if "post_type" not in json_data:
             cls._result_store.add_result(json_data)
             return
-
+        if json_data['post_type'] == "message_sent":
+            json_data["post_type"] = "message"
+            json_data.pop("message_sent_type", None)
         try:
             for model in cls.get_event_model(json_data):
                 try:
