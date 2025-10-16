@@ -145,7 +145,7 @@ class MessageEvent(Event):
     post_type: Literal["message"]
     sub_type: str
     user_id: int
-    target_id: int = 0 # napcat的字段
+    target_id: int = 0  # napcat的字段
     message_type: str
     message_id: int
     message: Message
