@@ -6,8 +6,8 @@ FrontMatter:
 """
 
 import re
-from typing_extensions import override
 from typing import Any, Union, Callable
+from typing_extensions import override
 
 from nonebot.message import handle_event
 from nonebot.compat import model_dump, type_validate_python
@@ -15,8 +15,8 @@ from nonebot.compat import model_dump, type_validate_python
 from nonebot.adapters import Bot as BaseBot
 
 from .utils import log
-from .message import Message, MessageSegment
 from .event import Event, Reply, MessageEvent
+from .message import Message, MessageSegment
 
 
 async def _check_reply(bot: "Bot", event: MessageEvent) -> None:
