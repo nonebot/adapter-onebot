@@ -13,10 +13,9 @@ from typing import Union, Optional
 from collections.abc import Iterable
 from typing_extensions import Self, override
 
-from nonebot.adapters.onebot.utils import b2s, f2s
 from nonebot.adapters import Message as BaseMessage
-from nonebot.adapters.onebot.utils import rich_escape
 from nonebot.adapters.onebot.utils import truncate as trunc
+from nonebot.adapters.onebot.utils import b2s, f2s, rich_escape
 from nonebot.adapters import MessageSegment as BaseMessageSegment
 
 from .utils import escape, unescape
